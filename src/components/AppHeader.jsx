@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useNotification } from "./Notification";
 
@@ -221,14 +221,9 @@ export default function AppHeader() {
 
     const isActive = item.href ? activeMap[item.href] : false;
     return (
-      <a
-        key={item.key}
-        href={item.href}
-        className={`${className} ${isActive ? "text-[#ffcfad]" : ""}`}
-        onClick={onNavigate}
-      >
+      <Link key={item.key} to={item.href} className={`${className} ${isActive ? "text-[#ffcfad]" : ""}`} onClick={onNavigate}>
         {t(`header.nav.${item.key}`)}
-      </a>
+      </Link>
     );
   };
 
@@ -237,12 +232,12 @@ export default function AppHeader() {
       <div className="mx-auto w-full max-w-6xl px-4 py-3 md:py-4">
         <div className="flex items-center justify-between gap-3 lg:gap-10">
           <div className="flex items-center gap-2">
-            <a href="/" className="inline-flex items-center gap-2">
+            <Link to="/" className="inline-flex items-center gap-2">
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/10">
                 <img src="/static/gold.svg" alt="GODL" className="h-5 w-5 object-contain" />
               </span>
               <span className="hidden text-sm font-semibold tracking-[0.16em] text-slate-100 sm:inline">GODL LABS</span>
-            </a>
+            </Link>
           </div>
 
           <nav className="hidden items-center gap-8 lg:gap-10 md:flex">

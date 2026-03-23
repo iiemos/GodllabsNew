@@ -1,5 +1,5 @@
 import { Icon } from "@iconify/react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 const sectionLinks = [
@@ -54,9 +54,9 @@ export default function AppFooter() {
             <ul className="mt-4 space-y-3 text-sm text-slate-400">
               {sectionLinks.map((item) => (
                 <li key={item.key}>
-                  <a href={`${homePrefix}${item.hash}`} className="transition hover:text-white">
+                  <Link to={`${homePrefix}${item.hash}`} className="transition hover:text-white">
                     {t(`footer.sectionLinks.${item.key}`)}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -67,9 +67,9 @@ export default function AppFooter() {
             <ul className="mt-4 space-y-3 text-sm text-slate-400">
               {infoLinks.map((item) => (
                 <li key={item.key}>
-                  <a href={item.href ?? `${homePrefix}${item.hash}`} className="transition hover:text-white">
+                  <Link to={item.href ?? `${homePrefix}${item.hash}`} className="transition hover:text-white">
                     {t(`footer.infoLinks.${item.key}`)}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

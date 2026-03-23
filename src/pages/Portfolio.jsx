@@ -1,4 +1,5 @@
 import { Icon } from "@iconify/react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 const balances = [
@@ -31,12 +32,12 @@ export default function Portfolio() {
             <h1 className="mt-4 text-3xl font-semibold text-white md:text-4xl">{t("portfolio.title")}</h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">{t("portfolio.description")}</p>
           </div>
-          <a
-            href="/swap"
+          <Link
+            to="/swap"
             className="morgan-btn-secondary inline-flex h-10 items-center justify-center px-4 text-sm"
           >
             {t("portfolio.goSwap")}
-          </a>
+          </Link>
         </div>
       </div>
 

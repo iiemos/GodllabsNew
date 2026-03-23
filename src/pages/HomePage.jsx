@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 const glowCardStyle = {
@@ -269,24 +270,24 @@ export default function HomePage() {
             </p>
           </div>
 
-          <a
-            href="/farms"
+          <Link
+            to="/farms"
             className="mt-9 inline-flex rounded-full border border-[#d89b7c] bg-black/45 px-8 py-3 text-sm font-semibold text-white transition hover:bg-black/60"
             style={{ boxShadow: "rgba(0, 0, 0, 0.3) 0px 0px 2px 3px inset, rgba(201, 115, 89, 0.16) 0px 0px 4px 8px inset" }}
           >
             {t("home.hero.launch")}
-          </a>
+          </Link>
 
           <div className="mx-auto mt-4 flex w-full max-w-2xl flex-wrap items-center justify-center gap-2 text-xs">
-            <a href="/farms" className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-slate-200 transition hover:border-white/30">
+            <Link to="/farms" className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-slate-200 transition hover:border-white/30">
               {t("home.hero.farmsLink")}
-            </a>
-            <a href="/portfolio" className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-slate-200 transition hover:border-white/30">
+            </Link>
+            <Link to="/portfolio" className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-slate-200 transition hover:border-white/30">
               {t("home.hero.portfolioLink")}
-            </a>
-            <a href="/contact-us" className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-slate-200 transition hover:border-white/30">
+            </Link>
+            <Link to="/contact-us" className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-slate-200 transition hover:border-white/30">
               {t("home.hero.contactLink")}
-            </a>
+            </Link>
           </div>
 
           <div className="relative mx-auto mt-7 h-[320px] w-full max-w-[900px] md:h-[390px]">
@@ -764,18 +765,18 @@ export default function HomePage() {
               {t("home.blocks.finalDescription")}
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-2">
-              <a
-                href="/farms"
+              <Link
+                to="/farms"
                 className="morgan-btn-primary inline-flex px-6 py-2.5 text-sm font-semibold"
               >
                 {t("home.blocks.finalButtonPrimary")}
-              </a>
-              <a
-                href="/portfolio"
+              </Link>
+              <Link
+                to="/portfolio"
                 className="morgan-btn-secondary inline-flex px-6 py-2.5 text-sm font-medium"
               >
                 {t("home.blocks.finalButtonSecondary")}
-              </a>
+              </Link>
             </div>
           </div>
         </div>
