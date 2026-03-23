@@ -1,0 +1,183 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Space Grotesk", sans-serif;
+  background: #0a0a0a;
+  color: #f8fafc;
+}
+
+input,
+button,
+textarea,
+select {
+  font-family: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.marquee-mask {
+  mask-image: linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 12%, #000 88%, transparent 100%);
+}
+
+.marquee-track {
+  animation: marquee-left 26s linear infinite;
+}
+
+@keyframes marquee-left {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.no-number-spin::-webkit-outer-spin-button,
+.no-number-spin::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.no-number-spin[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.morgan-btn-primary {
+  border: 1px solid rgba(255, 177, 59, 0.68);
+  border-radius: 1rem;
+  background: linear-gradient(90deg, rgba(255, 177, 59, 1) 0%, rgba(237, 111, 60, 0.92) 100%);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 0 20px rgba(255, 177, 59, 0.36), 0 10px 24px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.morgan-btn-primary:hover {
+  filter: brightness(1.06);
+  transform: scale(1.02);
+  box-shadow: 0 0 26px rgba(255, 177, 59, 0.44), 0 12px 28px rgba(0, 0, 0, 0.38);
+}
+
+.morgan-btn-primary:active {
+  transform: scale(0.98);
+}
+
+.morgan-btn-primary:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.25);
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
+}
+
+.morgan-btn-secondary {
+  border: 1px solid rgba(255, 177, 59, 0.34);
+  border-radius: 1rem;
+  background: rgba(74, 53, 34, 0.35);
+  color: rgba(248, 250, 252, 0.9);
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+  transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+}
+
+.morgan-btn-secondary:hover {
+  border-color: rgba(255, 177, 59, 0.62);
+  color: #fff;
+  background: rgba(96, 67, 41, 0.54);
+  transform: scale(1.01);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
+}
+
+.swap-switch-btn {
+  position: relative;
+  overflow: visible;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+}
+
+.swap-switch-btn::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: -4px;
+  border-radius: 0.9rem;
+  background: linear-gradient(135deg, rgba(255, 177, 59, 0.42), rgba(237, 111, 60, 0.34));
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: none;
+  z-index: -1;
+}
+
+.swap-switch-btn:hover {
+  background: linear-gradient(135deg, rgba(255, 177, 59, 0.35), rgba(237, 111, 60, 0.26));
+  border-color: rgba(255, 177, 59, 0.7);
+  transform: scale(1.08);
+  box-shadow: none;
+}
+
+.swap-switch-btn:hover::after {
+  opacity: 1;
+  transform: scale(1.1);
+  box-shadow: none;
+}
+
+.swap-switch-icon {
+  transition: transform 0.45s ease;
+}
+
+.swap-switch-btn:hover .swap-switch-icon {
+  transform: rotate(180deg);
+}
+
+.globe {
+  --globe-size: clamp(200px, 26vw, 250px);
+  position: relative;
+  width: var(--globe-size);
+  height: var(--globe-size);
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #ff9568;
+  background: radial-gradient(circle at 50% 70%, rgba(255, 149, 104, 0.08), rgba(255, 149, 104, 0) 68%);
+  box-shadow: 0 0 22px rgba(255, 149, 104, 0.32);
+}
+
+.globe-track {
+  display: flex;
+  align-items: center;
+  width: max-content;
+  height: 100%;
+  animation: rotation 20s linear 0s infinite;
+  will-change: transform;
+}
+
+.globe-map {
+  flex: 0 0 auto;
+  width: calc(var(--globe-size) * 3.9071428571);
+  height: var(--globe-size);
+  opacity: 0.98;
+}
+
+@keyframes rotation {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
