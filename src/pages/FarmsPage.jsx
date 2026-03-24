@@ -323,10 +323,10 @@ function ListRow({ item, metricLabel, earnedValue, expanded, onToggle, onAction,
       >
         <div className="flex items-center gap-3">
           <TokenStack tokens={item.tokens} />
-          <p className="font-semibold text-[#f6cdb7]">{pairText}</p>
+          <p className="font-semibold text-[#f0cd54]">{pairText}</p>
         </div>
 
-        <span className="inline-flex w-fit rounded-full border border-[#ffb13b]/65 bg-[#ffb13b]/10 px-2 py-0.5 text-xs font-semibold text-[#ffcc9f]">
+        <span className="inline-flex w-fit rounded-full border border-[#fcd535]/50 bg-[#fcd535]/10 px-2 py-0.5 text-xs font-semibold text-[#f0cd54]">
           {item.fee}
         </span>
 
@@ -337,7 +337,7 @@ function ListRow({ item, metricLabel, earnedValue, expanded, onToggle, onAction,
 
         <div>
           <p className="text-[11px] text-slate-500">{t("farms.detail.apr")}</p>
-          <p className="font-semibold text-[#f6b79a]">{item.apy}</p>
+          <p className="font-semibold text-[#fcd535]">{item.apy}</p>
         </div>
 
         <div>
@@ -360,16 +360,16 @@ function ListRow({ item, metricLabel, earnedValue, expanded, onToggle, onAction,
           <p className="font-semibold text-slate-300">{item.staked}</p>
         </div>
 
-        <button type="button" onClick={onToggle} className="text-[#f4c8b0] transition hover:brightness-110">
+        <button type="button" onClick={onToggle} className="text-[#fcd535] transition hover:brightness-110">
           <Icon icon={expanded ? "mdi:chevron-up" : "mdi:chevron-down"} width="20" />
         </button>
       </div>
 
       {expanded && (
         <div className="grid min-w-[980px] grid-cols-[1fr_2fr_1fr] gap-4 border-t border-white/10 bg-black/20 px-5 py-4">
-          <div className="space-y-1 text-sm text-[#f6b79a]">
+          <div className="space-y-1 text-sm text-[#fcd535]">
             {detailLinks.map((text) => (
-              <button key={text} type="button" onClick={onAction} className="block text-left transition hover:text-[#ffd8bf]">
+              <button key={text} type="button" onClick={onAction} className="block text-left transition hover:text-[#f0cd54]">
                 {text}
               </button>
             ))}
@@ -440,10 +440,10 @@ function FarmCard({ item, metricLabel, earnedValue, expanded, onToggle, onAction
         <div className="flex items-start justify-between gap-3">
           <TokenStack tokens={item.tokens} />
           <div className="text-right">
-            <p className="font-semibold text-[#f6cdb7]">{pairText.replace(/\s*LP$/i, "")}</p>
+            <p className="font-semibold text-[#f0cd54]">{pairText.replace(/\s*LP$/i, "")}</p>
             <div className="mt-1 flex items-center justify-end gap-1.5">
-              <span className="inline-flex rounded-full border border-[#ffb13b]/65 bg-[#ffb13b]/10 px-2 py-0.5 text-xs font-semibold text-[#ffcc9f]">{item.fee}</span>
-              <span className="inline-flex rounded-full border border-[#ffb13b]/45 bg-[#ffb13b]/5 px-2 py-0.5 text-xs font-semibold text-[#ffcc9f]">{metricText}</span>
+              <span className="inline-flex rounded-full border border-[#fcd535]/50 bg-[#fcd535]/10 px-2 py-0.5 text-xs font-semibold text-[#f0cd54]">{item.fee}</span>
+              <span className="inline-flex rounded-full border border-[#fcd535]/35 bg-[#fcd535]/5 px-2 py-0.5 text-xs font-semibold text-[#f0cd54]">{metricText}</span>
             </div>
           </div>
         </div>
@@ -451,7 +451,7 @@ function FarmCard({ item, metricLabel, earnedValue, expanded, onToggle, onAction
         <div className="grid grid-cols-2 gap-2 text-sm">
           <p className="text-slate-400">
             {t("farms.detail.apr")}:
-            <span className="ml-1 font-semibold text-[#f6b79a]">{item.apy}</span>
+            <span className="ml-1 font-semibold text-[#fcd535]">{item.apy}</span>
           </p>
           <p className="text-right text-slate-400">
             {t("farms.detail.earned")}:
@@ -478,7 +478,7 @@ function FarmCard({ item, metricLabel, earnedValue, expanded, onToggle, onAction
       </div>
 
       <div className="flex justify-center border-t border-white/10 px-4 py-3 text-center">
-        <button type="button" onClick={onToggle} className="inline-flex items-center justify-center gap-1 text-sm font-semibold text-[#f4c8b0]">
+        <button type="button" onClick={onToggle} className="inline-flex items-center justify-center gap-1 text-sm font-semibold text-[#fcd535]">
           {expanded ? t("farms.actions.hide") : t("farms.actions.details")}
           <Icon icon={expanded ? "mdi:chevron-up" : "mdi:chevron-down"} width="16" />
         </button>
@@ -509,9 +509,9 @@ function FarmCard({ item, metricLabel, earnedValue, expanded, onToggle, onAction
             )}
           </div>
 
-          <div className="space-y-1 text-[#f6b79a]">
+          <div className="space-y-1 text-[#fcd535]">
             {detailLinks.map((text) => (
-              <button key={text} type="button" onClick={onAction} className="block text-left text-sm transition hover:text-[#ffd8bf]">
+              <button key={text} type="button" onClick={onAction} className="block text-left text-sm transition hover:text-[#f0cd54]">
                 {text}
               </button>
             ))}
@@ -594,7 +594,7 @@ export default function FarmsPage() {
   return (
     <section className="mx-auto max-w-6xl px-4 py-12 md:py-16">
       <div>
-        <h1 className="text-5xl font-bold tracking-tight text-[#f4c8b0] md:text-6xl">{t("farms.title")}</h1>
+        <h1 className="text-5xl font-bold tracking-tight text-[#fcd535] md:text-6xl">{t("farms.title")}</h1>
         <p className="mt-3 text-2xl font-semibold text-slate-100">{t("farms.subtitle")}</p>
 
         <div className="mt-6 flex flex-wrap items-center gap-2">
@@ -608,7 +608,7 @@ export default function FarmsPage() {
                   setPanelTab(tab.id);
                   setExpandedId(null);
                 }}
-                className={`rounded-full px-4 py-2 text-sm transition ${active ? "morgan-btn-primary border-0 text-white" : "bg-white/8 text-slate-300 hover:bg-white/14"}`}
+                className={`rounded-full px-4 py-2 text-sm transition ${active ? "morgan-btn-primary border-0 text-[#111111]" : "bg-white/8 text-slate-300 hover:bg-white/14"}`}
               >
                 {t(`farms.panelTabs.${tab.id}`)}
               </button>
@@ -625,14 +625,14 @@ export default function FarmsPage() {
             <button
               type="button"
               onClick={() => setViewMode("card")}
-              className={`inline-flex h-8 w-8 items-center justify-center rounded ${viewMode === "card" ? "morgan-btn-primary border-0 text-white" : "bg-white/8 text-slate-400 hover:bg-white/14"}`}
+              className={`inline-flex h-8 w-8 items-center justify-center rounded ${viewMode === "card" ? "morgan-btn-primary border-0 text-[#111111]" : "bg-white/8 text-slate-400 hover:bg-white/14"}`}
             >
               <Icon icon="mdi:view-grid-outline" width="16" />
             </button>
             <button
               type="button"
               onClick={() => setViewMode("list")}
-              className={`inline-flex h-8 w-8 items-center justify-center rounded ${viewMode === "list" ? "morgan-btn-primary border-0 text-white" : "bg-white/8 text-slate-400 hover:bg-white/14"}`}
+              className={`inline-flex h-8 w-8 items-center justify-center rounded ${viewMode === "list" ? "morgan-btn-primary border-0 text-[#111111]" : "bg-white/8 text-slate-400 hover:bg-white/14"}`}
             >
               <Icon icon="mdi:view-list-outline" width="16" />
             </button>
@@ -641,7 +641,7 @@ export default function FarmsPage() {
           <button
             type="button"
             onClick={() => setStatusFilter("active")}
-            className={`px-4 py-1.5 text-sm ${statusFilter === "active" ? "morgan-btn-primary border-0 text-white" : "morgan-btn-secondary text-slate-300"}`}
+            className={`px-4 py-1.5 text-sm ${statusFilter === "active" ? "morgan-btn-primary border-0 text-[#111111]" : "morgan-btn-secondary text-slate-300"}`}
           >
             {t("farms.statusFilter.active")}
           </button>
@@ -649,7 +649,7 @@ export default function FarmsPage() {
           <button
             type="button"
             onClick={() => setStatusFilter("ended")}
-            className={`px-4 py-1.5 text-sm ${statusFilter === "ended" ? "morgan-btn-primary border-0 text-white" : "morgan-btn-secondary text-slate-300"}`}
+            className={`px-4 py-1.5 text-sm ${statusFilter === "ended" ? "morgan-btn-primary border-0 text-[#111111]" : "morgan-btn-secondary text-slate-300"}`}
           >
             {t("farms.statusFilter.ended")}
           </button>
@@ -671,7 +671,7 @@ export default function FarmsPage() {
             <button
               type="button"
               onClick={() => setOnlyStaked((prev) => !prev)}
-              className={`relative h-6 w-11 rounded-full transition ${onlyStaked ? "bg-[#ffb13b]" : "bg-white/15"}`}
+              className={`relative h-6 w-11 rounded-full transition ${onlyStaked ? "bg-[#fcd535]" : "bg-white/15"}`}
             >
               <span
                 className={`absolute top-[2px] h-5 w-5 rounded-full bg-white transition ${onlyStaked ? "left-[22px]" : "left-[2px]"}`}

@@ -22,13 +22,13 @@ function formatAddress(address) {
 function WalletConnectButton({ address, connecting, onConnect, onDisconnect, t }) {
   if (address) {
     return (
-      <div className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#ffb13b]/35 bg-[#ffb13b]/10 px-3 text-sm text-[#ffd8b6]">
+      <div className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#fcd535]/30 bg-[#fcd535]/10 px-3 text-sm text-[#f0cd54]">
         <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
         <span className="max-w-[118px] truncate font-medium">{formatAddress(address)}</span>
         <button
           type="button"
           onClick={onDisconnect}
-          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[#ffbe95] transition hover:bg-black/20 hover:text-white"
+          className="inline-flex h-6 w-6 items-center justify-center rounded-md text-[#f0cd54] transition hover:bg-black/30 hover:text-white"
           title={t("header.wallet.disconnect")}
         >
           <Icon icon="mdi:logout" width="16" />
@@ -221,14 +221,14 @@ export default function AppHeader() {
 
     const isActive = item.href ? activeMap[item.href] : false;
     return (
-      <Link key={item.key} to={item.href} className={`${className} ${isActive ? "text-[#ffcfad]" : ""}`} onClick={onNavigate}>
+      <Link key={item.key} to={item.href} className={`${className} ${isActive ? "text-[#f0cd54]" : ""}`} onClick={onNavigate}>
         {t(`header.nav.${item.key}`)}
       </Link>
     );
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-black/35 backdrop-blur-xl">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-black/55 backdrop-blur-xl">
       <div className="mx-auto w-full max-w-6xl px-4 py-3 md:py-4">
         <div className="flex items-center justify-between gap-3 lg:gap-10">
           <div className="flex items-center gap-2">
@@ -273,10 +273,10 @@ export default function AppHeader() {
                         key={option.code}
                         type="button"
                         onClick={() => handleLanguageChange(option.code)}
-                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition ${active ? "bg-white/10 text-[#ffd3b2]" : "text-slate-300 hover:bg-white/5 hover:text-white"}`}
+                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition ${active ? "bg-white/10 text-[#f0cd54]" : "text-slate-300 hover:bg-white/5 hover:text-white"}`}
                       >
                         <span>{option.label}</span>
-                        {active && <Icon icon="mdi:check" width="14" className="text-[#ffb13b]" />}
+                        {active && <Icon icon="mdi:check" width="14" className="text-[#fcd535]" />}
                       </button>
                     );
                   })}

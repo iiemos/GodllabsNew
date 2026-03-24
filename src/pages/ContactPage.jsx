@@ -30,7 +30,7 @@ export default function ContactPage() {
             <input
               type="text"
               placeholder={t("contact.placeholders.name")}
-              className="h-11 w-full rounded-xl border border-white/10 bg-black/20 px-4 text-sm text-slate-200 placeholder:text-slate-500 outline-none transition focus:border-[#df8f68]"
+              className="h-11 w-full rounded-xl border border-white/10 bg-black/20 px-4 text-sm text-slate-200 placeholder:text-slate-500 outline-none transition focus:border-[#fcd535]"
             />
           </label>
 
@@ -40,7 +40,7 @@ export default function ContactPage() {
               type="email"
               required
               placeholder={t("contact.placeholders.email")}
-              className="h-11 w-full rounded-xl border border-white/10 bg-black/20 px-4 text-sm text-slate-200 placeholder:text-slate-500 outline-none transition focus:border-[#df8f68]"
+              className="h-11 w-full rounded-xl border border-white/10 bg-black/20 px-4 text-sm text-slate-200 placeholder:text-slate-500 outline-none transition focus:border-[#fcd535]"
             />
           </label>
         </div>
@@ -50,7 +50,7 @@ export default function ContactPage() {
           <textarea
             rows={5}
             placeholder={t("contact.placeholders.message")}
-            className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 outline-none transition focus:border-[#df8f68]"
+            className="w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-slate-200 placeholder:text-slate-500 outline-none transition focus:border-[#fcd535]"
           />
         </label>
 

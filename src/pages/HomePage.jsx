@@ -226,7 +226,7 @@ export default function HomePage() {
           style={{ filter: "blur(19px)" }}
         />
         <div
-          className="pointer-events-none absolute left-1/2 top-0 h-[4px] w-[316px] -translate-x-1/2 bg-[#ffaa6e]"
+          className="pointer-events-none absolute left-1/2 top-0 h-[4px] w-[316px] -translate-x-1/2 bg-[#fcd535]"
           style={{
             mask: "linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgb(0, 0, 0) 49.50556024774775%, rgba(0, 0, 0, 0) 100%) add",
             WebkitMask:
@@ -236,7 +236,7 @@ export default function HomePage() {
         <div className="pointer-events-none absolute left-1/2 top-10 h-[420px] w-[min(122vw,1080px)] -translate-x-1/2 opacity-30 [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:112px_112px]" />
 
         <div className="relative mx-auto max-w-6xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/35 px-4 py-2 text-sm font-medium text-[#ffd6c2]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/35 px-4 py-2 text-sm font-medium text-[#f0cd54]">
             <Icon icon="mdi:star-four-points" width="13" />
             {t("home.hero.badge")}
           </div>
@@ -245,35 +245,35 @@ export default function HomePage() {
             <div className="pointer-events-none absolute left-0 top-0 h-12 w-12 -translate-x-1/2 -translate-y-1/2">
               <span className="absolute left-1/2 top-1/2 h-px w-10 bg-white/35" />
               <span className="absolute left-1/2 top-1/2 h-10 w-px bg-white/35" />
-              <span className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 bg-[#ffb13b] shadow-[0_0_18px_rgba(255,177,59,0.55)]" />
+              <span className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 bg-[#fcd535] shadow-[0_0_14px_rgba(252,213,53,0.32)]" />
             </div>
             <div className="pointer-events-none absolute right-0 top-0 h-12 w-12 translate-x-1/2 -translate-y-1/2">
               <span className="absolute right-1/2 top-1/2 h-px w-10 bg-white/35" />
               <span className="absolute left-1/2 top-1/2 h-10 w-px bg-white/35" />
-              <span className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 bg-[#ffb13b] shadow-[0_0_18px_rgba(255,177,59,0.55)]" />
+              <span className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 bg-[#fcd535] shadow-[0_0_14px_rgba(252,213,53,0.32)]" />
             </div>
             <div className="pointer-events-none absolute bottom-0 left-0 h-12 w-12 -translate-x-1/2 translate-y-1/2">
               <span className="absolute left-1/2 top-1/2 h-px w-10 bg-white/35" />
               <span className="absolute bottom-1/2 left-1/2 h-10 w-px bg-white/35" />
-              <span className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 bg-[#ffb13b] shadow-[0_0_18px_rgba(255,177,59,0.55)]" />
+              <span className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 bg-[#fcd535] shadow-[0_0_14px_rgba(252,213,53,0.32)]" />
             </div>
             <div className="pointer-events-none absolute bottom-0 right-0 h-12 w-12 translate-x-1/2 translate-y-1/2">
               <span className="absolute right-1/2 top-1/2 h-px w-10 bg-white/35" />
               <span className="absolute bottom-1/2 left-1/2 h-10 w-px bg-white/35" />
-              <span className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 bg-[#ffb13b] shadow-[0_0_18px_rgba(255,177,59,0.55)]" />
+              <span className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 bg-[#fcd535] shadow-[0_0_14px_rgba(252,213,53,0.32)]" />
             </div>
 
-            <h1 className="mx-auto max-w-4xl text-6xl font-semibold leading-none text-[#f8cab1] md:text-8xl">GODL LABS</h1>
+            <h1 className="mx-auto max-w-4xl text-6xl font-semibold leading-none text-[#fcd535] md:text-8xl">GODL LABS</h1>
 
-            <p className="mx-auto mt-12 max-w-xl text-sm leading-snug text-[#f3bca0] sm:text-base md:text-[20px]">
+            <p className="mx-auto mt-12 max-w-xl text-sm leading-snug text-slate-300 sm:text-base md:text-[20px]">
               {t("home.hero.description")}
             </p>
           </div>
 
           <Link
             to="/farms"
-            className="mt-9 inline-flex rounded-full border border-[#d89b7c] bg-black/45 px-8 py-3 text-sm font-semibold text-white transition hover:bg-black/60"
-            style={{ boxShadow: "rgba(0, 0, 0, 0.3) 0px 0px 2px 3px inset, rgba(201, 115, 89, 0.16) 0px 0px 4px 8px inset" }}
+            className="mt-9 inline-flex rounded-full border border-[#fcd535] bg-black/45 px-8 py-3 text-sm font-semibold text-white transition hover:bg-black/60"
+            style={{ boxShadow: "rgba(0, 0, 0, 0.3) 0px 0px 2px 3px inset, rgba(252, 213, 53, 0.16) 0px 0px 4px 8px inset" }}
           >
             {t("home.hero.launch")}
           </Link>
@@ -324,7 +324,7 @@ export default function HomePage() {
         <SectionHeading
           title={
             <>
-              {t("home.sectionHeadings.overviewBase")} <span className="font-serif italic text-[#f4c8b0]">{t("home.sectionHeadings.overviewHighlight")}</span>
+              {t("home.sectionHeadings.overviewBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.overviewHighlight")}</span>
             </>
           }
           subtitle={t("home.sectionHeadings.overviewSubtitle")}
@@ -337,7 +337,7 @@ export default function HomePage() {
               className="glass-card rounded-2xl p-5"
             >
               <p className="text-xs text-slate-500">{metric.label}</p>
-              <p className="mt-2 text-2xl font-semibold text-[#f6bb9f]">{metric.value}</p>
+              <p className="mt-2 text-2xl font-semibold text-[#fcd535]">{metric.value}</p>
               <p className="mt-2 text-xs leading-5 text-slate-400">{metric.note}</p>
             </article>
           ))}
@@ -360,7 +360,7 @@ export default function HomePage() {
         <SectionHeading
           title={
             <>
-              {t("home.sectionHeadings.tokenomicsBase")} <span className="font-serif italic text-[#f4c8b0]">{t("home.sectionHeadings.tokenomicsHighlight")}</span>
+              {t("home.sectionHeadings.tokenomicsBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.tokenomicsHighlight")}</span>
             </>
           }
           subtitle={t("home.sectionHeadings.tokenomicsSubtitle")}
@@ -373,7 +373,7 @@ export default function HomePage() {
               className="glass-card flex flex-col gap-4 rounded-2xl p-5 md:flex-row md:items-center md:justify-between"
             >
               <div className="flex items-center gap-4 md:min-w-[280px]">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[#f6bb9f]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[#fcd535]">
                   <Icon icon={token.icon} width="24" />
                 </div>
                 <div>
@@ -394,7 +394,7 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-[1.1fr_1fr] md:items-center">
           <div>
             <h3 className="text-4xl font-semibold leading-tight text-white md:text-5xl">
-              <span className="font-serif italic text-[#f5c5aa]">{t("home.blocks.featureTitleBase")}</span>{t("home.blocks.featureTitleHighlight")}
+              <span className="font-serif italic text-[#fcd535]">{t("home.blocks.featureTitleBase")}</span>{t("home.blocks.featureTitleHighlight")}
             </h3>
             <p className="mt-5 max-w-xl text-sm leading-7 text-slate-400 md:text-base">
               {t("home.blocks.featureDescription")}
@@ -413,7 +413,7 @@ export default function HomePage() {
                     {String.fromCharCode(65 + index)}
                   </div>
                   <div className="h-2 flex-1 rounded-full bg-white/10">
-                    <div className="h-full rounded-full bg-gradient-to-r from-[#f7ba9b] to-[#ff7f4e]" style={{ width: `${value}%` }} />
+                    <div className="h-full rounded-full bg-gradient-to-r from-[#fcd535] to-[#a57a10]" style={{ width: `${value}%` }} />
                   </div>
                 </div>
               ))}
@@ -426,7 +426,7 @@ export default function HomePage() {
         <SectionHeading
           title={
             <>
-              {t("home.sectionHeadings.matrixBase")} <span className="font-serif italic text-[#f4c8b0]">{t("home.sectionHeadings.matrixHighlight")}</span>
+              {t("home.sectionHeadings.matrixBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.matrixHighlight")}</span>
             </>
           }
           subtitle={t("home.sectionHeadings.matrixSubtitle")}
@@ -435,7 +435,7 @@ export default function HomePage() {
         <div className="mx-auto mt-12 grid max-w-6xl gap-4 lg:grid-cols-[1.35fr_0.85fr]">
           <div className="grid gap-4">
             <article className="relative min-h-[360px] overflow-hidden p-6 md:p-7" style={glowCardStyle}>
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_16%,rgba(255,173,128,0.2),rgba(255,173,128,0)_42%),radial-gradient(circle_at_90%_80%,rgba(255,255,255,0.1),rgba(255,255,255,0)_55%)]" />
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_16%,rgba(252,213,53,0.14),rgba(252,213,53,0)_42%),radial-gradient(circle_at_90%_80%,rgba(255,255,255,0.08),rgba(255,255,255,0)_55%)]" />
               <CardBaseBackground />
               <div className="relative z-10 flex h-full flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div className="max-w-[540px]">
@@ -444,7 +444,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="relative flex w-full flex-1 items-center justify-center md:w-auto md:justify-end">
-                  <div className="pointer-events-none absolute h-[260px] w-[260px] rounded-full bg-[radial-gradient(circle,rgba(255,149,104,0.2),rgba(255,149,104,0)_68%)] blur-xl md:h-[300px] md:w-[300px]" />
+                  <div className="pointer-events-none absolute h-[260px] w-[260px] rounded-full bg-[radial-gradient(circle,rgba(252,213,53,0.14),rgba(252,213,53,0)_68%)] blur-xl md:h-[300px] md:w-[300px]" />
                   <div className="globe">
                     <div className="globe-track">
                       <img src="/static/earth.svg" alt="" className="globe-map" />
@@ -456,10 +456,10 @@ export default function HomePage() {
             </article>
 
             <article className="relative min-h-[200px] overflow-hidden p-6 md:p-7" style={glowCardStyle}>
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_10%,rgba(255,255,255,0.12),rgba(255,255,255,0)_42%),radial-gradient(circle_at_68%_70%,rgba(255,172,129,0.14),rgba(255,172,129,0)_52%)]" />
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_8%_10%,rgba(255,255,255,0.1),rgba(255,255,255,0)_42%),radial-gradient(circle_at_68%_70%,rgba(252,213,53,0.1),rgba(252,213,53,0)_52%)]" />
               <CardBaseBackground />
               <div className="relative z-10 flex h-full items-center gap-5">
-                <span className="inline-flex h-[86px] w-[86px] shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-black/30 text-[#f4c8b0] shadow-[0_0_26px_rgba(255,173,128,0.16)]">
+                <span className="inline-flex h-[86px] w-[86px] shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-black/30 text-[#fcd535] shadow-[0_0_18px_rgba(252,213,53,0.12)]">
                   <Icon icon="mdi:calendar-month" width="44" />
                 </span>
                 <div>
@@ -472,12 +472,12 @@ export default function HomePage() {
 
           <div className="grid gap-4 lg:grid-rows-2">
             <article className="relative min-h-[220px] overflow-hidden p-6 md:p-7" style={glowCardStyle}>
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_20%,rgba(255,255,255,0.1),rgba(255,255,255,0)_45%),radial-gradient(circle_at_20%_82%,rgba(255,165,118,0.14),rgba(255,165,118,0)_52%)]" />
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_20%,rgba(255,255,255,0.08),rgba(255,255,255,0)_45%),radial-gradient(circle_at_20%_82%,rgba(252,213,53,0.1),rgba(252,213,53,0)_52%)]" />
               <CardBaseBackground />
                 <div className="relative z-10 flex h-full items-center gap-5">
                 <div className="flex shrink-0 items-end gap-2">
                   <div className="h-12 w-4 rounded-full bg-[rgba(217,217,217,0.08)] shadow-[0_11px_27px_rgba(0,0,0,0.52)]" />
-                  <div className="h-20 w-4 rounded-full bg-gradient-to-b from-[#ffd6bd] to-[#ff7845] shadow-[0_0_22px_rgba(255,132,84,0.42)]" />
+                  <div className="h-20 w-4 rounded-full bg-gradient-to-b from-[#f0cd54] to-[#a57a10] shadow-[0_0_16px_rgba(252,213,53,0.24)]" />
                   <div className="h-16 w-4 rounded-full bg-[rgba(217,217,217,0.08)] shadow-[0_11px_27px_rgba(0,0,0,0.52)]" />
                 </div>
                 <div>
@@ -488,7 +488,7 @@ export default function HomePage() {
             </article>
 
             <article className="relative min-h-[220px] overflow-hidden p-6 md:p-7" style={glowCardStyle}>
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_88%,rgba(255,157,101,0.16),rgba(255,157,101,0)_52%),radial-gradient(circle_at_90%_10%,rgba(255,255,255,0.08),rgba(255,255,255,0)_45%)]" />
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_88%,rgba(252,213,53,0.11),rgba(252,213,53,0)_52%),radial-gradient(circle_at_90%_10%,rgba(255,255,255,0.07),rgba(255,255,255,0)_45%)]" />
               <CardBaseBackground />
               <div className="relative z-10 flex h-full flex-col">
                 <h4 className="text-2xl font-semibold text-white">{t("home.blocks.matrixBottomRightTitle")}</h4>
@@ -497,16 +497,16 @@ export default function HomePage() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-xs font-semibold text-white">A</span>
-                      <span className="h-[2px] w-16 bg-gradient-to-r from-[#ffb484]/70 to-transparent" />
+                      <span className="h-[2px] w-16 bg-gradient-to-r from-[#fcd535]/70 to-transparent" />
                     </div>
                     <div className="ml-6 flex items-center gap-2">
                       <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10 text-xs font-semibold text-white">B</span>
-                      <span className="h-[2px] w-16 bg-gradient-to-r from-[#ffb484]/70 to-transparent" />
+                      <span className="h-[2px] w-16 bg-gradient-to-r from-[#fcd535]/70 to-transparent" />
                     </div>
                   </div>
                   <div className="relative flex h-[118px] w-[118px] items-center justify-center rounded-[26px] border border-white/10 bg-white/5">
-                    <div className="absolute inset-0 rounded-[26px] bg-[radial-gradient(circle_at_50%_40%,rgba(255,184,138,0.3),rgba(255,184,138,0)_60%)]" />
-                    <Icon icon="mdi:lightning-bolt" className="relative text-[72px] text-[#ff9568]" />
+                    <div className="absolute inset-0 rounded-[26px] bg-[radial-gradient(circle_at_50%_40%,rgba(252,213,53,0.22),rgba(252,213,53,0)_60%)]" />
+                    <Icon icon="mdi:lightning-bolt" className="relative text-[72px] text-[#fcd535]" />
                   </div>
                 </div>
               </div>
@@ -519,7 +519,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-6 lg:grid-cols-[1.25fr_0.9fr] lg:items-end">
             <h2 className="text-4xl font-semibold leading-tight text-white md:text-6xl">
-              {t("home.blocks.dataPlatformTitleBase")} <span className="font-serif italic text-[#f4c8b0]">{t("home.blocks.dataPlatformTitleHighlight")}</span> {t("home.blocks.dataPlatformTitleSuffix")}
+              {t("home.blocks.dataPlatformTitleBase")} <span className="font-serif italic text-[#fcd535]">{t("home.blocks.dataPlatformTitleHighlight")}</span> {t("home.blocks.dataPlatformTitleSuffix")}
             </h2>
             <p className="max-w-xl text-sm leading-7 text-slate-400 md:text-base">
               {t("home.blocks.dataPlatformDescription")}
@@ -538,7 +538,7 @@ export default function HomePage() {
 
                   <div className="mt-5 flex items-end justify-between gap-4">
                     <h4 className="max-w-[220px] text-[38px] font-medium leading-tight text-white md:text-[43px]">{card.title}</h4>
-                    <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/25 bg-black/20 text-emerald-300">
+                    <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/25 bg-black/20 text-[#f0cd54]">
                       <Icon icon={card.icon} width="20" />
                     </span>
                   </div>
@@ -552,7 +552,7 @@ export default function HomePage() {
       <section id="why-aligno" className="px-4 pb-32 md:pb-40">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-4xl font-semibold text-white md:text-5xl">
-            {t("home.sectionHeadings.whyBase")} <span className="font-serif italic text-[#f4c8b0]">{t("home.sectionHeadings.whyHighlight")}</span>？
+            {t("home.sectionHeadings.whyBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.whyHighlight")}</span>？
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-slate-400 md:text-base">
             {t("home.sectionHeadings.whySubtitle")}
@@ -560,13 +560,13 @@ export default function HomePage() {
         </div>
 
         <div className="glass-card relative mx-auto mt-10 max-w-6xl overflow-hidden rounded-[20px]">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_92%,rgba(255,136,76,0.32),rgba(255,136,76,0)_32%),radial-gradient(circle_at_80%_92%,rgba(255,136,76,0.28),rgba(255,136,76,0)_30%)]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_92%,rgba(252,213,53,0.2),rgba(252,213,53,0)_32%),radial-gradient(circle_at_80%_92%,rgba(252,213,53,0.16),rgba(252,213,53,0)_30%)]" />
           <div className="grid grid-cols-2 items-center border-b border-white/10">
             <div className="flex items-center gap-3 px-6 py-4">
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10">
                 <Icon icon="mdi:play-box" width="16" className="text-white" />
               </span>
-              <p className="text-[28px] font-medium text-[#f1a67f] md:text-[34px]">GODL</p>
+              <p className="text-[28px] font-medium text-[#fcd535] md:text-[34px]">GODL</p>
             </div>
             <p className="px-6 py-4 text-right text-[28px] font-medium text-slate-100 md:text-[34px]">{t("home.blocks.whyTraditional")}</p>
           </div>
@@ -588,7 +588,7 @@ export default function HomePage() {
       <section id="security" className="px-4 pb-32 md:pb-40">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-4xl font-semibold text-white md:text-5xl">
-            {t("home.sectionHeadings.securityBase")} <span className="font-serif italic text-[#f4c8b0]">{t("home.sectionHeadings.securityHighlight")}</span>
+            {t("home.sectionHeadings.securityBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.securityHighlight")}</span>
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-slate-400 md:text-base">
             {t("home.sectionHeadings.securitySubtitle")}
@@ -602,13 +602,13 @@ export default function HomePage() {
               className="glass-card relative overflow-hidden rounded-[20px] p-8 text-center"
             >
               {index === 0 && (
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(255,136,76,0.38),rgba(255,136,76,0)_45%)]" />
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_18%,rgba(252,213,53,0.24),rgba(252,213,53,0)_45%)]" />
               )}
-              <div className="relative mx-auto flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[#f4c3aa]">
+              <div className="relative mx-auto flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[#fcd535]">
                 <Icon icon={card.icon} width="22" />
               </div>
               <h4 className="relative mt-6 text-[31px] font-medium leading-tight text-white">
-                <span className="mr-2 font-serif italic text-[#f4c8b0]">{card.leading}</span>
+                <span className="mr-2 font-serif italic text-[#fcd535]">{card.leading}</span>
                 {card.title}
               </h4>
               <p className="relative mx-auto mt-4 max-w-[360px] text-sm leading-6 text-slate-400">{card.description}</p>
@@ -621,7 +621,7 @@ export default function HomePage() {
         <SectionHeading
           title={
             <>
-              {t("home.sectionHeadings.partnerBase")} <span className="font-serif italic text-[#f4c8b0]">{t("home.sectionHeadings.partnerHighlight")}</span>
+              {t("home.sectionHeadings.partnerBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.partnerHighlight")}</span>
             </>
           }
           subtitle={t("home.sectionHeadings.partnerSubtitle")}
@@ -630,7 +630,7 @@ export default function HomePage() {
         <div className="mx-auto mt-12 grid max-w-6xl gap-4 md:grid-cols-3">
           {projectCards.map((card) => (
             <article key={card.title} className="glass-card rounded-3xl p-6">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 text-[#f4c3aa]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 text-[#fcd535]">
                 <Icon icon={card.icon} width="20" />
               </div>
               <h4 className="mt-5 text-xl font-semibold text-white">{card.title}</h4>
@@ -644,7 +644,7 @@ export default function HomePage() {
         <SectionHeading
           title={
             <>
-              {t("home.sectionHeadings.plansBase")} <span className="font-serif italic text-[#f4c8b0]">{t("home.sectionHeadings.plansHighlight")}</span>
+              {t("home.sectionHeadings.plansBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.plansHighlight")}</span>
             </>
           }
           subtitle={t("home.sectionHeadings.plansSubtitle")}
@@ -652,10 +652,10 @@ export default function HomePage() {
 
         <div className="mx-auto mt-12 grid max-w-[940px] gap-5 lg:grid-cols-2">
           <article className="glass-card relative min-h-[520px] overflow-hidden rounded-[28px] p-6 md:p-7">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_86%,rgba(255,137,79,0.36),rgba(255,137,79,0)_50%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_86%,rgba(252,213,53,0.2),rgba(252,213,53,0)_50%)]" />
             <div className="relative">
               <p className="text-[17px] font-medium text-slate-300">{t("home.blocks.planFreeCycle")}</p>
-              <p className="mt-3 text-[52px] font-semibold leading-none text-[#f2a37e]">
+              <p className="mt-3 text-[52px] font-semibold leading-none text-[#fcd535]">
                 13%<span className="ml-1 text-[30px] text-slate-200">APY</span>
               </p>
               <p className="mt-3 text-[15px] text-slate-400">{t("home.blocks.planFreeDescription")}</p>
@@ -676,20 +676,20 @@ export default function HomePage() {
             </div>
           </article>
 
-          <article className="glass-card relative min-h-[520px] overflow-hidden rounded-[28px] border border-[#d9a185]/45 p-6 md:p-7">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_76%_88%,rgba(255,136,76,0.4),rgba(255,136,76,0)_50%)]" />
+          <article className="glass-card relative min-h-[520px] overflow-hidden rounded-[28px] border border-[#fcd535]/45 p-6 md:p-7">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_76%_88%,rgba(252,213,53,0.24),rgba(252,213,53,0)_50%)]" />
             <div className="relative">
               <div className="flex items-center justify-between">
                 <p className="text-[17px] font-medium text-slate-100">{t("home.blocks.planProCycle")}</p>
                 <span className="inline-flex items-center gap-2 text-xs text-slate-400">
                   {t("home.blocks.planProIncludeGdl")}
                   <span className="relative h-[17px] w-[30px] rounded-full border border-white/20 bg-white/10">
-                    <span className="absolute right-[2px] top-[2px] h-3 w-3 rounded-full bg-[#f0b198] shadow-[0_0_0_2px_rgba(255,255,255,0.08)]" />
+                    <span className="absolute right-[2px] top-[2px] h-3 w-3 rounded-full bg-[#fcd535] shadow-[0_0_0_2px_rgba(255,255,255,0.08)]" />
                   </span>
                 </span>
               </div>
 
-              <p className="mt-3 text-[52px] font-semibold leading-none text-[#f2a37e]">
+              <p className="mt-3 text-[52px] font-semibold leading-none text-[#fcd535]">
                 30%<span className="ml-1 text-[30px] text-slate-200">APY</span>
               </p>
               <p className="mt-3 text-[15px] text-slate-400">{t("home.blocks.planProDescription")}</p>
@@ -720,7 +720,7 @@ export default function HomePage() {
         <SectionHeading
           title={
             <>
-              {t("home.sectionHeadings.faqBase")} <span className="font-serif italic text-[#f4c8b0]">{t("home.sectionHeadings.faqHighlight")}</span>
+              {t("home.sectionHeadings.faqBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.faqHighlight")}</span>
             </>
           }
           subtitle={t("home.sectionHeadings.faqSubtitle")}
@@ -733,14 +733,14 @@ export default function HomePage() {
               <article
                 key={item.id}
                 onClick={() => setOpenFaqId((prev) => (prev === item.id ? null : item.id))}
-                className="morgan-btn-secondary cursor-pointer overflow-hidden px-6 py-4"
+                className="cursor-pointer overflow-hidden rounded-2xl border border-[rgba(252,213,53,0.28)] bg-transparent px-6 py-4 transition hover:border-[rgba(252,213,53,0.52)]"
               >
                 <div className="flex w-full items-center justify-between gap-4 py-1 text-left">
                   <span className="text-sm text-slate-200">{item.question}</span>
                   <Icon
                     icon="mdi:plus"
                     width="20"
-                    className={`shrink-0 text-slate-100 transition ${isOpen ? "rotate-45 text-[#ffb13b]" : "rotate-0"}`}
+                    className={`shrink-0 text-slate-100 transition ${isOpen ? "rotate-45 text-[#fcd535]" : "rotate-0"}`}
                   />
                 </div>
 
@@ -759,7 +759,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-4xl">
           <div className="glass-card overflow-hidden rounded-3xl px-6 py-12 text-center md:px-10 md:py-14">
             <h3 className="text-4xl font-semibold leading-tight text-white md:text-5xl">
-              {t("home.sectionHeadings.finalBase")} <span className="font-serif italic text-[#f4c8b0]">{t("home.sectionHeadings.finalHighlight")}</span>
+              {t("home.sectionHeadings.finalBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.finalHighlight")}</span>
             </h3>
             <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-slate-400 md:text-base">
               {t("home.blocks.finalDescription")}

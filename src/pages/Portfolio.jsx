@@ -44,7 +44,7 @@ export default function Portfolio() {
       <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-5">
         {balances.map((item) => (
           <article key={item.key} className="glass-card min-h-[136px] rounded-2xl p-3">
-            <div className="flex h-11 w-11 items-center justify-center text-[#ffb13b]">
+            <div className="flex h-11 w-11 items-center justify-center text-[#fcd535]">
               {item.iconSrc ? (
                 <img src={item.iconSrc} alt={`${t(`portfolio.balances.${item.key}`)} icon`} className="h-8 w-8 object-contain" />
               ) : (
@@ -60,7 +60,7 @@ export default function Portfolio() {
 
       <div className="mt-8 flex items-center justify-between">
         <h2 className="flex items-center justify-center text-xl font-semibold text-white">
-          <Icon icon="solar:checklist-minimalistic-bold" className="mr-2 text-[#ffb13b]" />
+          <Icon icon="solar:checklist-minimalistic-bold" className="mr-2 text-[#fcd535]" />
           {t("portfolio.recordsTitle")}
         </h2>
         <p className="text-xs text-slate-500">{t("portfolio.recentCount")}</p>

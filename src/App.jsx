@@ -29,7 +29,7 @@ function HashScrollHandler() {
 export default function App() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050608] text-slate-100">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_50%_8%,rgba(255,133,73,0.22),rgba(255,133,73,0)_36%),radial-gradient(circle_at_12%_30%,rgba(255,133,73,0.14),rgba(255,133,73,0)_32%),radial-gradient(circle_at_88%_68%,rgba(255,133,73,0.14),rgba(255,133,73,0)_28%)]" />
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_50%_8%,rgba(252,213,53,0.14),rgba(252,213,53,0)_36%),radial-gradient(circle_at_12%_30%,rgba(252,213,53,0.08),rgba(252,213,53,0)_32%),radial-gradient(circle_at_88%_68%,rgba(252,213,53,0.08),rgba(252,213,53,0)_28%)]" />
 
       <div className="relative z-10 flex min-h-screen flex-col">
         <HashScrollHandler />

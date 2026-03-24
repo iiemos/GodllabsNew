@@ -82,11 +82,11 @@ export default function AppFooter() {
               <input
                 type="email"
                 placeholder={t("footer.emailPlaceholder")}
-                className="h-11 flex-1 rounded-full border border-white/5 bg-white/5 px-5 text-sm text-slate-200 placeholder:text-slate-500 outline-none transition focus:border-[#df8f68]"
+                className="h-14 min-h-[56px] flex-1 rounded-full border border-white/5 bg-white/5 px-5 text-base text-slate-200 placeholder:text-slate-500 outline-none transition focus:border-[#fcd535] sm:h-11 sm:min-h-[44px] sm:text-sm"
               />
               <button
                 type="button"
-                className="morgan-btn-primary h-11 px-6 text-sm font-semibold"
+                className="morgan-btn-primary h-14 min-h-[56px] px-6 text-base font-semibold sm:h-11 sm:min-h-[44px] sm:text-sm"
               >
                 {t("footer.submit")}
               </button>

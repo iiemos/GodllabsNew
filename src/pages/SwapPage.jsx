@@ -133,8 +133,8 @@ export default function SwapPage() {
         </div>
 
         <div className="relative mx-auto mt-8 w-full max-w-[520px] overflow-hidden rounded-3xl border border-white/15 bg-white/[0.03] p-5 shadow-[0_24px_64px_rgba(0,0,0,0.42)] backdrop-blur-2xl md:p-6">
-          <div className="pointer-events-none absolute -left-24 -top-24 h-44 w-44 rounded-full bg-[radial-gradient(circle,rgba(255,161,125,0.26)_0%,rgba(255,161,125,0)_70%)] blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-24 -right-24 h-52 w-52 rounded-full bg-[radial-gradient(circle,rgba(237,111,60,0.24)_0%,rgba(237,111,60,0)_72%)] blur-2xl" />
+          <div className="pointer-events-none absolute -left-24 -top-24 h-44 w-44 rounded-full bg-[radial-gradient(circle,rgba(252,213,53,0.18)_0%,rgba(252,213,53,0)_70%)] blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-24 -right-24 h-52 w-52 rounded-full bg-[radial-gradient(circle,rgba(252,213,53,0.16)_0%,rgba(252,213,53,0)_72%)] blur-2xl" />
 
           <div className="relative z-10">
             <div className="">
@@ -147,7 +147,7 @@ export default function SwapPage() {
                     onClick={() => handleSelectTab(tab.id)}
                     className={`rounded-full px-4 py-2 text-sm transition mx-1 ${
                       active
-                        ? "morgan-btn-primary border-0 font-semibold text-white shadow-[0_0_18px_rgba(255,177,59,0.42)]"
+                        ? "morgan-btn-primary border-0 font-semibold text-[#111111] shadow-[0_10px_18px_rgba(0,0,0,0.44)]"
                         : "morgan-btn-secondary border border-transparent bg-transparent text-slate-300 hover:text-white"
                     }`}
                   >
@@ -168,7 +168,7 @@ export default function SwapPage() {
               {showSettings && (
                 <div
                   className="glass-card absolute right-0 top-11 z-20 w-[280px] rounded-xl p-4 shadow-[0_24px_64px_rgba(0,0,0,0.55)]"
-                  style={{ backgroundColor: "rgba(0, 0, 0, 0.90)", borderColor: "rgba(255, 177, 59, 0.38)" }}
+                  style={{ backgroundColor: "rgba(0, 0, 0, 0.90)", borderColor: "rgba(252, 213, 53, 0.38)" }}
                 >
                   <div className="mb-3 flex items-center justify-between">
                     <p className="text-sm font-semibold text-white">{t("swap.settings.title")}</p>
@@ -189,7 +189,7 @@ export default function SwapPage() {
                         }}
                         className={`rounded-lg px-2 py-1.5 text-xs transition ${
                           slippage === item && customSlippage === ""
-                            ? "morgan-btn-primary border-0 text-white"
+                            ? "morgan-btn-primary border-0 text-[#111111]"
                             : "morgan-btn-secondary text-slate-300 hover:text-white"
                         }`}
                       >
@@ -224,7 +224,7 @@ export default function SwapPage() {
               )}
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-black/25 p-4 transition hover:border-[#f19873]/50">
+            <div className="rounded-2xl border border-white/10 bg-black/25 p-4 transition hover:border-[#fcd535]/50">
               <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
                 <span>{t("swap.fields.from")}</span>
                 <span>
@@ -259,13 +259,13 @@ export default function SwapPage() {
               <button
                 type="button"
                 onClick={handleToggleDirection}
-                className="swap-switch-btn morgan-btn-secondary inline-flex h-9 w-9 items-center justify-center rounded-xl border-2 text-[#f4c8b0]"
+                className="swap-switch-btn morgan-btn-secondary inline-flex h-9 w-9 items-center justify-center rounded-xl border-2 text-[#fcd535]"
               >
                 <Icon icon="mdi:swap-vertical" width="17" className="swap-switch-icon" />
               </button>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-black/25 p-4 transition hover:border-[#f19873]/50">
+            <div className="rounded-2xl border border-white/10 bg-black/25 p-4 transition hover:border-[#fcd535]/50">
               <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
                 <span>{t("swap.fields.to")}</span>
                 <span>
