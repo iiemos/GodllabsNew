@@ -3,7 +3,10 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import AppFooter from "./components/AppFooter";
 import AppHeader from "./components/AppHeader";
 import ContactPage from "./pages/ContactPage";
+import DocsPage from "./pages/DocsPage";
 import FarmsPage from "./pages/FarmsPage";
+import FundPage from "./pages/FundPage";
+import GovernancePage from "./pages/GovernancePage";
 import HomePage from "./pages/HomePage";
 import Portfolio from "./pages/Portfolio";
 import SwapPage from "./pages/SwapPage";
@@ -38,10 +41,14 @@ export default function App() {
         <main className="flex-1 pt-[72px] md:pt-[80px]">
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/farms" element={<FarmsPage />} />
+            <Route path="/defi" element={<FarmsPage />} />
+            <Route path="/fund" element={<FundPage />} />
+            <Route path="/governance" element={<GovernancePage />} />
+            <Route path="/docs" element={<DocsPage />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/swap" element={<SwapPage />} />
             <Route path="/contact-us" element={<ContactPage />} />
+            <Route path="/farms" element={<Navigate to="/defi" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

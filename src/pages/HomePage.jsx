@@ -271,24 +271,12 @@ export default function HomePage() {
           </div>
 
           <Link
-            to="/farms"
+            to="/fund"
             className="mt-9 inline-flex rounded-full border border-[#fcd535] bg-black/45 px-8 py-3 text-sm font-semibold text-white transition hover:bg-black/60"
             style={{ boxShadow: "rgba(0, 0, 0, 0.3) 0px 0px 2px 3px inset, rgba(252, 213, 53, 0.16) 0px 0px 4px 8px inset" }}
           >
             {t("home.hero.launch")}
           </Link>
-
-          <div className="mx-auto mt-4 flex w-full max-w-2xl flex-wrap items-center justify-center gap-2 text-xs">
-            <Link to="/farms" className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-slate-200 transition hover:border-white/30">
-              {t("home.hero.farmsLink")}
-            </Link>
-            <Link to="/portfolio" className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-slate-200 transition hover:border-white/30">
-              {t("home.hero.portfolioLink")}
-            </Link>
-            <Link to="/contact-us" className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-slate-200 transition hover:border-white/30">
-              {t("home.hero.contactLink")}
-            </Link>
-          </div>
 
           <div className="relative mx-auto mt-7 h-[320px] w-full max-w-[900px] md:h-[390px]">
             <div
@@ -766,7 +754,7 @@ export default function HomePage() {
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-2">
               <Link
-                to="/farms"
+                to="/fund"
                 className="morgan-btn-primary inline-flex px-6 py-2.5 text-sm font-semibold"
               >
                 {t("home.blocks.finalButtonPrimary")}

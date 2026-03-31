@@ -6,9 +6,12 @@ import { useNotification } from "./Notification";
 
 const navItems = [
   { key: "home", href: "/" },
-  { key: "farms", href: "/farms" },
+  { key: "fund", href: "/fund" },
+  { key: "defi", href: "/defi" },
+  { key: "governance", href: "/governance" },
   { key: "portfolio", href: "/portfolio" },
   { key: "swap", href: "/swap" },
+  { key: "docs", href: "/docs" },
   { key: "bridge", action: "bridge" },
 ];
 
@@ -66,9 +69,12 @@ export default function AppHeader() {
   const activeMap = useMemo(
     () => ({
       "/": location.pathname === "/",
-      "/farms": location.pathname === "/farms" || location.pathname === "/mine/one",
+      "/fund": location.pathname === "/fund",
+      "/defi": location.pathname === "/defi" || location.pathname === "/farms" || location.pathname === "/mine/one",
+      "/governance": location.pathname === "/governance",
       "/portfolio": location.pathname === "/portfolio" || location.pathname === "/mine/two",
       "/swap": location.pathname === "/swap",
+      "/docs": location.pathname === "/docs",
     }),
     [location.pathname],
   );
@@ -240,8 +246,8 @@ export default function AppHeader() {
             </Link>
           </div>
 
-          <nav className="hidden items-center gap-8 lg:gap-10 md:flex">
-            {navItems.map((item) => renderNavItem(item, "block px-4 text-sm font-medium text-slate-300 transition hover:text-white"))}
+          <nav className="hidden items-center gap-2 xl:flex">
+            {navItems.map((item) => renderNavItem(item, "block rounded-lg px-2 py-1 text-sm font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"))}
           </nav>
 
           <div className="flex items-center gap-2 lg:gap-3">
@@ -287,7 +293,7 @@ export default function AppHeader() {
             <button
               type="button"
               onClick={() => setMobileMenuOpen((prev) => !prev)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-slate-200 transition hover:border-white/30 hover:text-white md:hidden"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-slate-200 transition hover:border-white/30 hover:text-white xl:hidden"
               aria-label={t("header.menu.toggle")}
             >
               <Icon icon={mobileMenuOpen ? "mdi:close" : "mdi:menu"} width="18" />
@@ -295,7 +301,7 @@ export default function AppHeader() {
           </div>
         </div>
 
-        <div className={`${mobileMenuOpen ? "block" : "hidden"} md:hidden`}>
+        <div className={`${mobileMenuOpen ? "block" : "hidden"} xl:hidden`}>
           <div className="mt-3 rounded-2xl border border-white/10 bg-black/35 px-4 py-4">
             <nav className="flex flex-col gap-3 text-sm text-slate-300">
               {navItems.map((item) =>

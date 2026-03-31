@@ -10,11 +10,14 @@ const sectionLinks = [
 ];
 
 const infoLinks = [
-  { key: "farms", href: "/farms" },
+  { key: "fund", href: "/fund" },
+  { key: "defi", href: "/defi" },
+  { key: "governance", href: "/governance" },
+  { key: "docs", href: "/docs" },
   { key: "portfolio", href: "/portfolio" },
   { key: "swap", href: "/swap" },
   { key: "contact", href: "/contact-us" },
-  { key: "start", href: "/farms" },
+  { key: "start", href: "/fund" },
 ];
 
 const socials = [
@@ -33,10 +36,11 @@ export default function AppFooter() {
       <div className="mx-auto w-full max-w-6xl px-4 py-14">
         <div className="grid gap-9 md:grid-cols-[1.1fr_1fr_1fr_1.8fr]">
           <div className="space-y-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
-              <Icon icon="mdi:layers-triple" width="22" className="text-white" />
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 p-1.5">
+              <img src="/static/godl_logo.png" alt="GODL logo" className="h-full w-full object-contain" />
             </div>
             <p className="text-lg font-semibold text-white">GODL LABS</p>
+            <p className="text-xs tracking-[0.18em] text-slate-500">GODL.IO</p>
             <div className="space-y-2">
               <p className="text-sm text-slate-400">{t("footer.followUs")}</p>
               <div className="flex items-center gap-3 text-slate-400">
@@ -98,13 +102,19 @@ export default function AppFooter() {
       <div className="border-t border-white/10">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-5 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <p>{t("footer.copyright")}</p>
-          <p className="inline-flex items-center gap-2">
-            {t("footer.poweredBy")}
-            <span className="inline-flex items-center gap-1 text-slate-300">
-              <Icon icon="mdi:star-four-points-circle" width="14" />
-              GODL
+          <div className="inline-flex items-center gap-3">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 p-1">
+              <img src="/static/godl_logo.png" alt="GODL logo" className="h-full w-full object-contain" />
             </span>
-          </p>
+            <span className="text-sm font-semibold tracking-[0.14em] text-slate-200">{t("footer.domain")}</span>
+            <p className="inline-flex items-center gap-2">
+              {t("footer.poweredBy")}
+              <span className="inline-flex items-center gap-1 text-slate-300">
+                <Icon icon="mdi:star-four-points-circle" width="14" />
+                GODL
+              </span>
+            </p>
+          </div>
         </div>
       </div>
     </footer>
