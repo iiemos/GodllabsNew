@@ -127,15 +127,15 @@ const en = {
   },
   swap: {
     title: "Swap Center",
-    subtitle: "Based on SwapView structure, supports dual pair switching and trade parameter settings (frontend demo)",
+    subtitle: "Supports USDT↔USGD and USGD↔GODL with on-chain routing, live quotes, and exact-in execution.",
     tabs: {
       usdtUsgd: {
         label: "USDT ↔ USGD",
-        helper: "Frontend demo follows the 1:1 stable target. Actual execution depends on on-chain liquidity pools.",
+        helper: "Quotes and execution are derived from on-chain pools and router output in real time.",
       },
       usgdGodl: {
         label: "USGD ↔ GODL",
-        helper: "Converted by referenced gold-related price feeds. Current values are for page demo only.",
+        helper: "Pricing is calculated from live pool reserves and router path results.",
       },
     },
     settings: {
@@ -177,7 +177,7 @@ const en = {
       invalidAmount: "Please enter a valid amount",
       insufficientBalance: "Insufficient balance, available {{balance}} {{token}}",
       requestProcessing: "Swap request processing...",
-      swapSuccess: "{{from}} → {{to}} swap successful (frontend demo)",
+      swapSuccess: "{{from}} → {{to}} swap successful",
     },
   },
   farms: {

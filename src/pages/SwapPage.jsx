@@ -1,38 +1,36 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import { useTranslation } from "react-i18next";
+import { formatUnits } from "ethers";
 import { useNotification } from "../components/Notification";
+import { useWallet } from "../contexts/WalletContext";
+import { ADDRESSES, SWAP_ROUTES, TBSC_CHAIN_ID, TOKEN_ORDER } from "../web3/config";
+import { getReadProvider, isExpectedChain } from "../web3/client";
+import { createCoreContracts, createErc20Contract, createPairContract } from "../web3/contracts";
+import { clampSlippage, formatTokenAmount, parseTokenAmount, toErrorMessage } from "../web3/format";
 
-const swapTabs = [
-  {
-    id: "usdt-usgd",
-    labelKey: "swap.tabs.usdtUsgd.label",
-    helperKey: "swap.tabs.usdtUsgd.helper",
-    from: "USDT",
-    to: "USGD",
-    rate: 1.0,
-  },
-  {
-    id: "usgd-godl",
-    labelKey: "swap.tabs.usgdGodl.label",
-    helperKey: "swap.tabs.usgdGodl.helper",
-    from: "USGD",
-    to: "GODL",
-    rate: 0.0246,
-  },
-];
-
-const tokenMeta = {
-  USDT: { balance: 12540.23, icon: "mdi:currency-usd-circle-outline", chipClass: "bg-emerald-500/20 text-emerald-300" },
-  USGD: { balance: 9880.1, icon: "mdi:shield-check-outline", chipClass: "bg-sky-500/20 text-sky-300" },
-  GODL: { balance: 218.67, icon: "mdi:gold", chipClass: "bg-amber-500/20 text-amber-300" },
+const tokenUiMeta = {
+  USDT: { icon: "mdi:currency-usd-circle-outline", chipClass: "bg-emerald-500/20 text-emerald-300" },
+  USGD: { icon: "mdi:shield-check-outline", chipClass: "bg-sky-500/20 text-sky-300" },
+  GODL: { icon: "mdi:gold", chipClass: "bg-amber-500/20 text-amber-300" },
+  GDL: { icon: "mdi:chart-donut-variant", chipClass: "bg-orange-500/20 text-orange-300" },
 };
+
+function calcRateString(amountIn, inDecimals, amountOut, outDecimals, inSymbol, outSymbol) {
+  if (amountIn <= 0n || amountOut <= 0n) {
+    return `1 ${inSymbol} ≈ - ${outSymbol}`;
+  }
+  const scaled = (amountOut * 10n ** 18n * 10n ** BigInt(inDecimals)) / (amountIn * 10n ** BigInt(outDecimals));
+  const value = Number(scaled) / 1e18;
+  return `1 ${inSymbol} ≈ ${value.toLocaleString("en-US", { maximumFractionDigits: 8 })} ${outSymbol}`;
+}
 
 export default function SwapPage() {
   const { notify } = useNotification();
   const { t } = useTranslation();
+  const { address, chainId, connect, getSigner } = useWallet();
 
-  const [activeTab, setActiveTab] = useState(swapTabs[0].id);
+  const [activeTab, setActiveTab] = useState(SWAP_ROUTES[0].id);
   const [amount, setAmount] = useState("");
   const [isReversed, setIsReversed] = useState(false);
   const [slippage, setSlippage] = useState(0.5);
@@ -42,23 +40,165 @@ export default function SwapPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [transactionStatus, setTransactionStatus] = useState("");
   const [transactionHash, setTransactionHash] = useState("");
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [refreshNonce, setRefreshNonce] = useState(0);
+  const [tokenState, setTokenState] = useState({});
+  const [quoteState, setQuoteState] = useState({
+    amountOut: 0n,
+    reserveRate: "",
+    reserveIn: 0n,
+    reserveOut: 0n,
+  });
+
   const settingsWrapRef = useRef(null);
 
-  const currentTab = useMemo(
-    () => swapTabs.find((item) => item.id === activeTab) ?? swapTabs[0],
-    [activeTab],
+  const tokenMap = useMemo(() => Object.fromEntries(TOKEN_ORDER.map((item) => [item.key, item])), []);
+
+  const currentRoute = useMemo(() => SWAP_ROUTES.find((item) => item.id === activeTab) ?? SWAP_ROUTES[0], [activeTab]);
+
+  const fromKey = isReversed ? currentRoute.toKey : currentRoute.fromKey;
+  const toKey = isReversed ? currentRoute.fromKey : currentRoute.toKey;
+
+  const fromToken = tokenState[fromKey] ?? {
+    symbol: tokenMap[fromKey]?.symbol ?? fromKey.toUpperCase(),
+    decimals: tokenMap[fromKey]?.defaultDecimals ?? 18,
+    balance: 0n,
+    address: tokenMap[fromKey]?.address ?? "",
+  };
+  const toToken = tokenState[toKey] ?? {
+    symbol: tokenMap[toKey]?.symbol ?? toKey.toUpperCase(),
+    decimals: tokenMap[toKey]?.defaultDecimals ?? 18,
+    balance: 0n,
+    address: tokenMap[toKey]?.address ?? "",
+  };
+
+  const fromUi = tokenUiMeta[fromToken.symbol] ?? tokenUiMeta.USGD;
+  const toUi = tokenUiMeta[toToken.symbol] ?? tokenUiMeta.USGD;
+
+  const slippageValue = clampSlippage(slippage);
+  const slippageBps = BigInt(Math.floor(slippageValue * 100));
+  const minimumReceived = quoteState.amountOut > 0n ? (quoteState.amountOut * (10000n - slippageBps)) / 10000n : 0n;
+
+  const estimateText = quoteState.amountOut > 0n ? formatTokenAmount(quoteState.amountOut, toToken.decimals, 6) : "";
+  const minimumReceivedText = formatTokenAmount(minimumReceived, toToken.decimals, 6);
+
+  const exchangeRateText = useMemo(() => {
+    if (quoteState.amountOut > 0n) {
+      let parsedIn = 0n;
+      try {
+        parsedIn = parseTokenAmount(amount || "0", fromToken.decimals);
+      } catch {
+        parsedIn = 0n;
+      }
+      return calcRateString(parsedIn, fromToken.decimals, quoteState.amountOut, toToken.decimals, fromToken.symbol, toToken.symbol);
+    }
+    return quoteState.reserveRate || `1 ${fromToken.symbol} ≈ - ${toToken.symbol}`;
+  }, [amount, fromToken.decimals, fromToken.symbol, quoteState.amountOut, quoteState.reserveRate, toToken.decimals, toToken.symbol]);
+
+  const loadTokensAndBalances = useCallback(async () => {
+    const provider = getReadProvider();
+
+    const entries = await Promise.all(
+      TOKEN_ORDER.map(async (token) => {
+        const contract = createErc20Contract(token.address, provider);
+        const [decimals, symbol, balance] = await Promise.all([
+          contract.decimals().catch(() => token.defaultDecimals ?? 18),
+          contract.symbol().catch(() => token.symbol),
+          address ? contract.balanceOf(address).catch(() => 0n) : 0n,
+        ]);
+
+        return [
+          token.key,
+          {
+            symbol: symbol || token.symbol,
+            decimals: Number(decimals),
+            balance,
+            address: token.address,
+          },
+        ];
+      }),
+    );
+
+    setTokenState(Object.fromEntries(entries));
+  }, [address]);
+
+  const fetchQuoteAndRate = useCallback(
+    async (nextAmount) => {
+      const provider = getReadProvider();
+      const contracts = createCoreContracts(provider);
+      const pair = createPairContract(currentRoute.pairAddress, provider);
+
+      const fromAddress = tokenMap[fromKey]?.address;
+      const toAddress = tokenMap[toKey]?.address;
+      const fromDecimals = tokenState[fromKey]?.decimals ?? tokenMap[fromKey]?.defaultDecimals ?? 18;
+      const toDecimals = tokenState[toKey]?.decimals ?? tokenMap[toKey]?.defaultDecimals ?? 18;
+      const fromSymbol = tokenState[fromKey]?.symbol ?? tokenMap[fromKey]?.symbol ?? fromKey.toUpperCase();
+      const toSymbol = tokenState[toKey]?.symbol ?? tokenMap[toKey]?.symbol ?? toKey.toUpperCase();
+
+      if (!fromAddress || !toAddress) {
+        setQuoteState({ amountOut: 0n, reserveRate: "", reserveIn: 0n, reserveOut: 0n });
+        return;
+      }
+
+      setQuoteLoading(true);
+      try {
+        const [token0, token1, reserves] = await Promise.all([pair.token0(), pair.token1(), pair.getReserves()]);
+
+        const reserve0 = reserves.reserve0;
+        const reserve1 = reserves.reserve1;
+        const lowerToken0 = String(token0).toLowerCase();
+        const lowerFrom = fromAddress.toLowerCase();
+        const lowerTo = toAddress.toLowerCase();
+
+        const reserveIn = lowerToken0 === lowerFrom ? reserve0 : reserve1;
+        const reserveOut = lowerToken0 === lowerTo ? reserve0 : reserve1;
+        const reserveRate = calcRateString(
+          reserveIn,
+          fromDecimals,
+          reserveOut,
+          toDecimals,
+          fromSymbol,
+          toSymbol,
+        );
+
+        let amountOut = 0n;
+        if (nextAmount && Number(nextAmount) > 0) {
+          let amountIn;
+          try {
+            amountIn = parseTokenAmount(nextAmount, fromDecimals);
+          } catch {
+            amountIn = 0n;
+          }
+
+          if (amountIn > 0n) {
+            const amounts = await contracts.router.getAmountsOut(amountIn, [fromAddress, toAddress]);
+            amountOut = amounts[amounts.length - 1];
+          }
+        }
+
+        setQuoteState({ amountOut, reserveRate, reserveIn, reserveOut });
+      } catch (error) {
+        setQuoteState({ amountOut: 0n, reserveRate: "", reserveIn: 0n, reserveOut: 0n });
+        notify({ type: "error", message: toErrorMessage(error, "读取兑换报价失败") });
+      } finally {
+        setQuoteLoading(false);
+      }
+    },
+    [currentRoute.pairAddress, fromKey, notify, toKey, tokenMap, tokenState],
   );
 
-  const fromToken = isReversed ? currentTab.to : currentTab.from;
-  const toToken = isReversed ? currentTab.from : currentTab.to;
-  const currentRate = isReversed ? 1 / currentTab.rate : currentTab.rate;
-  const fromBalance = tokenMeta[fromToken]?.balance ?? 0;
-  const toBalance = tokenMeta[toToken]?.balance ?? 0;
+  useEffect(() => {
+    loadTokensAndBalances().catch((error) => {
+      notify({ type: "error", message: toErrorMessage(error, "读取代币余额失败") });
+    });
+  }, [loadTokensAndBalances, notify, refreshNonce]);
 
-  const numericAmount = Number(amount) || 0;
-  const estimate = numericAmount > 0 ? (numericAmount * currentRate).toFixed(6) : "";
-  const minimumReceived = estimate ? (Number(estimate) * (1 - slippage / 100)).toFixed(6) : "0.000000";
-  const exchangeRateText = `1 ${fromToken} ≈ ${currentRate.toFixed(6)} ${toToken}`;
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      fetchQuoteAndRate(amount).catch(() => {});
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [amount, fetchQuoteAndRate, refreshNonce]);
 
   useEffect(() => {
     const onClickOutside = (event) => {
@@ -76,52 +216,133 @@ export default function SwapPage() {
     setAmount("");
     setTransactionStatus("");
     setTransactionHash("");
+    setQuoteState({ amountOut: 0n, reserveRate: "", reserveIn: 0n, reserveOut: 0n });
   };
 
   const handleToggleDirection = () => {
     setIsReversed((prev) => !prev);
+    setAmount("");
     setTransactionStatus("");
     setTransactionHash("");
+    setQuoteState({ amountOut: 0n, reserveRate: "", reserveIn: 0n, reserveOut: 0n });
   };
 
   const handleSetMax = () => {
-    setAmount(fromBalance.toFixed(3));
+    setAmount(formatUnits(fromToken.balance, fromToken.decimals));
   };
 
-  const handleRefreshPrice = () => {
+  const handleRefreshPrice = async () => {
     if (isRefreshing) return;
     setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
+    try {
+      await loadTokensAndBalances();
+      await fetchQuoteAndRate(amount);
       notify({ type: "success", message: t("swap.notifications.priceRefreshed") });
-    }, 700);
+    } catch (error) {
+      notify({ type: "error", message: toErrorMessage(error, "刷新价格失败") });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
-  const handleConfirmSwap = () => {
+  const ensureSigner = useCallback(async () => {
+    let currentAddress = address;
+    if (!currentAddress) {
+      currentAddress = await connect();
+    }
+    if (!currentAddress) return null;
+
+    const signer = await getSigner();
+    if (!signer) return null;
+
+    const network = await signer.provider.getNetwork();
+    if (Number(network.chainId) !== TBSC_CHAIN_ID) {
+      notify({ type: "error", message: `请切换到 BSC Testnet（ChainId=${TBSC_CHAIN_ID}）` });
+      return null;
+    }
+
+    return { signer, currentAddress };
+  }, [address, connect, getSigner, notify]);
+
+  const handleConfirmSwap = async () => {
     if (isProcessing) return;
-    if (!numericAmount || numericAmount <= 0) {
+
+    let amountIn;
+    try {
+      amountIn = parseTokenAmount(amount, fromToken.decimals);
+    } catch {
       notify({ type: "error", message: t("swap.notifications.invalidAmount") });
       return;
     }
-    if (numericAmount > fromBalance) {
+
+    if (amountIn <= 0n) {
+      notify({ type: "error", message: t("swap.notifications.invalidAmount") });
+      return;
+    }
+
+    if (amountIn > fromToken.balance) {
       notify({
         type: "error",
-        message: t("swap.notifications.insufficientBalance", { balance: fromBalance.toFixed(3), token: fromToken }),
+        message: t("swap.notifications.insufficientBalance", {
+          balance: formatTokenAmount(fromToken.balance, fromToken.decimals, 6),
+          token: fromToken.symbol,
+        }),
       });
+      return;
+    }
+
+    const signerContext = await ensureSigner();
+    if (!signerContext) return;
+
+    const fromAddress = tokenMap[fromKey]?.address;
+    const toAddress = tokenMap[toKey]?.address;
+    if (!fromAddress || !toAddress) {
+      notify({ type: "error", message: "兑换路径配置缺失" });
       return;
     }
 
     setIsProcessing(true);
     setTransactionStatus("pending");
+    setTransactionHash("");
     notify({ type: "info", message: t("swap.notifications.requestProcessing") });
 
-    setTimeout(() => {
-      const hash = `0x${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`.slice(0, 34);
-      setTransactionHash(hash);
+    try {
+      const contracts = createCoreContracts(signerContext.signer);
+      const fromTokenContract = createErc20Contract(fromAddress, signerContext.signer);
+
+      const quoteAmounts = await contracts.router.getAmountsOut(amountIn, [fromAddress, toAddress]);
+      const expectedOut = quoteAmounts[quoteAmounts.length - 1];
+      const amountOutMin = (expectedOut * (10000n - slippageBps)) / 10000n;
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + 20 * 60);
+
+      const allowance = await fromTokenContract.allowance(signerContext.currentAddress, ADDRESSES.routerV2);
+      if (allowance < amountIn) {
+        notify({ type: "info", message: `正在授权 ${fromToken.symbol}...` });
+        const approveTx = await fromTokenContract.approve(ADDRESSES.routerV2, amountIn);
+        await approveTx.wait();
+      }
+
+      const tx = await contracts.router.swapExactTokensForTokens(
+        amountIn,
+        amountOutMin,
+        [fromAddress, toAddress],
+        signerContext.currentAddress,
+        deadline,
+      );
+
+      setTransactionHash(tx.hash);
+      await tx.wait();
       setTransactionStatus("success");
+      notify({ type: "success", message: t("swap.notifications.swapSuccess", { from: fromToken.symbol, to: toToken.symbol }) });
+
+      setAmount("");
+      setRefreshNonce((prev) => prev + 1);
+    } catch (error) {
+      setTransactionStatus("");
+      notify({ type: "error", message: toErrorMessage(error, "兑换失败") });
+    } finally {
       setIsProcessing(false);
-      notify({ type: "success", message: t("swap.notifications.swapSuccess", { from: fromToken, to: toToken }) });
-    }, 1200);
+    }
   };
 
   return (
@@ -132,20 +353,26 @@ export default function SwapPage() {
           <p className="mt-2 text-sm text-slate-400">{t("swap.subtitle")}</p>
         </div>
 
+        {!isExpectedChain(chainId) && address && (
+          <div className="mx-auto mt-4 max-w-[520px] rounded-2xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+            检测到当前钱包网络非 BSC Testnet，请切换后再执行交易。
+          </div>
+        )}
+
         <div className="relative mx-auto mt-8 w-full max-w-[520px] overflow-hidden rounded-3xl border border-white/15 bg-white/[0.03] p-5 shadow-[0_24px_64px_rgba(0,0,0,0.42)] backdrop-blur-2xl md:p-6">
           <div className="pointer-events-none absolute -left-24 -top-24 h-44 w-44 rounded-full bg-[radial-gradient(circle,rgba(252,213,53,0.18)_0%,rgba(252,213,53,0)_70%)] blur-2xl" />
           <div className="pointer-events-none absolute -bottom-24 -right-24 h-52 w-52 rounded-full bg-[radial-gradient(circle,rgba(252,213,53,0.16)_0%,rgba(252,213,53,0)_72%)] blur-2xl" />
 
           <div className="relative z-10">
-            <div className="">
-              {swapTabs.map((tab) => {
+            <div>
+              {SWAP_ROUTES.map((tab) => {
                 const active = tab.id === activeTab;
                 return (
                   <button
                     key={tab.id}
                     type="button"
                     onClick={() => handleSelectTab(tab.id)}
-                    className={`rounded-full px-4 py-2 text-sm transition mx-1 ${
+                    className={`mx-1 rounded-full px-4 py-2 text-sm transition ${
                       active
                         ? "morgan-btn-primary border-0 font-semibold text-[#111111] shadow-[0_10px_18px_rgba(0,0,0,0.44)]"
                         : "morgan-btn-secondary border border-transparent bg-transparent text-slate-300 hover:text-white"
@@ -219,7 +446,7 @@ export default function SwapPage() {
                     />
                     <span className="text-xs text-slate-400">%</span>
                   </div>
-                  <p className="mt-2 text-[11px] text-slate-500">{t("swap.settings.currentSlippage", { value: slippage })}</p>
+                  <p className="mt-2 text-[11px] text-slate-500">{t("swap.settings.currentSlippage", { value: slippageValue })}</p>
                 </div>
               )}
             </div>
@@ -228,7 +455,7 @@ export default function SwapPage() {
               <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
                 <span>{t("swap.fields.from")}</span>
                 <span>
-                  {t("swap.fields.balance")}: {fromBalance.toFixed(3)} {fromToken}
+                  {t("swap.fields.balance")}: {formatTokenAmount(fromToken.balance, fromToken.decimals, 6)} {fromToken.symbol}
                 </span>
               </div>
               <div className="flex items-center gap-3">
@@ -248,9 +475,9 @@ export default function SwapPage() {
                 >
                   {t("swap.buttons.max")}
                 </button>
-                <div className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 ${tokenMeta[fromToken].chipClass}`}>
-                  <Icon icon={tokenMeta[fromToken].icon} width="16" />
-                  <span className="text-sm font-semibold">{fromToken}</span>
+                <div className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 ${fromUi.chipClass}`}>
+                  <Icon icon={fromUi.icon} width="16" />
+                  <span className="text-sm font-semibold">{fromToken.symbol}</span>
                 </div>
               </div>
             </div>
@@ -269,20 +496,20 @@ export default function SwapPage() {
               <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
                 <span>{t("swap.fields.to")}</span>
                 <span>
-                  {t("swap.fields.balance")}: {toBalance.toFixed(3)} {toToken}
+                  {t("swap.fields.balance")}: {formatTokenAmount(toToken.balance, toToken.decimals, 6)} {toToken.symbol}
                 </span>
               </div>
               <div className="flex items-center gap-3">
                 <input
                   type="text"
                   readOnly
-                  value={estimate}
+                  value={estimateText}
                   placeholder="0.00"
                   className="h-10 w-full bg-transparent text-3xl font-bold text-white outline-none placeholder:text-white/20"
                 />
-                <div className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 ${tokenMeta[toToken].chipClass}`}>
-                  <Icon icon={tokenMeta[toToken].icon} width="16" />
-                  <span className="text-sm font-semibold">{toToken}</span>
+                <div className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 ${toUi.chipClass}`}>
+                  <Icon icon={toUi.icon} width="16" />
+                  <span className="text-sm font-semibold">{toToken.symbol}</span>
                 </div>
               </div>
             </div>
@@ -293,17 +520,23 @@ export default function SwapPage() {
                 <span className="text-slate-300">{exchangeRateText}</span>
               </div>
               <div className="flex items-center justify-between">
+                <span className="text-slate-500">Pool reserves</span>
+                <span className="text-slate-300">
+                  {formatTokenAmount(quoteState.reserveIn, fromToken.decimals, 4)} / {formatTokenAmount(quoteState.reserveOut, toToken.decimals, 4)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
                 <span className="text-slate-500">{t("swap.stats.priceImpact")}</span>
-                <span className="text-emerald-400">{((slippage / 100) * numericAmount).toFixed(2)}%</span>
+                <span className="text-emerald-400">≤ {slippageValue.toFixed(2)}%</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">{t("swap.stats.liquidityFee")}</span>
-                <span className="text-slate-300">0.03 {fromToken}</span>
+                <span className="text-slate-300">Pancake V2 Fee</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-500">{t("swap.stats.minimumReceived")}</span>
                 <span className="text-slate-300">
-                  {minimumReceived} {toToken}
+                  {minimumReceivedText} {toToken.symbol}
                 </span>
               </div>
             </div>
@@ -327,13 +560,13 @@ export default function SwapPage() {
             <button
               type="button"
               onClick={handleConfirmSwap}
-              disabled={!amount || isProcessing}
+              disabled={!amount || isProcessing || quoteLoading}
               className={`morgan-btn-primary mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-semibold ${
-                !amount || isProcessing ? "cursor-not-allowed opacity-55" : ""
+                !amount || isProcessing || quoteLoading ? "cursor-not-allowed opacity-55" : ""
               }`}
             >
               <Icon icon={isProcessing ? "mdi:refresh" : "mdi:check-circle"} className={isProcessing ? "animate-spin" : ""} width="16" />
-              {isProcessing ? t("swap.buttons.processing") : t("swap.buttons.confirmSwap")}
+              {isProcessing ? t("swap.buttons.processing") : "Confirm Swap (Exact In)"}
             </button>
 
             <button
@@ -342,11 +575,11 @@ export default function SwapPage() {
               disabled={isRefreshing}
               className="morgan-btn-secondary mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-2xl text-xs font-semibold"
             >
-              <Icon icon="mdi:refresh" className={isRefreshing ? "animate-spin" : ""} width="14" />
+              <Icon icon="mdi:refresh" className={isRefreshing || quoteLoading ? "animate-spin" : ""} width="14" />
               {isRefreshing ? t("swap.buttons.refreshing") : t("swap.buttons.refreshPrice")}
             </button>
 
-            <p className="mt-4 text-xs leading-5 text-slate-500">{t(currentTab.helperKey)}</p>
+            <p className="mt-4 text-xs leading-5 text-slate-500">{t(currentRoute.helperKey)}</p>
           </div>
         </div>
 
@@ -361,7 +594,7 @@ export default function SwapPage() {
           </span>
           <span className="inline-flex items-center gap-2">
             <Icon icon="mdi:swap-horizontal-circle-outline" width="14" />
-            {t("swap.tags.crossChain")}
+            RouterV2 exact-in
           </span>
         </div>
       </div>

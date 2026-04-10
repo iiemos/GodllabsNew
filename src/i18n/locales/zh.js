@@ -125,15 +125,15 @@ const zh = {
   },
   swap: {
     title: "兑换中心",
-    subtitle: "参考 SwapView 结构，支持双兑换对切换与交易参数设置（前端演示）",
+    subtitle: "支持 USDT↔USGD、USGD↔GODL 双兑换对，基于链上路由进行实时报价与成交。",
     tabs: {
       usdtUsgd: {
         label: "USDT ↔ USGD",
-        helper: "按 1:1 稳定目标进行前端演示，实际成交以链上流动池为准。",
+        helper: "报价与成交均以链上流动池和 Router 实时结果为准。",
       },
       usgdGodl: {
         label: "USGD ↔ GODL",
-        helper: "参考黄金相关价格源做折算，当前仅用于页面演示。",
+        helper: "通过链上池子储备与路由返回进行实时换算。",
       },
     },
     settings: {
@@ -175,7 +175,7 @@ const zh = {
       invalidAmount: "请输入有效兑换数量",
       insufficientBalance: "余额不足，当前可用 {{balance}} {{token}}",
       requestProcessing: "兑换请求处理中...",
-      swapSuccess: "{{from}} → {{to}} 兑换成功（前端演示）",
+      swapSuccess: "{{from}} → {{to}} 兑换成功",
     },
   },
   farms: {

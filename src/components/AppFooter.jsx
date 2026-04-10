@@ -36,7 +36,7 @@ export default function AppFooter() {
       <div className="mx-auto w-full max-w-6xl px-4 py-14">
         <div className="grid gap-9 md:grid-cols-[1.1fr_1fr_1fr_1.8fr]">
           <div className="space-y-4">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 p-1.5">
+            <div className="inline-flex h-12 w-12 items-center justify-center p-1.5">
               <img src="/static/godl_logo.png" alt="GODL logo" className="h-full w-full object-contain" />
             </div>
             <p className="text-lg font-semibold text-white">GODL LABS</p>

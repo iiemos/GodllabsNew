@@ -3,6 +3,7 @@ import { Icon } from "@iconify/react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useNotification } from "./Notification";
+import { useWallet } from "../contexts/WalletContext";
 
 const navItems = [
   { key: "home", href: "/" },
@@ -14,8 +15,6 @@ const navItems = [
   { key: "docs", href: "/docs" },
   { key: "bridge", action: "bridge" },
 ];
-
-const WALLET_STORAGE_KEY = "godl_wallet_address";
 
 function formatAddress(address) {
   if (!address) return "";
@@ -57,14 +56,12 @@ export default function AppHeader() {
   const location = useLocation();
   const { notify } = useNotification();
   const { t, i18n } = useTranslation();
+  const { address: walletAddress, isConnecting: walletConnecting, connect, disconnect } = useWallet();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
-  const [walletAddress, setWalletAddress] = useState("");
-  const [walletConnecting, setWalletConnecting] = useState(false);
 
   const languageWrapRef = useRef(null);
-  const ethereum = typeof window !== "undefined" ? window.ethereum : undefined;
 
   const activeMap = useMemo(
     () => ({
@@ -107,96 +104,25 @@ export default function AppHeader() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [languageMenuOpen]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const savedAddress = window.localStorage.getItem(WALLET_STORAGE_KEY);
-    if (savedAddress) {
-      setWalletAddress(savedAddress);
-    }
-
-    if (!ethereum?.request) return;
-
-    let alive = true;
-    ethereum
-      .request({ method: "eth_accounts" })
-      .then((accounts) => {
-        if (!alive) return;
-        const first = Array.isArray(accounts) ? accounts[0] : "";
-        if (first) {
-          setWalletAddress(first);
-          window.localStorage.setItem(WALLET_STORAGE_KEY, first);
-        }
-      })
-      .catch(() => {});
-
-    return () => {
-      alive = false;
-    };
-  }, [ethereum]);
-
-  useEffect(() => {
-    if (!ethereum?.on) return;
-
-    const onAccountsChanged = (accounts) => {
-      const first = Array.isArray(accounts) ? accounts[0] : "";
-      if (first) {
-        setWalletAddress(first);
-        window.localStorage.setItem(WALLET_STORAGE_KEY, first);
-        notify({ type: "success", message: `${t("header.wallet.connected")} ${formatAddress(first)}` });
-      } else {
-        setWalletAddress("");
-        window.localStorage.removeItem(WALLET_STORAGE_KEY);
-        notify({ type: "info", message: t("header.wallet.disconnected") });
-      }
-    };
-
-    const onChainChanged = () => {
-      notify({ type: "info", message: t("header.wallet.networkChanged") });
-    };
-
-    ethereum.on("accountsChanged", onAccountsChanged);
-    ethereum.on("chainChanged", onChainChanged);
-
-    return () => {
-      if (ethereum.removeListener) {
-        ethereum.removeListener("accountsChanged", onAccountsChanged);
-        ethereum.removeListener("chainChanged", onChainChanged);
-      }
-    };
-  }, [ethereum, notify, t]);
-
   const handleConnectWallet = async () => {
-    if (!ethereum?.request) {
-      notify({ type: "error", message: t("header.wallet.extensionMissing") });
-      return;
-    }
-
-    setWalletConnecting(true);
     try {
-      const accounts = await ethereum.request({ method: "eth_requestAccounts" });
-      const first = Array.isArray(accounts) ? accounts[0] : "";
+      const first = await connect();
       if (first) {
-        setWalletAddress(first);
-        window.localStorage.setItem(WALLET_STORAGE_KEY, first);
         notify({ type: "success", message: `${t("header.wallet.connected")} ${formatAddress(first)}` });
       }
     } catch (error) {
-      if (error?.code === 4001) {
+      if (error?.code === "NO_PROVIDER") {
+        notify({ type: "error", message: t("header.wallet.extensionMissing") });
+      } else if (error?.code === 4001) {
         notify({ type: "info", message: t("header.wallet.connectCancelled") });
       } else {
         notify({ type: "error", message: t("header.wallet.connectFailed") });
       }
-    } finally {
-      setWalletConnecting(false);
     }
   };
 
   const handleDisconnectWallet = () => {
-    setWalletAddress("");
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem(WALLET_STORAGE_KEY);
-    }
+    disconnect();
     notify({ type: "info", message: t("header.wallet.sessionDisconnected") });
   };
 
@@ -239,8 +165,8 @@ export default function AppHeader() {
         <div className="flex items-center justify-between gap-3 lg:gap-10">
           <div className="flex items-center gap-2">
             <Link to="/" className="inline-flex items-center gap-2">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/10">
-                <img src="/static/gold.svg" alt="GODL" className="h-5 w-5 object-contain" />
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl">
+                <img src="/static/godl_logo.png" alt="GODL logo" className="h-10 w-10 object-contain" />
               </span>
               <span className="hidden text-sm font-semibold tracking-[0.16em] text-slate-100 sm:inline">GODL LABS</span>
             </Link>

@@ -1,109 +1,26 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
 import { useTranslation } from "react-i18next";
 import { useNotification } from "../components/Notification";
-
-const timeframeTabs = ["1D", "1W", "1M"];
-
-const poolItems = [
-  {
-    id: "pool-godl-usgd-001",
-    pair: "GODL-USGD LP",
-    tokens: ["godl", "usgd"],
-    fee: "0.01%",
-    apr: "48.94%",
-    tvl: 4412229,
-    volume24h: 336920,
-    available: "12.5 LP",
-    staked: "2.4 LP",
-    rewardRate: "18.6 GDL/day",
-    status: "active",
-    claimable: 26.4,
-    liquiditySeries: {
-      "1D": [4.09, 4.12, 4.18, 4.23, 4.17, 4.22, 4.3, 4.41],
-      "1W": [3.58, 3.63, 3.7, 3.82, 3.95, 4.02, 4.16, 4.41],
-      "1M": [2.84, 2.95, 3.08, 3.22, 3.38, 3.57, 3.91, 4.41],
-    },
-  },
-  {
-    id: "pool-usgd-gdl-002",
-    pair: "USGD-GDL LP",
-    tokens: ["usgd", "gdl"],
-    fee: "0.05%",
-    apr: "36.11%",
-    tvl: 924907,
-    volume24h: 121084,
-    available: "3.7 LP",
-    staked: "0 LP",
-    rewardRate: "9.2 GDL/day",
-    status: "active",
-    claimable: 0,
-    liquiditySeries: {
-      "1D": [0.82, 0.81, 0.84, 0.86, 0.87, 0.89, 0.91, 0.92],
-      "1W": [0.68, 0.7, 0.73, 0.76, 0.81, 0.86, 0.9, 0.92],
-      "1M": [0.54, 0.56, 0.6, 0.64, 0.7, 0.78, 0.86, 0.92],
-    },
-  },
-  {
-    id: "pool-godl-gdl-003",
-    pair: "GODL-GDL LP",
-    tokens: ["godl", "gdl"],
-    fee: "0.05%",
-    apr: "25.35%",
-    tvl: 7082584,
-    volume24h: 481337,
-    available: "0 LP",
-    staked: "0 LP",
-    rewardRate: "12.1 GDL/day",
-    status: "ended",
-    claimable: 4.9,
-    liquiditySeries: {
-      "1D": [7.4, 7.31, 7.29, 7.25, 7.2, 7.14, 7.1, 7.08],
-      "1W": [8.02, 7.91, 7.82, 7.73, 7.61, 7.43, 7.22, 7.08],
-      "1M": [9.44, 9.15, 8.84, 8.59, 8.24, 7.9, 7.46, 7.08],
-    },
-  },
-];
+import { useWallet } from "../contexts/WalletContext";
+import { ADDRESSES, LP_POOLS, TBSC_CHAIN_ID } from "../web3/config";
+import { getReadProvider, isExpectedChain } from "../web3/client";
+import { createCoreContracts, createErc20Contract } from "../web3/contracts";
+import { formatTokenAmount, parseTokenAmount, toErrorMessage } from "../web3/format";
 
 const tokenVisualMap = {
   usgd: { icon: "mdi:shield-check", bg: "bg-cyan-500", text: "text-white" },
+  usdt: { icon: "mdi:currency-usd", bg: "bg-emerald-500", text: "text-white" },
   godl: { icon: "mdi:gold", bg: "bg-amber-500", text: "text-white" },
   gdl: { icon: "mdi:chart-donut-variant", bg: "bg-orange-500", text: "text-white" },
 };
 
-const parseAmount = (value) => Number(String(value).replace(/[^\d.]/g, "")) || 0;
-
-function formatUsd(value, digits = 0) {
-  return `$${value.toLocaleString("en-US", {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  })}`;
-}
-
-function formatNumber(value, digits = 2) {
-  return value.toLocaleString("en-US", {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  });
-}
-
-function buildChartPath(values, width, height, pad) {
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = Math.max(max - min, 0.0001);
-
-  const coords = values.map((point, index) => {
-    const x = (index / (values.length - 1)) * (width - pad * 2) + pad;
-    const y = pad + (1 - (point - min) / range) * (height - pad * 2);
-    return [x, y];
-  });
-
-  const line = coords.map(([x, y], index) => `${index === 0 ? "M" : "L"}${x},${y}`).join(" ");
-  const end = coords[coords.length - 1];
-  const area = `${line} L${end[0]},${height - pad} L${coords[0][0]},${height - pad} Z`;
-
-  return { line, area, coords };
-}
+const tokenAddressByKey = {
+  usdt: ADDRESSES.usdt,
+  usgd: ADDRESSES.usgd,
+  godl: ADDRESSES.godl,
+  gdl: ADDRESSES.gdl,
+};
 
 function TokenStack({ tokens }) {
   const shownTokens = tokens.slice(0, 2);
@@ -125,282 +42,275 @@ function TokenStack({ tokens }) {
   );
 }
 
-function LiquidityChart({ pool, t }) {
-  const [frame, setFrame] = useState("1D");
-  const values = pool.liquiditySeries[frame];
-  const width = 640;
-  const height = 220;
-  const pad = 16;
-  const chart = buildChartPath(values, width, height, pad);
-  const current = values[values.length - 1];
-  const high = Math.max(...values);
-  const low = Math.min(...values);
-  const trend = ((current - values[0]) / values[0]) * 100;
-  const trendUp = trend >= 0;
-  const gradientId = `defi-gradient-${pool.id}-${frame}`.replace(/[^a-zA-Z0-9-_]/g, "");
-
-  return (
-    <div className="governance-panel-soft rounded-[24px] p-4 md:p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm font-semibold text-slate-200">{t("defi.chart.title")}</p>
-        <div className="inline-flex items-center gap-1 rounded-full bg-black/35 p-1">
-          {timeframeTabs.map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setFrame(tab)}
-              className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                frame === tab ? "bg-[#fcd535] text-black" : "text-slate-300 hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black/20">
-        <svg viewBox={`0 0 ${width} ${height}`} className="h-[220px] w-full">
-          <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgba(252,213,53,0.36)" />
-              <stop offset="90%" stopColor="rgba(252,213,53,0.03)" />
-            </linearGradient>
-            <filter id="defi-glow">
-              <feGaussianBlur stdDeviation="2" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
-          {[0.25, 0.5, 0.75].map((y) => (
-            <line
-              key={y}
-              x1={0}
-              y1={height * y}
-              x2={width}
-              y2={height * y}
-              stroke="rgba(255,255,255,0.06)"
-              strokeWidth="1"
-            />
-          ))}
-
-          <path d={chart.area} fill={`url(#${gradientId})`} />
-          <path d={chart.line} stroke="#fcd535" strokeWidth="3" fill="none" filter="url(#defi-glow)" />
-          <circle cx={chart.coords[chart.coords.length - 1][0]} cy={chart.coords[chart.coords.length - 1][1]} r="4" fill="#fcd535" />
-        </svg>
-      </div>
-
-      <div className="mt-4 grid gap-3 md:grid-cols-4">
-        <div className="rounded-xl border border-white/8 bg-white/5 px-3 py-2">
-          <p className="text-xs text-slate-500">{t("defi.chart.current")}</p>
-          <p className="mt-1 text-sm font-semibold text-white">{formatUsd(current * 1000000)}</p>
-        </div>
-        <div className="rounded-xl border border-white/8 bg-white/5 px-3 py-2">
-          <p className="text-xs text-slate-500">{t("defi.chart.high")}</p>
-          <p className="mt-1 text-sm font-semibold text-emerald-300">{formatUsd(high * 1000000)}</p>
-        </div>
-        <div className="rounded-xl border border-white/8 bg-white/5 px-3 py-2">
-          <p className="text-xs text-slate-500">{t("defi.chart.low")}</p>
-          <p className="mt-1 text-sm font-semibold text-rose-300">{formatUsd(low * 1000000)}</p>
-        </div>
-        <div className="rounded-xl border border-white/8 bg-white/5 px-3 py-2">
-          <p className="text-xs text-slate-500">{t("defi.chart.trend")}</p>
-          <p className={`mt-1 text-sm font-semibold ${trendUp ? "text-emerald-300" : "text-rose-300"}`}>
-            {trendUp ? "+" : ""}
-            {formatNumber(trend, 2)}%
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PoolCard({ pool, claimable, expanded, onToggle, onAddLiquidity, onClaim, onOpenLink, t }) {
-  const canAdd = pool.status === "active";
-  const canClaim = claimable > 0;
-
-  return (
-    <article className="governance-panel overflow-hidden rounded-[28px]">
-      <div className="p-5 md:p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex items-center gap-3">
-            <TokenStack tokens={pool.tokens} />
-            <div>
-              <p className="text-xl font-semibold text-[#f0cd54]">{pool.pair}</p>
-              <p className="mt-1 text-sm text-slate-400">
-                {t("defi.fields.fee")}: {pool.fee}
-              </p>
-            </div>
-          </div>
-
-          <span
-            className={`inline-flex h-9 items-center rounded-full px-3 text-xs font-semibold ${
-              pool.status === "active"
-                ? "border border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
-                : "border border-white/15 bg-white/5 text-slate-300"
-            }`}
-          >
-            {t(`common.status.${pool.status}`)}
-          </span>
-        </div>
-
-        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
-            <p className="text-xs text-slate-500">{t("defi.fields.apr")}</p>
-            <p className="mt-1 text-lg font-semibold text-[#fcd535]">{pool.apr}</p>
-          </div>
-          <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
-            <p className="text-xs text-slate-500">{t("defi.fields.tvl")}</p>
-            <p className="mt-1 text-lg font-semibold text-white">{formatUsd(pool.tvl)}</p>
-          </div>
-          <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
-            <p className="text-xs text-slate-500">{t("defi.fields.volume24h")}</p>
-            <p className="mt-1 text-lg font-semibold text-white">{formatUsd(pool.volume24h)}</p>
-          </div>
-          <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
-            <p className="text-xs text-slate-500">{t("defi.fields.rewardRate")}</p>
-            <p className="mt-1 text-lg font-semibold text-sky-300">{pool.rewardRate}</p>
-          </div>
-        </div>
-
-        <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
-          <p className="rounded-xl border border-white/8 bg-black/20 px-4 py-2 text-slate-400">
-            {t("defi.fields.available")}: <span className="ml-1 font-semibold text-slate-200">{pool.available}</span>
-          </p>
-          <p className="rounded-xl border border-white/8 bg-black/20 px-4 py-2 text-slate-400">
-            {t("defi.fields.staked")}: <span className="ml-1 font-semibold text-slate-200">{pool.staked}</span>
-          </p>
-        </div>
-
-        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_220px]">
-          <button
-            type="button"
-            onClick={() => onAddLiquidity(pool)}
-            disabled={!canAdd}
-            className={`h-12 rounded-2xl text-sm font-semibold transition ${
-              canAdd ? "morgan-btn-primary border-0 text-[#111111]" : "cursor-not-allowed border border-white/10 bg-white/8 text-slate-500"
-            }`}
-          >
-            {t("defi.actions.addLiquidity")}
-          </button>
-          <button
-            type="button"
-            onClick={() => onClaim(pool)}
-            disabled={!canClaim}
-            className={`h-12 rounded-2xl text-sm font-semibold transition ${
-              canClaim
-                ? "border border-[#fcd535]/35 bg-[#fcd535]/10 text-[#f0cd54] hover:bg-[#fcd535]/15"
-                : "cursor-not-allowed border border-white/10 bg-white/8 text-slate-500"
-            }`}
-          >
-            {t("defi.actions.claimGdl")} ({formatNumber(claimable, 2)})
-          </button>
-          <button
-            type="button"
-            onClick={onToggle}
-            className="inline-flex h-12 items-center justify-center gap-1 rounded-2xl border border-white/10 bg-black/25 text-sm font-semibold text-slate-200 transition hover:border-white/20 hover:text-white"
-          >
-            {expanded ? t("defi.actions.hide") : t("defi.actions.details")}
-            <Icon icon={expanded ? "mdi:chevron-up" : "mdi:chevron-down"} width="16" />
-          </button>
-        </div>
-      </div>
-
-      {expanded && (
-        <div className="border-t border-white/10 bg-black/20 px-5 py-5 md:px-6 md:py-6">
-          <LiquidityChart pool={pool} t={t} />
-
-          <div className="mt-4 grid gap-2 sm:grid-cols-3">
-            <button
-              type="button"
-              onClick={() => onOpenLink(pool, "pool")}
-              className="rounded-xl border border-white/12 bg-white/5 px-3 py-2 text-sm text-slate-300 transition hover:border-[#fcd535]/40 hover:text-[#f0cd54]"
-            >
-              {t("defi.actions.viewPoolDetails")}
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenLink(pool, "pair")}
-              className="rounded-xl border border-white/12 bg-white/5 px-3 py-2 text-sm text-slate-300 transition hover:border-[#fcd535]/40 hover:text-[#f0cd54]"
-            >
-              {t("defi.actions.viewPairInfo")}
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenLink(pool, "contract")}
-              className="rounded-xl border border-white/12 bg-white/5 px-3 py-2 text-sm text-slate-300 transition hover:border-[#fcd535]/40 hover:text-[#f0cd54]"
-            >
-              {t("defi.actions.viewContract")}
-            </button>
-          </div>
-        </div>
-      )}
-    </article>
-  );
+function formatNumberish(value) {
+  return Number(value ?? 0).toLocaleString("en-US");
 }
 
 export default function FarmsPage() {
   const { t } = useTranslation();
   const { notify } = useNotification();
+  const { address, chainId, connect, getSigner } = useWallet();
+  
+  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("active");
   const [onlyStaked, setOnlyStaked] = useState(false);
-  const [expandedId, setExpandedId] = useState(null);
-  const [claimableMap, setClaimableMap] = useState(() =>
-    Object.fromEntries(poolItems.map((item) => [item.id, item.claimable])),
+  const [refreshNonce, setRefreshNonce] = useState(0);
+  const [amountInputs, setAmountInputs] = useState({});
+  const [actionState, setActionState] = useState({ type: "", pid: -1 });
+
+  const [farmState, setFarmState] = useState({
+    paused: false,
+    whitelistMode: false,
+    whitelisted: true,
+    blacklisted: false,
+    startTimestamp: 0n,
+    emittedTotal: 0n,
+    currentDailyEmission: 0n,
+    pools: [],
+  });
+
+  useEffect(() => {
+    if (chainId != null) {
+      console.log("当前链id,", chainId);
+    }
+  }, [chainId]);
+
+  const loadFarmData = useCallback(async () => {
+    setLoading(true);
+    const readProvider = getReadProvider();
+    const contracts = createCoreContracts(readProvider);
+
+    try {
+      const [paused, whitelistMode, startTimestamp, emittedTotal] = await Promise.all([
+        contracts.lp.paused(),
+        contracts.lp.whitelistMode(),
+        contracts.lp.startTimestamp(),
+        contracts.lp.emittedTotal(),
+      ]);
+
+      const nowTs = Math.floor(Date.now() / 1000);
+      const startTs = Number(startTimestamp);
+      const dayIndex = nowTs > startTs ? Math.floor((nowTs - startTs) / 86400) : 0;
+      const currentDailyEmission = await contracts.lp.dailyEmission(dayIndex);
+
+      let whitelisted = true;
+      let blacklisted = false;
+
+      if (address) {
+        [whitelisted, blacklisted] = await Promise.all([
+          contracts.lp.whitelisted(address),
+          contracts.lp.blacklisted(address),
+        ]);
+      }
+
+      const pools = await Promise.all(
+        LP_POOLS.map(async (meta) => {
+          const poolInfo = await contracts.lp.pools(meta.pid);
+          const lpTokenAddress = String(poolInfo.lpToken);
+          const lpTokenContract = createErc20Contract(lpTokenAddress, readProvider);
+          const [lpDecimals, lpSymbol] = await Promise.all([
+            lpTokenContract.decimals().catch(() => 18),
+            lpTokenContract.symbol().catch(() => "LP"),
+          ]);
+
+          let walletBalance = 0n;
+          let stakedAmount = 0n;
+          let pending = 0n;
+
+          if (address) {
+            const [balance, user, pendingMining] = await Promise.all([
+              lpTokenContract.balanceOf(address),
+              contracts.lp.users(meta.pid, address),
+              contracts.lp.pendingMining(meta.pid, address),
+            ]);
+            walletBalance = balance;
+            stakedAmount = user.amount;
+            pending = pendingMining;
+          }
+
+          return {
+            ...meta,
+            lpTokenAddress,
+            lpSymbol,
+            lpDecimals: Number(lpDecimals),
+            allocPoint: poolInfo.allocPoint,
+            totalStaked: poolInfo.totalStaked,
+            walletBalance,
+            stakedAmount,
+            pending,
+            status: poolInfo.allocPoint > 0n ? "active" : "ended",
+          };
+        }),
+      );
+
+      const totalAlloc = pools.reduce((sum, pool) => sum + pool.allocPoint, 0n);
+      const normalizedPools = pools.map((pool) => ({
+        ...pool,
+        dailyReward: totalAlloc > 0n ? (currentDailyEmission * pool.allocPoint) / totalAlloc : 0n,
+      }));
+
+      setFarmState({
+        paused,
+        whitelistMode,
+        whitelisted,
+        blacklisted,
+        startTimestamp,
+        emittedTotal,
+        currentDailyEmission,
+        pools: normalizedPools,
+      });
+    } catch (error) {
+      notify({ type: "error", message: toErrorMessage(error, "读取挖矿数据失败") });
+    } finally {
+      setLoading(false);
+    }
+  }, [address, notify]);
+
+  useEffect(() => {
+    loadFarmData();
+  }, [loadFarmData, refreshNonce]);
+
+  const canWrite = useMemo(() => {
+    if (!address) return false;
+    if (!isExpectedChain(chainId)) return false;
+    if (farmState.paused) return false;
+    if (farmState.blacklisted) return false;
+    if (farmState.whitelistMode && !farmState.whitelisted) return false;
+    return true;
+  }, [address, chainId, farmState.blacklisted, farmState.paused, farmState.whitelistMode, farmState.whitelisted]);
+
+  const writeBlockReason = useMemo(() => {
+    if (!address) return "请先连接钱包";
+    if (!isExpectedChain(chainId)) return `请切换到 BSC Testnet（ChainId=${TBSC_CHAIN_ID}）`;
+    if (farmState.paused) return "挖矿合约已暂停";
+    if (farmState.blacklisted) return "当前地址在黑名单中";
+    if (farmState.whitelistMode && !farmState.whitelisted) return "当前地址不在白名单中";
+    return "";
+  }, [address, chainId, farmState.blacklisted, farmState.paused, farmState.whitelistMode, farmState.whitelisted]);
+
+  const ensureSigner = useCallback(async () => {
+    let currentAddress = address;
+    if (!currentAddress) {
+      currentAddress = await connect();
+    }
+    if (!currentAddress) return null;
+
+    const signer = await getSigner();
+    if (!signer) return null;
+
+    const network = await signer.provider.getNetwork();
+    if (Number(network.chainId) !== TBSC_CHAIN_ID) {
+      notify({ type: "error", message: `请切换到 BSC Testnet（ChainId=${TBSC_CHAIN_ID}）` });
+      return null;
+    }
+
+    return { signer, currentAddress };
+  }, [address, connect, getSigner, notify]);
+
+  const handleAmountChange = (pid, value) => {
+    setAmountInputs((prev) => ({ ...prev, [pid]: value }));
+  };
+
+  const executePoolAction = useCallback(
+    async (pool, action) => {
+      const rawInput = amountInputs[pool.pid];
+      let amount = 0n;
+      if (action !== "claim") {
+        try {
+          amount = parseTokenAmount(rawInput, pool.lpDecimals);
+        } catch {
+          notify({ type: "error", message: "请输入有效数量" });
+          return;
+        }
+        if (amount <= 0n) {
+          notify({ type: "error", message: "请输入有效数量" });
+          return;
+        }
+      }
+
+      const signerContext = await ensureSigner();
+      if (!signerContext) return;
+
+      if (!canWrite) {
+        notify({ type: "error", message: writeBlockReason || "当前状态不可执行写入" });
+        return;
+      }
+
+      setActionState({ type: action, pid: pool.pid });
+      try {
+        const contracts = createCoreContracts(signerContext.signer);
+        const lpToken = createErc20Contract(pool.lpTokenAddress, signerContext.signer);
+
+        if (action === "deposit") {
+          const allowance = await lpToken.allowance(signerContext.currentAddress, ADDRESSES.lpProxy);
+          if (allowance < amount) {
+            notify({ type: "info", message: `正在授权 ${pool.pair}` });
+            const approveTx = await lpToken.approve(ADDRESSES.lpProxy, amount);
+            await approveTx.wait();
+          }
+
+          const tx = await contracts.lp.deposit(pool.pid, amount);
+          await tx.wait();
+          notify({ type: "success", message: `${pool.pair} 质押成功` });
+        } else if (action === "withdraw") {
+          const tx = await contracts.lp.withdraw(pool.pid, amount);
+          await tx.wait();
+          notify({ type: "success", message: `${pool.pair} 提取成功` });
+        } else if (action === "claim") {
+          if (pool.pending <= 0n) {
+            notify({ type: "info", message: "当前没有可领取奖励" });
+            return;
+          }
+          const tx = await contracts.lp.claim(pool.pid);
+          await tx.wait();
+          notify({ type: "success", message: `${pool.pair} 奖励领取成功` });
+        }
+
+        setAmountInputs((prev) => ({ ...prev, [pool.pid]: "" }));
+        setRefreshNonce((prev) => prev + 1);
+      } catch (error) {
+        notify({ type: "error", message: toErrorMessage(error, `${pool.pair} 操作失败`) });
+      } finally {
+        setActionState({ type: "", pid: -1 });
+      }
+    },
+    [amountInputs, canWrite, ensureSigner, notify, writeBlockReason],
   );
 
-  const filteredPools = useMemo(() => {
-    let result = poolItems;
+  const handleAddLiquidity = (pool) => {
+    const [tokenA, tokenB] = pool.tokens;
+    const tokenAAddress = tokenAddressByKey[tokenA];
+    const tokenBAddress = tokenAddressByKey[tokenB];
+    const url = `https://pancakeswap.finance/add/${tokenAAddress}/${tokenBAddress}?chain=bscTestnet`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
+  const handleOpenContract = (pool) => {
+    window.open(`https://testnet.bscscan.com/address/${pool.lpTokenAddress}`, "_blank", "noopener,noreferrer");
+  };
+
+  const filteredPools = useMemo(() => {
+    let result = farmState.pools;
     if (statusFilter !== "all") {
       result = result.filter((pool) => pool.status === statusFilter);
     }
-
     if (onlyStaked) {
-      result = result.filter((pool) => parseAmount(pool.staked) > 0);
+      result = result.filter((pool) => pool.stakedAmount > 0n);
     }
-
     return result;
-  }, [statusFilter, onlyStaked]);
+  }, [farmState.pools, onlyStaked, statusFilter]);
 
-  const activeCount = useMemo(() => poolItems.filter((item) => item.status === "active").length, []);
-  const totalTvl = useMemo(() => poolItems.reduce((total, item) => total + item.tvl, 0), []);
-  const avgApy = useMemo(() => {
-    const values = poolItems.map((item) => parseAmount(item.apr));
-    const avg = values.reduce((sum, value) => sum + value, 0) / values.length;
-    return `${avg.toFixed(2)}%`;
-  }, []);
-
-  const handleAddLiquidity = (pool) => {
-    notify({
-      type: "info",
-      message: t("defi.notifications.addLiquidityOpened", { pair: pool.pair }),
-    });
-  };
-
-  const handleClaim = (pool) => {
-    const claimable = claimableMap[pool.id] ?? 0;
-    if (claimable <= 0) {
-      notify({ type: "info", message: t("defi.notifications.noClaimAvailable") });
-      return;
-    }
-
-    setClaimableMap((prev) => ({ ...prev, [pool.id]: 0 }));
-    notify({
-      type: "success",
-      message: t("defi.notifications.claimedReward", { pair: pool.pair, amount: formatNumber(claimable, 2) }),
-    });
-  };
-
-  const handleOpenLink = (pool, target) => {
-    notify({
-      type: "info",
-      message: t("defi.notifications.linkOpened", { pair: pool.pair, target: t(`defi.linkTarget.${target}`) }),
-    });
-  };
+  const summary = useMemo(() => {
+    return farmState.pools.reduce(
+      (acc, pool) => {
+        acc.poolCount += 1;
+        if (pool.status === "active") acc.activeCount += 1;
+        acc.totalStaked += pool.totalStaked;
+        return acc;
+      },
+      { poolCount: 0, activeCount: 0, totalStaked: 0n },
+    );
+  }, [farmState.pools]);
 
   return (
     <section className="relative overflow-hidden px-4 py-10 md:py-14">
@@ -411,20 +321,27 @@ export default function FarmsPage() {
         <h1 className="text-4xl font-semibold tracking-tight text-[#fcd535] md:text-6xl">{t("defi.title")}</h1>
         <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300">{t("defi.subtitle")}</p>
 
+        {!isExpectedChain(chainId) && address && (
+          <div className="mt-4 rounded-2xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+            检测到当前钱包网络非 BSC Testnet，请切换后再执行交易。
+          </div>
+        )}
+
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           <article className="governance-panel-soft rounded-3xl p-5">
             <p className="text-sm text-slate-500">{t("defi.summary.poolCount")}</p>
-            <p className="mt-2 text-3xl font-semibold text-white">{poolItems.length}</p>
+            <p className="mt-2 text-3xl font-semibold text-white">{summary.poolCount}</p>
           </article>
           <article className="governance-panel-soft rounded-3xl p-5">
             <p className="text-sm text-slate-500">{t("defi.summary.activeCount")}</p>
-            <p className="mt-2 text-3xl font-semibold text-emerald-300">{activeCount}</p>
+            <p className="mt-2 text-3xl font-semibold text-emerald-300">{summary.activeCount}</p>
           </article>
           <article className="governance-panel-soft rounded-3xl p-5">
-            <p className="text-sm text-slate-500">{t("defi.summary.totalTvl")}</p>
-            <p className="mt-2 text-3xl font-semibold text-[#fcd535]">{formatUsd(totalTvl)}</p>
+            <p className="text-sm text-slate-500">总质押 LP</p>
+            <p className="mt-2 text-3xl font-semibold text-[#fcd535]">{formatTokenAmount(summary.totalStaked)} LP</p>
             <p className="mt-1 text-xs text-slate-500">
-              {t("defi.summary.avgApy")}: {avgApy}
+              当前日产出: {formatTokenAmount(farmState.currentDailyEmission)} GDL · 已释放:{" "}
+              {formatTokenAmount(farmState.emittedTotal)} GDL
             </p>
           </article>
         </div>
@@ -462,27 +379,164 @@ export default function FarmsPage() {
             </button>
             {t("defi.onlyStaked")}
           </label>
+
+          <button
+            type="button"
+            onClick={() => setRefreshNonce((prev) => prev + 1)}
+            className="ml-auto inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-slate-200 transition hover:border-white/25 hover:text-white"
+          >
+            <Icon icon="mdi:refresh" width="16" />
+            刷新
+          </button>
         </div>
 
-        {filteredPools.length === 0 ? (
+        {!canWrite && <p className="mt-4 text-xs text-amber-300">{writeBlockReason}</p>}
+
+        {loading ? (
+          <div className="governance-panel mt-6 rounded-3xl px-6 py-10 text-center text-slate-300">正在读取链上矿池数据...</div>
+        ) : filteredPools.length === 0 ? (
           <div className="governance-panel mt-6 rounded-3xl px-6 py-10 text-center">
             <p className="text-slate-300">{t("defi.empty")}</p>
           </div>
         ) : (
           <div className="mt-6 space-y-4">
-            {filteredPools.map((pool) => (
-              <PoolCard
-                key={pool.id}
-                pool={pool}
-                claimable={claimableMap[pool.id] ?? 0}
-                expanded={expandedId === pool.id}
-                onToggle={() => setExpandedId((prev) => (prev === pool.id ? null : pool.id))}
-                onAddLiquidity={handleAddLiquidity}
-                onClaim={handleClaim}
-                onOpenLink={handleOpenLink}
-                t={t}
-              />
-            ))}
+            {filteredPools.map((pool) => {
+              const actionType = actionState.pid === pool.pid ? actionState.type : "";
+              const inputValue = amountInputs[pool.pid] ?? "";
+              const pendingLabel = formatTokenAmount(pool.pending);
+
+              return (
+                <article key={pool.pid} className="governance-panel overflow-hidden rounded-[28px]">
+                  <div className="p-5 md:p-6">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="flex items-center gap-3">
+                        <TokenStack tokens={pool.tokens} />
+                        <div>
+                          <p className="text-xl font-semibold text-[#f0cd54]">{pool.pair}</p>
+                          <p className="mt-1 text-sm text-slate-400">
+                            PID {pool.pid} · LP: {pool.lpTokenAddress.slice(0, 8)}...{pool.lpTokenAddress.slice(-6)}
+                          </p>
+                        </div>
+                      </div>
+
+                      <span
+                        className={`inline-flex h-9 items-center rounded-full px-3 text-xs font-semibold ${
+                          pool.status === "active"
+                            ? "border border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
+                            : "border border-white/15 bg-white/5 text-slate-300"
+                        }`}
+                      >
+                        {t(`common.status.${pool.status}`)}
+                      </span>
+                    </div>
+
+                    <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                      <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
+                        <p className="text-xs text-slate-500">allocPoint</p>
+                        <p className="mt-1 text-lg font-semibold text-[#fcd535]">{formatNumberish(pool.allocPoint)}</p>
+                      </div>
+                      <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
+                        <p className="text-xs text-slate-500">总质押</p>
+                        <p className="mt-1 text-lg font-semibold text-white">{formatTokenAmount(pool.totalStaked, pool.lpDecimals)} LP</p>
+                      </div>
+                      <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
+                        <p className="text-xs text-slate-500">日产出估算</p>
+                        <p className="mt-1 text-lg font-semibold text-emerald-300">{formatTokenAmount(pool.dailyReward)} GDL/day</p>
+                      </div>
+                      <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
+                        <p className="text-xs text-slate-500">可领奖励</p>
+                        <p className="mt-1 text-lg font-semibold text-sky-300">{pendingLabel} GDL</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
+                      <p className="rounded-xl border border-white/8 bg-black/20 px-4 py-2 text-slate-400">
+                        可用 LP:{" "}
+                        <span className="ml-1 font-semibold text-slate-200">
+                          {formatTokenAmount(pool.walletBalance, pool.lpDecimals)} {pool.lpSymbol}
+                        </span>
+                      </p>
+                      <p className="rounded-xl border border-white/8 bg-black/20 px-4 py-2 text-slate-400">
+                        已质押:{" "}
+                        <span className="ml-1 font-semibold text-slate-200">
+                          {formatTokenAmount(pool.stakedAmount, pool.lpDecimals)} {pool.lpSymbol}
+                        </span>
+                      </p>
+                    </div>
+
+                    <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                      <p className="text-xs text-slate-500">数量（用于质押/提取）</p>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={inputValue}
+                        onChange={(event) => handleAmountChange(pool.pid, event.target.value)}
+                        placeholder="0.0"
+                        className="mt-1 h-8 w-full bg-transparent text-lg font-semibold text-white outline-none placeholder:text-slate-500"
+                      />
+                    </div>
+
+                    <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                      <button
+                        type="button"
+                        onClick={() => executePoolAction(pool, "deposit")}
+                        disabled={actionType === "deposit" || !inputValue || !canWrite}
+                        className={`h-12 rounded-2xl text-sm font-semibold transition ${
+                          actionType === "deposit" || !inputValue || !canWrite
+                            ? "cursor-not-allowed border border-white/10 bg-white/8 text-slate-500"
+                            : "morgan-btn-primary border-0 text-[#111111]"
+                        }`}
+                      >
+                        {actionType === "deposit" ? "处理中..." : "质押"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => executePoolAction(pool, "withdraw")}
+                        disabled={actionType === "withdraw" || !inputValue || !canWrite}
+                        className={`h-12 rounded-2xl text-sm font-semibold transition ${
+                          actionType === "withdraw" || !inputValue || !canWrite
+                            ? "cursor-not-allowed border border-white/10 bg-white/8 text-slate-500"
+                            : "border border-[#fcd535]/35 bg-[#fcd535]/10 text-[#f0cd54] hover:bg-[#fcd535]/15"
+                        }`}
+                      >
+                        {actionType === "withdraw" ? "处理中..." : "提取"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => executePoolAction(pool, "claim")}
+                        disabled={actionType === "claim" || pool.pending <= 0n || !canWrite}
+                        className={`h-12 rounded-2xl text-sm font-semibold transition ${
+                          actionType === "claim" || pool.pending <= 0n || !canWrite
+                            ? "cursor-not-allowed border border-white/10 bg-white/8 text-slate-500"
+                            : "border border-emerald-400/35 bg-emerald-400/12 text-emerald-300 hover:bg-emerald-400/18"
+                        }`}
+                      >
+                        {actionType === "claim" ? "处理中..." : `领取 (${pendingLabel})`}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleAddLiquidity(pool)}
+                        className="h-12 rounded-2xl border border-white/10 bg-black/25 text-sm font-semibold text-slate-200 transition hover:border-white/25 hover:text-white"
+                      >
+                        添加流动性
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenContract(pool)}
+                        className="h-12 rounded-2xl border border-white/10 bg-black/25 text-sm font-semibold text-slate-200 transition hover:border-white/25 hover:text-white"
+                      >
+                        查看合约
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
       </div>
