@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
+import { formatUnits } from "ethers";
 import { useTranslation } from "react-i18next";
 import { useNotification } from "../components/Notification";
 import { useWallet } from "../contexts/WalletContext";
 import { ADDRESSES, LP_POOLS, TBSC_CHAIN_ID } from "../web3/config";
 import { getReadProvider, isExpectedChain } from "../web3/client";
-import { createCoreContracts, createErc20Contract } from "../web3/contracts";
+import { createCoreContracts, createErc20Contract, createPairContract } from "../web3/contracts";
 import { formatTokenAmount, parseTokenAmount, toErrorMessage } from "../web3/format";
 
 const tokenVisualMap = {
@@ -21,6 +22,35 @@ const tokenAddressByKey = {
   godl: ADDRESSES.godl,
   gdl: ADDRESSES.gdl,
 };
+
+function createInitialLiquidityState() {
+  return {
+    open: false,
+    loading: false,
+    submitting: false,
+    pool: null,
+    tokenAKey: "",
+    tokenBKey: "",
+    tokenAAddress: "",
+    tokenBAddress: "",
+    tokenASymbol: "",
+    tokenBSymbol: "",
+    tokenADecimals: 18,
+    tokenBDecimals: 18,
+    balanceA: 0n,
+    balanceB: 0n,
+    reserveA: 0n,
+    reserveB: 0n,
+    amountA: "",
+    amountB: "",
+  };
+}
+
+function toInputAmount(value, decimals) {
+  const raw = formatUnits(value ?? 0n, decimals);
+  if (!raw.includes(".")) return raw;
+  return raw.replace(/\.?0+$/, "");
+}
 
 function TokenStack({ tokens }) {
   const shownTokens = tokens.slice(0, 2);
@@ -50,13 +80,15 @@ export default function FarmsPage() {
   const { t } = useTranslation();
   const { notify } = useNotification();
   const { address, chainId, connect, getSigner } = useWallet();
-  
+  const pageT = useCallback((key, options) => t(`defi.page.${key}`, options), [t]);
+
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("active");
   const [onlyStaked, setOnlyStaked] = useState(false);
   const [refreshNonce, setRefreshNonce] = useState(0);
   const [amountInputs, setAmountInputs] = useState({});
   const [actionState, setActionState] = useState({ type: "", pid: -1 });
+  const [liquidityState, setLiquidityState] = useState(createInitialLiquidityState);
 
   const [farmState, setFarmState] = useState({
     paused: false,
@@ -68,12 +100,6 @@ export default function FarmsPage() {
     currentDailyEmission: 0n,
     pools: [],
   });
-
-  useEffect(() => {
-    if (chainId != null) {
-      console.log("当前链id,", chainId);
-    }
-  }, [chainId]);
 
   const loadFarmData = useCallback(async () => {
     setLoading(true);
@@ -160,11 +186,11 @@ export default function FarmsPage() {
         pools: normalizedPools,
       });
     } catch (error) {
-      notify({ type: "error", message: toErrorMessage(error, "读取挖矿数据失败") });
+      notify({ type: "error", message: toErrorMessage(error, pageT("errors.loadData")) });
     } finally {
       setLoading(false);
     }
-  }, [address, notify]);
+  }, [address, notify, pageT]);
 
   useEffect(() => {
     loadFarmData();
@@ -180,18 +206,23 @@ export default function FarmsPage() {
   }, [address, chainId, farmState.blacklisted, farmState.paused, farmState.whitelistMode, farmState.whitelisted]);
 
   const writeBlockReason = useMemo(() => {
-    if (!address) return "请先连接钱包";
-    if (!isExpectedChain(chainId)) return `请切换到 BSC Testnet（ChainId=${TBSC_CHAIN_ID}）`;
-    if (farmState.paused) return "挖矿合约已暂停";
-    if (farmState.blacklisted) return "当前地址在黑名单中";
-    if (farmState.whitelistMode && !farmState.whitelisted) return "当前地址不在白名单中";
+    if (!address) return pageT("errors.connectWalletFirst");
+    if (!isExpectedChain(chainId)) return pageT("errors.switchNetwork", { chainId: TBSC_CHAIN_ID });
+    if (farmState.paused) return pageT("errors.paused");
+    if (farmState.blacklisted) return pageT("errors.blacklisted");
+    if (farmState.whitelistMode && !farmState.whitelisted) return pageT("errors.notWhitelisted");
     return "";
-  }, [address, chainId, farmState.blacklisted, farmState.paused, farmState.whitelistMode, farmState.whitelisted]);
+  }, [address, chainId, farmState.blacklisted, farmState.paused, farmState.whitelistMode, farmState.whitelisted, pageT]);
 
   const ensureSigner = useCallback(async () => {
     let currentAddress = address;
     if (!currentAddress) {
-      currentAddress = await connect();
+      try {
+        currentAddress = await connect();
+      } catch (error) {
+        notify({ type: "error", message: toErrorMessage(error, pageT("errors.connectWalletFirst")) });
+        return null;
+      }
     }
     if (!currentAddress) return null;
 
@@ -200,7 +231,7 @@ export default function FarmsPage() {
 
     const network = await signer.provider.getNetwork();
     if (Number(network.chainId) !== TBSC_CHAIN_ID) {
-      notify({ type: "error", message: `请切换到 BSC Testnet（ChainId=${TBSC_CHAIN_ID}）` });
+      notify({ type: "error", message: pageT("errors.switchNetwork", { chainId: TBSC_CHAIN_ID }) });
       return null;
     }
 
@@ -219,11 +250,11 @@ export default function FarmsPage() {
         try {
           amount = parseTokenAmount(rawInput, pool.lpDecimals);
         } catch {
-          notify({ type: "error", message: "请输入有效数量" });
+          notify({ type: "error", message: pageT("errors.invalidAmount") });
           return;
         }
         if (amount <= 0n) {
-          notify({ type: "error", message: "请输入有效数量" });
+          notify({ type: "error", message: pageT("errors.invalidAmount") });
           return;
         }
       }
@@ -232,7 +263,7 @@ export default function FarmsPage() {
       if (!signerContext) return;
 
       if (!canWrite) {
-        notify({ type: "error", message: writeBlockReason || "当前状态不可执行写入" });
+        notify({ type: "error", message: writeBlockReason || pageT("errors.actionNotAllowed") });
         return;
       }
 
@@ -244,45 +275,287 @@ export default function FarmsPage() {
         if (action === "deposit") {
           const allowance = await lpToken.allowance(signerContext.currentAddress, ADDRESSES.lpProxy);
           if (allowance < amount) {
-            notify({ type: "info", message: `正在授权 ${pool.pair}` });
+            notify({ type: "info", message: pageT("notices.approvingPool", { pair: pool.pair }) });
             const approveTx = await lpToken.approve(ADDRESSES.lpProxy, amount);
             await approveTx.wait();
           }
 
           const tx = await contracts.lp.deposit(pool.pid, amount);
           await tx.wait();
-          notify({ type: "success", message: `${pool.pair} 质押成功` });
+          notify({ type: "success", message: pageT("notices.depositSuccess", { pair: pool.pair }) });
         } else if (action === "withdraw") {
           const tx = await contracts.lp.withdraw(pool.pid, amount);
           await tx.wait();
-          notify({ type: "success", message: `${pool.pair} 提取成功` });
+          notify({ type: "success", message: pageT("notices.withdrawSuccess", { pair: pool.pair }) });
         } else if (action === "claim") {
           if (pool.pending <= 0n) {
-            notify({ type: "info", message: "当前没有可领取奖励" });
+            notify({ type: "info", message: pageT("notices.noClaimableReward") });
             return;
           }
           const tx = await contracts.lp.claim(pool.pid);
           await tx.wait();
-          notify({ type: "success", message: `${pool.pair} 奖励领取成功` });
+          notify({ type: "success", message: pageT("notices.claimSuccess", { pair: pool.pair }) });
         }
 
         setAmountInputs((prev) => ({ ...prev, [pool.pid]: "" }));
         setRefreshNonce((prev) => prev + 1);
       } catch (error) {
-        notify({ type: "error", message: toErrorMessage(error, `${pool.pair} 操作失败`) });
+        notify({ type: "error", message: toErrorMessage(error, pageT("errors.poolActionFailed", { pair: pool.pair })) });
       } finally {
         setActionState({ type: "", pid: -1 });
       }
     },
-    [amountInputs, canWrite, ensureSigner, notify, writeBlockReason],
+    [amountInputs, canWrite, ensureSigner, notify, pageT, writeBlockReason],
+  );
+
+  const closeLiquidityModal = useCallback(() => {
+    setLiquidityState(createInitialLiquidityState());
+  }, []);
+
+  useEffect(() => {
+    if (!liquidityState.open) return undefined;
+
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        closeLiquidityModal();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [closeLiquidityModal, liquidityState.open]);
+
+  const openLiquidityModal = useCallback(
+    async (pool) => {
+      const [tokenAKey, tokenBKey] = pool.tokens;
+      const tokenAAddress = tokenAddressByKey[tokenAKey];
+      const tokenBAddress = tokenAddressByKey[tokenBKey];
+
+      if (!tokenAAddress || !tokenBAddress) {
+        notify({ type: "error", message: pageT("errors.missingTokenAddress") });
+        return;
+      }
+
+      setLiquidityState({
+        ...createInitialLiquidityState(),
+        open: true,
+        loading: true,
+        pool,
+        tokenAKey,
+        tokenBKey,
+        tokenAAddress,
+        tokenBAddress,
+      });
+
+      const provider = getReadProvider();
+      try {
+        const tokenAContract = createErc20Contract(tokenAAddress, provider);
+        const tokenBContract = createErc20Contract(tokenBAddress, provider);
+        const pairContract = createPairContract(pool.lpTokenAddress, provider);
+
+        const [tokenADecimals, tokenASymbol, tokenBDecimals, tokenBSymbol, tokenABalance, tokenBBalance, token0, reserves] = await Promise.all([
+          tokenAContract.decimals().catch(() => 18),
+          tokenAContract.symbol().catch(() => tokenAKey.toUpperCase()),
+          tokenBContract.decimals().catch(() => 18),
+          tokenBContract.symbol().catch(() => tokenBKey.toUpperCase()),
+          address ? tokenAContract.balanceOf(address).catch(() => 0n) : 0n,
+          address ? tokenBContract.balanceOf(address).catch(() => 0n) : 0n,
+          pairContract.token0().catch(() => tokenAAddress),
+          pairContract.getReserves().catch(() => ({ reserve0: 0n, reserve1: 0n })),
+        ]);
+
+        const token0Lower = String(token0).toLowerCase();
+        const reserveA = token0Lower === tokenAAddress.toLowerCase() ? reserves.reserve0 : reserves.reserve1;
+        const reserveB = token0Lower === tokenAAddress.toLowerCase() ? reserves.reserve1 : reserves.reserve0;
+
+        setLiquidityState((prev) => ({
+          ...prev,
+          loading: false,
+          tokenASymbol,
+          tokenBSymbol,
+          tokenADecimals: Number(tokenADecimals),
+          tokenBDecimals: Number(tokenBDecimals),
+          balanceA: tokenABalance,
+          balanceB: tokenBBalance,
+          reserveA,
+          reserveB,
+        }));
+      } catch (error) {
+        setLiquidityState((prev) => ({ ...prev, loading: false }));
+        notify({ type: "error", message: toErrorMessage(error, pageT("errors.loadLiquidityData")) });
+      }
+    },
+    [address, notify, pageT],
   );
 
   const handleAddLiquidity = (pool) => {
-    const [tokenA, tokenB] = pool.tokens;
-    const tokenAAddress = tokenAddressByKey[tokenA];
-    const tokenBAddress = tokenAddressByKey[tokenB];
-    const url = `https://pancakeswap.finance/add/${tokenAAddress}/${tokenBAddress}?chain=bscTestnet`;
-    window.open(url, "_blank", "noopener,noreferrer");
+    openLiquidityModal(pool).catch(() => {});
+  };
+
+  useEffect(() => {
+    if (!address || !liquidityState.open || !liquidityState.pool) return;
+    openLiquidityModal(liquidityState.pool).catch(() => {});
+  }, [address, liquidityState.open, liquidityState.pool, openLiquidityModal]);
+
+  const handleLiquidityAmountAChange = (value) => {
+    setLiquidityState((prev) => {
+      const next = { ...prev, amountA: value };
+      if (!value) return { ...next, amountB: "" };
+
+      try {
+        const amountA = parseTokenAmount(value, prev.tokenADecimals);
+        if (amountA <= 0n || prev.reserveA <= 0n || prev.reserveB <= 0n) {
+          return { ...next, amountB: "" };
+        }
+        const amountB = (amountA * prev.reserveB) / prev.reserveA;
+        return { ...next, amountB: toInputAmount(amountB, prev.tokenBDecimals) };
+      } catch {
+        return { ...next, amountB: "" };
+      }
+    });
+  };
+
+  const handleLiquidityAmountBChange = (value) => {
+    setLiquidityState((prev) => {
+      const next = { ...prev, amountB: value };
+      if (!value) return { ...next, amountA: "" };
+
+      try {
+        const amountB = parseTokenAmount(value, prev.tokenBDecimals);
+        if (amountB <= 0n || prev.reserveA <= 0n || prev.reserveB <= 0n) {
+          return { ...next, amountA: "" };
+        }
+        const amountA = (amountB * prev.reserveA) / prev.reserveB;
+        return { ...next, amountA: toInputAmount(amountA, prev.tokenADecimals) };
+      } catch {
+        return { ...next, amountA: "" };
+      }
+    });
+  };
+
+  const handleLiquiditySetMaxA = () => {
+    setLiquidityState((prev) => {
+      const amountA = prev.balanceA;
+      const amountAInput = toInputAmount(amountA, prev.tokenADecimals);
+      if (amountA <= 0n || prev.reserveA <= 0n || prev.reserveB <= 0n) {
+        return { ...prev, amountA: amountAInput, amountB: "" };
+      }
+
+      const amountB = (amountA * prev.reserveB) / prev.reserveA;
+      return {
+        ...prev,
+        amountA: amountAInput,
+        amountB: toInputAmount(amountB, prev.tokenBDecimals),
+      };
+    });
+  };
+
+  const handleLiquiditySetMaxB = () => {
+    setLiquidityState((prev) => {
+      const amountB = prev.balanceB;
+      const amountBInput = toInputAmount(amountB, prev.tokenBDecimals);
+      if (amountB <= 0n || prev.reserveA <= 0n || prev.reserveB <= 0n) {
+        return { ...prev, amountB: amountBInput, amountA: "" };
+      }
+
+      const amountA = (amountB * prev.reserveA) / prev.reserveB;
+      return {
+        ...prev,
+        amountB: amountBInput,
+        amountA: toInputAmount(amountA, prev.tokenADecimals),
+      };
+    });
+  };
+
+  const handleConfirmAddLiquidity = async () => {
+    if (liquidityState.submitting || !liquidityState.pool) return;
+
+    let amountA = 0n;
+    let amountB = 0n;
+
+    try {
+      amountA = parseTokenAmount(liquidityState.amountA, liquidityState.tokenADecimals);
+      amountB = parseTokenAmount(liquidityState.amountB, liquidityState.tokenBDecimals);
+    } catch {
+      notify({ type: "error", message: pageT("errors.invalidLiquidityAmount") });
+      return;
+    }
+
+    if (amountA <= 0n || amountB <= 0n) {
+      notify({ type: "error", message: pageT("errors.invalidLiquidityAmount") });
+      return;
+    }
+
+    if (amountA > liquidityState.balanceA || amountB > liquidityState.balanceB) {
+      notify({
+        type: "error",
+        message: pageT("errors.insufficientBalance", {
+          balanceA: formatTokenAmount(liquidityState.balanceA, liquidityState.tokenADecimals, 6),
+          tokenA: liquidityState.tokenASymbol,
+          balanceB: formatTokenAmount(liquidityState.balanceB, liquidityState.tokenBDecimals, 6),
+          tokenB: liquidityState.tokenBSymbol,
+        }),
+      });
+      return;
+    }
+
+    const signerContext = await ensureSigner();
+    if (!signerContext) return;
+
+    const snapshot = liquidityState;
+    setLiquidityState((prev) => ({ ...prev, submitting: true }));
+
+    let succeeded = false;
+    try {
+      const contracts = createCoreContracts(signerContext.signer);
+      const tokenAContract = createErc20Contract(snapshot.tokenAAddress, signerContext.signer);
+      const tokenBContract = createErc20Contract(snapshot.tokenBAddress, signerContext.signer);
+
+      const [allowanceA, allowanceB] = await Promise.all([
+        tokenAContract.allowance(signerContext.currentAddress, ADDRESSES.routerV2),
+        tokenBContract.allowance(signerContext.currentAddress, ADDRESSES.routerV2),
+      ]);
+
+      if (allowanceA < amountA) {
+        notify({ type: "info", message: pageT("notices.approvingToken", { symbol: snapshot.tokenASymbol }) });
+        const approveATx = await tokenAContract.approve(ADDRESSES.routerV2, amountA);
+        await approveATx.wait();
+      }
+
+      if (allowanceB < amountB) {
+        notify({ type: "info", message: pageT("notices.approvingToken", { symbol: snapshot.tokenBSymbol }) });
+        const approveBTx = await tokenBContract.approve(ADDRESSES.routerV2, amountB);
+        await approveBTx.wait();
+      }
+
+      const amountAMin = (amountA * 9900n) / 10000n;
+      const amountBMin = (amountB * 9900n) / 10000n;
+      const deadline = BigInt(Math.floor(Date.now() / 1000) + 20 * 60);
+
+      notify({ type: "info", message: pageT("notices.submittingAddLiquidity", { pair: snapshot.pool.pair }) });
+      const tx = await contracts.router.addLiquidity(
+        snapshot.tokenAAddress,
+        snapshot.tokenBAddress,
+        amountA,
+        amountB,
+        amountAMin,
+        amountBMin,
+        signerContext.currentAddress,
+        deadline,
+      );
+      await tx.wait();
+
+      succeeded = true;
+      notify({ type: "success", message: pageT("notices.addLiquiditySuccess", { pair: snapshot.pool.pair }) });
+      setRefreshNonce((prev) => prev + 1);
+      closeLiquidityModal();
+    } catch (error) {
+      notify({ type: "error", message: toErrorMessage(error, pageT("errors.addLiquidityFailed")) });
+    } finally {
+      if (!succeeded) {
+        setLiquidityState((prev) => ({ ...prev, submitting: false }));
+      }
+    }
   };
 
   const handleOpenContract = (pool) => {
@@ -312,6 +585,27 @@ export default function FarmsPage() {
     );
   }, [farmState.pools]);
 
+  const liquidityRatioText = useMemo(() => {
+    if (liquidityState.reserveA <= 0n || liquidityState.reserveB <= 0n) return pageT("liquidity.ratioLoading");
+
+    const reserveA = Number(formatUnits(liquidityState.reserveA, liquidityState.tokenADecimals));
+    const reserveB = Number(formatUnits(liquidityState.reserveB, liquidityState.tokenBDecimals));
+    if (!Number.isFinite(reserveA) || !Number.isFinite(reserveB) || reserveA <= 0 || reserveB <= 0) {
+      return pageT("liquidity.ratioLoading");
+    }
+
+    const ratio = reserveB / reserveA;
+    return `1 ${liquidityState.tokenASymbol} ≈ ${ratio.toLocaleString("en-US", { maximumFractionDigits: 6 })} ${liquidityState.tokenBSymbol}`;
+  }, [
+    liquidityState.reserveA,
+    liquidityState.reserveB,
+    liquidityState.tokenADecimals,
+    liquidityState.tokenASymbol,
+    liquidityState.tokenBDecimals,
+    liquidityState.tokenBSymbol,
+    pageT,
+  ]);
+
   return (
     <section className="relative overflow-hidden px-4 py-10 md:py-14">
       <div className="governance-grid pointer-events-none absolute inset-0 opacity-30" />
@@ -323,7 +617,7 @@ export default function FarmsPage() {
 
         {!isExpectedChain(chainId) && address && (
           <div className="mt-4 rounded-2xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-            检测到当前钱包网络非 BSC Testnet，请切换后再执行交易。
+            {pageT("warnings.networkMismatch")}
           </div>
         )}
 
@@ -337,10 +631,10 @@ export default function FarmsPage() {
             <p className="mt-2 text-3xl font-semibold text-emerald-300">{summary.activeCount}</p>
           </article>
           <article className="governance-panel-soft rounded-3xl p-5">
-            <p className="text-sm text-slate-500">总质押 LP</p>
+            <p className="text-sm text-slate-500">{pageT("summary.totalStakedLp")}</p>
             <p className="mt-2 text-3xl font-semibold text-[#fcd535]">{formatTokenAmount(summary.totalStaked)} LP</p>
             <p className="mt-1 text-xs text-slate-500">
-              当前日产出: {formatTokenAmount(farmState.currentDailyEmission)} GDL · 已释放:{" "}
+              {pageT("summary.dailyEmission")}: {formatTokenAmount(farmState.currentDailyEmission)} GDL · {pageT("summary.emittedTotal")}:{" "}
               {formatTokenAmount(farmState.emittedTotal)} GDL
             </p>
           </article>
@@ -386,14 +680,14 @@ export default function FarmsPage() {
             className="ml-auto inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-slate-200 transition hover:border-white/25 hover:text-white"
           >
             <Icon icon="mdi:refresh" width="16" />
-            刷新
+            {pageT("actions.refresh")}
           </button>
         </div>
 
         {!canWrite && <p className="mt-4 text-xs text-amber-300">{writeBlockReason}</p>}
 
         {loading ? (
-          <div className="governance-panel mt-6 rounded-3xl px-6 py-10 text-center text-slate-300">正在读取链上矿池数据...</div>
+          <div className="governance-panel mt-6 rounded-3xl px-6 py-10 text-center text-slate-300">{pageT("states.loading")}</div>
         ) : filteredPools.length === 0 ? (
           <div className="governance-panel mt-6 rounded-3xl px-6 py-10 text-center">
             <p className="text-slate-300">{t("defi.empty")}</p>
@@ -436,28 +730,28 @@ export default function FarmsPage() {
                         <p className="mt-1 text-lg font-semibold text-[#fcd535]">{formatNumberish(pool.allocPoint)}</p>
                       </div>
                       <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
-                        <p className="text-xs text-slate-500">总质押</p>
+                        <p className="text-xs text-slate-500">{pageT("fields.totalStaked")}</p>
                         <p className="mt-1 text-lg font-semibold text-white">{formatTokenAmount(pool.totalStaked, pool.lpDecimals)} LP</p>
                       </div>
                       <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
-                        <p className="text-xs text-slate-500">日产出估算</p>
+                        <p className="text-xs text-slate-500">{pageT("fields.dailyReward")}</p>
                         <p className="mt-1 text-lg font-semibold text-emerald-300">{formatTokenAmount(pool.dailyReward)} GDL/day</p>
                       </div>
                       <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
-                        <p className="text-xs text-slate-500">可领奖励</p>
+                        <p className="text-xs text-slate-500">{pageT("fields.claimableReward")}</p>
                         <p className="mt-1 text-lg font-semibold text-sky-300">{pendingLabel} GDL</p>
                       </div>
                     </div>
 
                     <div className="mt-4 grid gap-3 text-sm md:grid-cols-2">
                       <p className="rounded-xl border border-white/8 bg-black/20 px-4 py-2 text-slate-400">
-                        可用 LP:{" "}
+                        {pageT("fields.availableLp")}:{" "}
                         <span className="ml-1 font-semibold text-slate-200">
                           {formatTokenAmount(pool.walletBalance, pool.lpDecimals)} {pool.lpSymbol}
                         </span>
                       </p>
                       <p className="rounded-xl border border-white/8 bg-black/20 px-4 py-2 text-slate-400">
-                        已质押:{" "}
+                        {pageT("fields.stakedLp")}:{" "}
                         <span className="ml-1 font-semibold text-slate-200">
                           {formatTokenAmount(pool.stakedAmount, pool.lpDecimals)} {pool.lpSymbol}
                         </span>
@@ -465,7 +759,7 @@ export default function FarmsPage() {
                     </div>
 
                     <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-                      <p className="text-xs text-slate-500">数量（用于质押/提取）</p>
+                      <p className="text-xs text-slate-500">{pageT("fields.amountInput")}</p>
                       <input
                         type="number"
                         min="0"
@@ -488,7 +782,7 @@ export default function FarmsPage() {
                             : "morgan-btn-primary border-0 text-[#111111]"
                         }`}
                       >
-                        {actionType === "deposit" ? "处理中..." : "质押"}
+                        {actionType === "deposit" ? pageT("actions.processing") : pageT("actions.deposit")}
                       </button>
 
                       <button
@@ -501,7 +795,7 @@ export default function FarmsPage() {
                             : "border border-[#fcd535]/35 bg-[#fcd535]/10 text-[#f0cd54] hover:bg-[#fcd535]/15"
                         }`}
                       >
-                        {actionType === "withdraw" ? "处理中..." : "提取"}
+                        {actionType === "withdraw" ? pageT("actions.processing") : pageT("actions.withdraw")}
                       </button>
 
                       <button
@@ -514,7 +808,7 @@ export default function FarmsPage() {
                             : "border border-emerald-400/35 bg-emerald-400/12 text-emerald-300 hover:bg-emerald-400/18"
                         }`}
                       >
-                        {actionType === "claim" ? "处理中..." : `领取 (${pendingLabel})`}
+                        {actionType === "claim" ? pageT("actions.processing") : pageT("actions.claim", { amount: pendingLabel })}
                       </button>
 
                       <button
@@ -522,7 +816,7 @@ export default function FarmsPage() {
                         onClick={() => handleAddLiquidity(pool)}
                         className="h-12 rounded-2xl border border-white/10 bg-black/25 text-sm font-semibold text-slate-200 transition hover:border-white/25 hover:text-white"
                       >
-                        添加流动性
+                        {pageT("actions.addLiquidity")}
                       </button>
 
                       <button
@@ -530,7 +824,7 @@ export default function FarmsPage() {
                         onClick={() => handleOpenContract(pool)}
                         className="h-12 rounded-2xl border border-white/10 bg-black/25 text-sm font-semibold text-slate-200 transition hover:border-white/25 hover:text-white"
                       >
-                        查看合约
+                        {pageT("actions.viewContract")}
                       </button>
                     </div>
                   </div>
@@ -540,6 +834,126 @@ export default function FarmsPage() {
           </div>
         )}
       </div>
+
+      {liquidityState.open && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 md:p-6">
+          <button type="button" aria-label={pageT("actions.close")} onClick={closeLiquidityModal} className="absolute inset-0 bg-black/70 backdrop-blur-[2px]" />
+
+          <div className="governance-panel relative z-10 w-full max-w-xl overflow-hidden rounded-[28px]">
+            <div className="pointer-events-none absolute -left-16 -top-16 h-52 w-52 rounded-full bg-[radial-gradient(circle,rgba(252,213,53,0.22)_0%,rgba(252,213,53,0)_72%)] blur-2xl" />
+            <div className="pointer-events-none absolute -bottom-24 -right-16 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(240,205,84,0.18)_0%,rgba(240,205,84,0)_74%)] blur-2xl" />
+
+            <div className="relative p-5 md:p-6">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.16em] text-slate-500">Liquidity</p>
+                  <h2 className="mt-1 text-2xl font-semibold text-[#f0cd54]">{pageT("liquidity.title")}</h2>
+                  <p className="mt-1 text-sm text-slate-300">{liquidityState.pool?.pair ?? "-"}</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={closeLiquidityModal}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-200 transition hover:border-white/25 hover:text-white"
+                >
+                  <Icon icon="mdi:close" width="18" />
+                </button>
+              </div>
+
+              {liquidityState.loading ? (
+                <div className="mt-6 rounded-2xl border border-white/10 bg-black/20 px-4 py-10 text-center text-sm text-slate-300">
+                  {pageT("liquidity.loading")}
+                </div>
+              ) : (
+                <>
+                  <div className="mt-5 rounded-2xl border border-[#fcd535]/25 bg-[#fcd535]/10 px-4 py-3 text-sm text-[#f0cd54]">
+                    <p className="font-medium">{pageT("liquidity.autoRatio")}</p>
+                    <p className="mt-1 text-xs text-slate-300">{liquidityRatioText}</p>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
+                      <div className="flex items-center justify-between text-xs text-slate-400">
+                        <span>{liquidityState.tokenASymbol || "Token A"}</span>
+                        <button
+                          type="button"
+                          onClick={handleLiquiditySetMaxA}
+                          className="rounded-md border border-[#fcd535]/30 bg-[#fcd535]/10 px-2 py-0.5 text-[11px] font-semibold text-[#f0cd54] transition hover:bg-[#fcd535]/18"
+                        >
+                          MAX
+                        </button>
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={liquidityState.amountA}
+                        onChange={(event) => handleLiquidityAmountAChange(event.target.value)}
+                        placeholder="0.0"
+                        className="mt-2 h-9 w-full bg-transparent text-lg font-semibold text-white outline-none placeholder:text-slate-500"
+                      />
+                      <p className="mt-1 text-xs text-slate-500">
+                        {pageT("liquidity.availableBalance")}: {formatTokenAmount(liquidityState.balanceA, liquidityState.tokenADecimals, 6)} {liquidityState.tokenASymbol}
+                      </p>
+                    </div>
+
+                    <div className="flex justify-center text-[#f0cd54]">
+                      <Icon icon="mdi:plus-circle-outline" width="22" />
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
+                      <div className="flex items-center justify-between text-xs text-slate-400">
+                        <span>{liquidityState.tokenBSymbol || "Token B"}</span>
+                        <button
+                          type="button"
+                          onClick={handleLiquiditySetMaxB}
+                          className="rounded-md border border-[#fcd535]/30 bg-[#fcd535]/10 px-2 py-0.5 text-[11px] font-semibold text-[#f0cd54] transition hover:bg-[#fcd535]/18"
+                        >
+                          MAX
+                        </button>
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={liquidityState.amountB}
+                        onChange={(event) => handleLiquidityAmountBChange(event.target.value)}
+                        placeholder="0.0"
+                        className="mt-2 h-9 w-full bg-transparent text-lg font-semibold text-white outline-none placeholder:text-slate-500"
+                      />
+                      <p className="mt-1 text-xs text-slate-500">
+                        {pageT("liquidity.availableBalance")}: {formatTokenAmount(liquidityState.balanceB, liquidityState.tokenBDecimals, 6)} {liquidityState.tokenBSymbol}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={closeLiquidityModal}
+                      className="h-12 rounded-2xl border border-white/10 bg-white/5 text-sm font-semibold text-slate-200 transition hover:border-white/25 hover:text-white"
+                    >
+                      {pageT("actions.cancel")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleConfirmAddLiquidity}
+                      disabled={liquidityState.submitting || !liquidityState.amountA || !liquidityState.amountB}
+                      className={`h-12 rounded-2xl text-sm font-semibold transition ${
+                        liquidityState.submitting || !liquidityState.amountA || !liquidityState.amountB
+                          ? "cursor-not-allowed border border-white/10 bg-white/8 text-slate-500"
+                          : "morgan-btn-primary border-0 text-[#111111]"
+                      }`}
+                    >
+                      {liquidityState.submitting ? pageT("actions.submitting") : pageT("actions.confirmAddLiquidity")}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

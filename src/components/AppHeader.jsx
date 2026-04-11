@@ -113,8 +113,6 @@ export default function AppHeader() {
     } catch (error) {
       if (error?.code === "NO_PROVIDER") {
         notify({ type: "error", message: t("header.wallet.extensionMissing") });
-      } else if (error?.code === 4001) {
-        notify({ type: "info", message: t("header.wallet.connectCancelled") });
       } else {
         notify({ type: "error", message: t("header.wallet.connectFailed") });
       }

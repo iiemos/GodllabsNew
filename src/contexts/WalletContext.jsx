@@ -1,193 +1,128 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { BrowserProvider } from "ethers";
-
-const WALLET_STORAGE_KEY = "godl_wallet_address";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useConnect, useConnection, useDisconnect } from "wagmi";
 
 const WalletContext = createContext(null);
 
-function getEthereum() {
-  if (typeof window === "undefined") return undefined;
-  return window.ethereum;
+function createNoProviderError() {
+  const error = new Error("No wallet connector");
+  error.code = "NO_PROVIDER";
+  return error;
 }
 
-function parseChainId(value) {
-  if (value == null) return null;
-  if (typeof value === "bigint") {
-    const fromBigint = Number(value);
-    return Number.isFinite(fromBigint) ? fromBigint : null;
-  }
-
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : null;
-  }
-
-  if (typeof value === "string") {
-    const raw = value.trim();
-    if (!raw) return null;
-
-    if (raw.startsWith("0x") || raw.startsWith("0X")) {
-      const fromHex = Number.parseInt(raw, 16);
-      return Number.isFinite(fromHex) ? fromHex : null;
-    }
-
-    if (/^\d+$/.test(raw)) {
-      const fromDec = Number.parseInt(raw, 10);
-      return Number.isFinite(fromDec) ? fromDec : null;
-    }
-  }
-
-  const fallback = Number(value);
-  return Number.isFinite(fallback) ? fallback : null;
-}
-
-async function resolveChainId(ethereum) {
-  if (!ethereum) return null;
-
-  if (ethereum.request) {
-    try {
-      const chainHex = await ethereum.request({ method: "eth_chainId" });
-      const parsed = parseChainId(chainHex);
-      if (parsed != null) return parsed;
-    } catch {}
-  }
-
-  try {
-    const provider = new BrowserProvider(ethereum);
-    const network = await provider.getNetwork();
-    const parsed = parseChainId(network.chainId);
-    if (parsed != null) return parsed;
-  } catch {}
-
-  const fromProp = parseChainId(ethereum.chainId);
-  if (fromProp != null) return fromProp;
-
+function createInitialProviderState() {
   return null;
 }
 
 export function WalletProvider({ children }) {
-  const [address, setAddress] = useState("");
-  const [chainId, setChainId] = useState(() => parseChainId(getEthereum()?.chainId));
-  const [isConnecting, setIsConnecting] = useState(false);
+  const connection = useConnection();
+  const { openConnectModal } = useConnectModal();
+  const { isPending: connectPending } = useConnect();
+  const { disconnectAsync } = useDisconnect();
+  const [browserProvider, setBrowserProvider] = useState(createInitialProviderState);
 
-  const syncFromWallet = useCallback(async () => {
-    const ethereum = getEthereum();
-    if (!ethereum) return;
+  const address = connection.address ?? "";
+  const chainId = typeof connection.chainId === "number" ? connection.chainId : null;
+  const isConnecting = connectPending || connection.isConnecting || connection.isReconnecting;
 
-    const [accounts, resolvedChainId] = await Promise.all([
-      ethereum.request ? ethereum.request({ method: "eth_accounts" }) : [],
-      resolveChainId(ethereum),
-    ]);
-
-    const first = Array.isArray(accounts) ? accounts[0] ?? "" : "";
-    setAddress(first);
-    setChainId(resolvedChainId);
-
-    if (typeof window !== "undefined") {
-      if (first) {
-        window.localStorage.setItem(WALLET_STORAGE_KEY, first);
-      } else {
-        window.localStorage.removeItem(WALLET_STORAGE_KEY);
-      }
-    }
-  }, []);
+  const latestAddressRef = useRef(address);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const savedAddress = window.localStorage.getItem(WALLET_STORAGE_KEY);
-    if (savedAddress) {
-      setAddress(savedAddress);
-    }
-
-    const injectedChainId = parseChainId(getEthereum()?.chainId);
-    if (injectedChainId != null) {
-      setChainId(injectedChainId);
-    }
-
-    syncFromWallet().catch(() => {});
-  }, [syncFromWallet]);
+    latestAddressRef.current = address;
+  }, [address]);
 
   useEffect(() => {
-    const ethereum = getEthereum();
-    if (!ethereum?.on) return;
+    const connector = connection.connector;
+    let cancelled = false;
 
-    const onAccountsChanged = (accounts) => {
-      const first = Array.isArray(accounts) ? accounts[0] ?? "" : "";
-      setAddress(first);
-      if (typeof window !== "undefined") {
-        if (first) {
-          window.localStorage.setItem(WALLET_STORAGE_KEY, first);
-        } else {
-          window.localStorage.removeItem(WALLET_STORAGE_KEY);
+    if (!connector?.getProvider) {
+      setBrowserProvider(null);
+      return undefined;
+    }
+
+    connector
+      .getProvider()
+      .then((provider) => {
+        if (cancelled) return;
+        if (provider?.request) {
+          setBrowserProvider(new BrowserProvider(provider));
+          return;
         }
-      }
-
-      resolveChainId(ethereum).then(setChainId).catch(() => {});
-    };
-
-    const onChainChanged = () => {
-      resolveChainId(ethereum).then(setChainId).catch(() => {});
-    };
-
-    ethereum.on("accountsChanged", onAccountsChanged);
-    ethereum.on("chainChanged", onChainChanged);
+        setBrowserProvider(null);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setBrowserProvider(null);
+        }
+      });
 
     return () => {
-      if (ethereum.removeListener) {
-        ethereum.removeListener("accountsChanged", onAccountsChanged);
-        ethereum.removeListener("chainChanged", onChainChanged);
-      }
+      cancelled = true;
     };
+  }, [connection.connector]);
+
+  const waitForConnectedAddress = useCallback(async () => {
+    if (typeof window === "undefined") return "";
+
+    return new Promise((resolve) => {
+      const startedAt = Date.now();
+      const timeoutMs = 20_000;
+      const timer = window.setInterval(() => {
+        const current = latestAddressRef.current;
+        if (current) {
+          window.clearInterval(timer);
+          resolve(current);
+          return;
+        }
+
+        if (Date.now() - startedAt >= timeoutMs) {
+          window.clearInterval(timer);
+          resolve("");
+        }
+      }, 200);
+    });
   }, []);
 
   const connect = useCallback(async () => {
-    const ethereum = getEthereum();
-    if (!ethereum?.request) {
-      const missingProviderError = new Error("No injected wallet");
-      missingProviderError.code = "NO_PROVIDER";
-      throw missingProviderError;
+    if (latestAddressRef.current) {
+      return latestAddressRef.current;
     }
 
-    setIsConnecting(true);
-    try {
-      const accounts = await ethereum.request({ method: "eth_requestAccounts" });
-      const first = Array.isArray(accounts) ? accounts[0] ?? "" : "";
-      setAddress(first);
-      if (typeof window !== "undefined") {
-        if (first) {
-          window.localStorage.setItem(WALLET_STORAGE_KEY, first);
-        } else {
-          window.localStorage.removeItem(WALLET_STORAGE_KEY);
-        }
-      }
-
-      const resolvedChainId = await resolveChainId(ethereum);
-      setChainId(resolvedChainId);
-
-      return first;
-    } finally {
-      setIsConnecting(false);
+    if (!openConnectModal) {
+      throw createNoProviderError();
     }
-  }, []);
+
+    openConnectModal();
+    return waitForConnectedAddress();
+  }, [openConnectModal, waitForConnectedAddress]);
 
   const disconnect = useCallback(() => {
-    setAddress("");
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem(WALLET_STORAGE_KEY);
-    }
-  }, []);
+    disconnectAsync().catch(() => {});
+  }, [disconnectAsync]);
 
   const getBrowserProvider = useCallback(() => {
-    const ethereum = getEthereum();
-    if (!ethereum) return null;
-    return new BrowserProvider(ethereum);
-  }, []);
+    return browserProvider;
+  }, [browserProvider]);
 
   const getSigner = useCallback(async () => {
-    const provider = getBrowserProvider();
+    let provider = browserProvider;
+    if (!provider && connection.connector?.getProvider) {
+      try {
+        const rawProvider = await connection.connector.getProvider();
+        if (rawProvider?.request) {
+          provider = new BrowserProvider(rawProvider);
+        }
+      } catch {}
+    }
+
     if (!provider) return null;
-    return provider.getSigner();
-  }, [getBrowserProvider]);
+    try {
+      return await provider.getSigner();
+    } catch {
+      return null;
+    }
+  }, [browserProvider, connection.connector]);
 
   const contextValue = useMemo(
     () => ({

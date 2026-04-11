@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useNotification } from "../components/Notification";
 import { useWallet } from "../contexts/WalletContext";
@@ -47,6 +48,7 @@ export default function FundPage() {
   const { t } = useTranslation();
   const { notify } = useNotification();
   const { address, chainId, connect, getSigner } = useWallet();
+  const pageT = useCallback((key, options) => t(`fund.page.${key}`, options), [t]);
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -62,6 +64,7 @@ export default function FundPage() {
     whitelistMode: false,
     whitelisted: true,
     blacklisted: false,
+    godlBalance: 0n,
     weeklyClaimInterval: 0n,
     minSubscribe: parseTokenAmount("0.1"),
     price: 0n,
@@ -105,12 +108,14 @@ export default function FundPage() {
 
       let whitelisted = true;
       let blacklisted = false;
+      let godlBalance = 0n;
       let subscriptions = [];
 
       if (address) {
-        [whitelisted, blacklisted] = await Promise.all([
+        [whitelisted, blacklisted, godlBalance] = await Promise.all([
           contracts.gold.whitelisted(address),
           contracts.gold.blacklisted(address),
+          contracts.godl.balanceOf(address).catch(() => 0n),
         ]);
 
         const ids = [];
@@ -181,6 +186,7 @@ export default function FundPage() {
         whitelistMode,
         whitelisted,
         blacklisted,
+        godlBalance,
         weeklyClaimInterval,
         minSubscribe,
         price,
@@ -189,7 +195,7 @@ export default function FundPage() {
         subscriptions,
       });
     } catch (error) {
-      notify({ type: "error", message: toErrorMessage(error, "读取基金合约数据失败") });
+      notify({ type: "error", message: toErrorMessage(error, pageT("errors.loadData")) });
     } finally {
       setLoading(false);
     }
@@ -249,18 +255,23 @@ export default function FundPage() {
   }, [address, chainId, fundState.blacklisted, fundState.paused, fundState.whitelistMode, fundState.whitelisted]);
 
   const writeBlockReason = useMemo(() => {
-    if (!address) return "请先连接钱包";
-    if (!isExpectedChain(chainId)) return `请切换到 BSC Testnet（ChainId=${TBSC_CHAIN_ID}）`;
-    if (fundState.paused) return "协议已暂停，暂不可写入";
-    if (fundState.blacklisted) return "当前地址在黑名单中";
-    if (fundState.whitelistMode && !fundState.whitelisted) return "当前地址不在白名单中";
+    if (!address) return pageT("errors.connectWalletFirst");
+    if (!isExpectedChain(chainId)) return pageT("errors.switchNetwork", { chainId: TBSC_CHAIN_ID });
+    if (fundState.paused) return pageT("errors.paused");
+    if (fundState.blacklisted) return pageT("errors.blacklisted");
+    if (fundState.whitelistMode && !fundState.whitelisted) return pageT("errors.notWhitelisted");
     return "";
-  }, [address, chainId, fundState.blacklisted, fundState.paused, fundState.whitelistMode, fundState.whitelisted]);
+  }, [address, chainId, fundState.blacklisted, fundState.paused, fundState.whitelistMode, fundState.whitelisted, pageT]);
 
   const ensureSigner = useCallback(async () => {
     let currentAddress = address;
     if (!currentAddress) {
-      currentAddress = await connect();
+      try {
+        currentAddress = await connect();
+      } catch (error) {
+        notify({ type: "error", message: toErrorMessage(error, pageT("errors.connectWalletFirst")) });
+        return null;
+      }
     }
     if (!currentAddress) return null;
 
@@ -269,7 +280,7 @@ export default function FundPage() {
 
     const network = await signer.provider.getNetwork();
     if (Number(network.chainId) !== TBSC_CHAIN_ID) {
-      notify({ type: "error", message: `请切换到 BSC Testnet（ChainId=${TBSC_CHAIN_ID}）` });
+      notify({ type: "error", message: pageT("errors.switchNetwork", { chainId: TBSC_CHAIN_ID }) });
       return null;
     }
 
@@ -283,19 +294,19 @@ export default function FundPage() {
     try {
       amount = parseTokenAmount(amountInput);
     } catch {
-      notify({ type: "error", message: "请输入有效的 GODL 数量" });
+      notify({ type: "error", message: pageT("errors.invalidGodlAmount") });
       return;
     }
 
     if (amount <= 0n) {
-      notify({ type: "error", message: "请输入有效的 GODL 数量" });
+      notify({ type: "error", message: pageT("errors.invalidGodlAmount") });
       return;
     }
 
     if (amount < fundState.minSubscribe) {
       notify({
         type: "error",
-        message: `最低认购 ${formatTokenAmount(fundState.minSubscribe)} GODL`,
+        message: pageT("errors.minSubscribe", { amount: formatTokenAmount(fundState.minSubscribe) }),
       });
       return;
     }
@@ -304,7 +315,7 @@ export default function FundPage() {
     if (!signerContext) return;
 
     if (!canWrite) {
-      notify({ type: "error", message: writeBlockReason || "当前状态不可执行写入" });
+      notify({ type: "error", message: writeBlockReason || pageT("errors.actionNotAllowed") });
       return;
     }
 
@@ -314,7 +325,7 @@ export default function FundPage() {
       const allowance = await contracts.godl.allowance(signerContext.currentAddress, ADDRESSES.goldProxy);
 
       if (allowance < amount) {
-        notify({ type: "info", message: "正在进行 GODL 授权..." });
+        notify({ type: "info", message: pageT("notices.approvingGodl") });
         const approveTx = await contracts.godl.approve(ADDRESSES.goldProxy, amount);
         await approveTx.wait();
       }
@@ -326,13 +337,13 @@ export default function FundPage() {
 
       notify({
         type: "success",
-        message: subId ? `认购成功，订阅编号 #${subId}` : "认购成功",
+        message: subId ? pageT("notices.subscribeSuccessWithId", { id: subId.toString() }) : pageT("notices.subscribeSuccess"),
       });
 
       setAmountInput("");
       setRefreshNonce((prev) => prev + 1);
     } catch (error) {
-      notify({ type: "error", message: toErrorMessage(error, "认购失败") });
+      notify({ type: "error", message: toErrorMessage(error, pageT("errors.subscribeFailed")) });
     } finally {
       setSubmitting(false);
     }
@@ -345,7 +356,7 @@ export default function FundPage() {
     if (!signerContext) return;
 
     if (!canWrite) {
-      notify({ type: "error", message: writeBlockReason || "当前状态不可执行写入" });
+      notify({ type: "error", message: writeBlockReason || pageT("errors.actionNotAllowed") });
       return;
     }
 
@@ -354,10 +365,10 @@ export default function FundPage() {
       const contracts = createCoreContracts(signerContext.signer);
       const tx = await contracts.gold.claimWeekly(subscriptionId);
       await tx.wait();
-      notify({ type: "success", message: `周收益领取成功 #${subscriptionId}` });
+      notify({ type: "success", message: pageT("notices.weeklyClaimSuccess", { id: subscriptionId.toString() }) });
       setRefreshNonce((prev) => prev + 1);
     } catch (error) {
-      notify({ type: "error", message: toErrorMessage(error, "领取周收益失败") });
+      notify({ type: "error", message: toErrorMessage(error, pageT("errors.weeklyClaimFailed")) });
     } finally {
       setClaimingWeeklyId("");
     }
@@ -370,7 +381,7 @@ export default function FundPage() {
     if (!signerContext) return;
 
     if (!canWrite) {
-      notify({ type: "error", message: writeBlockReason || "当前状态不可执行写入" });
+      notify({ type: "error", message: writeBlockReason || pageT("errors.actionNotAllowed") });
       return;
     }
 
@@ -379,10 +390,10 @@ export default function FundPage() {
       const contracts = createCoreContracts(signerContext.signer);
       const tx = await contracts.gold.claimMatured(subscriptionId);
       await tx.wait();
-      notify({ type: "success", message: `到期收益领取成功 #${subscriptionId}` });
+      notify({ type: "success", message: pageT("notices.maturedClaimSuccess", { id: subscriptionId.toString() }) });
       setRefreshNonce((prev) => prev + 1);
     } catch (error) {
-      notify({ type: "error", message: toErrorMessage(error, "到期领取失败") });
+      notify({ type: "error", message: toErrorMessage(error, pageT("errors.maturedClaimFailed")) });
     } finally {
       setClaimingMaturedId("");
     }
@@ -399,7 +410,7 @@ export default function FundPage() {
 
         {!isExpectedChain(chainId) && address && (
           <div className="mt-4 rounded-2xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-            检测到当前钱包网络非 BSC Testnet，请切换后再执行交易。
+            {pageT("warnings.networkMismatch")}
           </div>
         )}
 
@@ -407,23 +418,41 @@ export default function FundPage() {
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">GoldStakingProtocol</p>
-              <p className="text-xl font-semibold text-white">基金认购（真实合约）</p>
+              <p className="text-xl font-semibold text-white">{pageT("header.contractMode")}</p>
               <p className="text-sm text-slate-400">
-                当前认购价: <span className="font-semibold text-[#fcd535]">{formatTokenAmount(fundState.price)} USGD / GODL</span>
+                {pageT("header.currentPrice")}:{" "}
+                <span className="font-semibold text-[#fcd535]">{formatTokenAmount(fundState.price)} USGD / GODL</span>
               </p>
               <p className="text-sm text-slate-400">
-                GDL 结算价: <span className="font-semibold text-[#f0cd54]">{formatTokenAmount(fundState.gdlPrice)} USGD / GDL</span>
+                {pageT("header.gdlPrice")}:{" "}
+                <span className="font-semibold text-[#f0cd54]">{formatTokenAmount(fundState.gdlPrice)} USGD / GDL</span>
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setRefreshNonce((prev) => prev + 1)}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-slate-200 transition hover:border-white/25 hover:text-white"
-            >
-              <Icon icon="mdi:refresh" width="16" />
-              刷新
-            </button>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <div className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#fcd535]/25 bg-[#fcd535]/10 px-3 text-sm text-[#f0cd54]">
+                <span className="text-xs text-slate-300">{pageT("header.godlBalance")}</span>
+                <span className="font-semibold">
+                  {address ? `${formatTokenAmount(fundState.godlBalance, 18, 6)} GODL` : "--"}
+                </span>
+              </div>
+
+              <Link
+                to="/swap?route=usgd-godl"
+                className="inline-flex h-10 items-center justify-center rounded-xl border border-[#fcd535]/35 bg-[#fcd535]/12 px-3 text-xs font-semibold text-[#f0cd54] transition hover:bg-[#fcd535]/20"
+              >
+                {pageT("actions.goSwapGodl")}
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setRefreshNonce((prev) => prev + 1)}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-slate-200 transition hover:border-white/25 hover:text-white"
+              >
+                <Icon icon="mdi:refresh" width="16" />
+                {pageT("actions.refresh")}
+              </button>
+            </div>
           </div>
 
           <div className="mt-5 grid gap-3 md:grid-cols-3">
@@ -452,7 +481,7 @@ export default function FundPage() {
 
           <div className="mt-4 grid gap-3 md:grid-cols-[1fr_180px]">
             <label className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-              <p className="text-xs text-slate-500">认购 GODL 数量</p>
+              <p className="text-xs text-slate-500">{pageT("fields.godlAmount")}</p>
               <input
                 type="number"
                 min="0"
@@ -474,28 +503,32 @@ export default function FundPage() {
                   : "morgan-btn-primary border-0 text-[#111111]"
               }`}
             >
-              {submitting ? "处理中..." : "授权并认购"}
+              {submitting ? pageT("actions.processing") : pageT("actions.approveAndSubscribe")}
             </button>
           </div>
 
           <div className="mt-4 grid gap-2 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-slate-300 md:grid-cols-3">
             <p>
-              预估本金: <span className="font-semibold text-white">{formatTokenAmount(estimate.principal)} USGD</span>
+              {pageT("estimates.principal")}: <span className="font-semibold text-white">{formatTokenAmount(estimate.principal)} USGD</span>
             </p>
             <p>
-              预估前置费: <span className="font-semibold text-rose-300">{formatTokenAmount(estimate.upfrontFee)} USGD</span>
+              {pageT("estimates.upfrontFee")}:{" "}
+              <span className="font-semibold text-rose-300">{formatTokenAmount(estimate.upfrontFee)} USGD</span>
             </p>
             <p>
-              到期本金(扣费后): <span className="font-semibold text-[#f0cd54]">{formatTokenAmount(estimate.principalOut)} USGD</span>
+              {pageT("estimates.principalOut")}:{" "}
+              <span className="font-semibold text-[#f0cd54]">{formatTokenAmount(estimate.principalOut)} USGD</span>
             </p>
             <p>
-              预估总收益: <span className="font-semibold text-emerald-300">{formatTokenAmount(estimate.yieldTotal)} USGD</span>
+              {pageT("estimates.yieldTotal")}:{" "}
+              <span className="font-semibold text-emerald-300">{formatTokenAmount(estimate.yieldTotal)} USGD</span>
             </p>
             <p>
-              GDL 奖励价值: <span className="font-semibold text-emerald-300">{formatTokenAmount(estimate.gdlBonusUsd)} USGD</span>
+              {pageT("estimates.gdlBonusUsd")}:{" "}
+              <span className="font-semibold text-emerald-300">{formatTokenAmount(estimate.gdlBonusUsd)} USGD</span>
             </p>
             <p>
-              预估 GDL 奖励: <span className="font-semibold text-[#fcd535]">{formatTokenAmount(estimate.gdlOut)} GDL</span>
+              {pageT("estimates.gdlBonus")}: <span className="font-semibold text-[#fcd535]">{formatTokenAmount(estimate.gdlOut)} GDL</span>
             </p>
           </div>
 
@@ -504,15 +537,15 @@ export default function FundPage() {
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           <article className="governance-panel-soft rounded-3xl p-5">
-            <p className="text-sm text-slate-500">认购本金（USGD）</p>
+            <p className="text-sm text-slate-500">{pageT("summary.principal")}</p>
             <p className="mt-2 text-3xl font-semibold text-white">{formatTokenAmount(totals.principal)} USGD</p>
           </article>
           <article className="governance-panel-soft rounded-3xl p-5">
-            <p className="text-sm text-slate-500">当前可领周收益（USGD）</p>
+            <p className="text-sm text-slate-500">{pageT("summary.weeklyClaimable")}</p>
             <p className="mt-2 text-3xl font-semibold text-emerald-300">{formatTokenAmount(totals.weekly)} USGD</p>
           </article>
           <article className="governance-panel-soft rounded-3xl p-5">
-            <p className="text-sm text-slate-500">当前可领到期收益</p>
+            <p className="text-sm text-slate-500">{pageT("summary.maturedClaimable")}</p>
             <p className="mt-2 text-xl font-semibold text-[#fcd535]">
               {formatTokenAmount(totals.maturedUsgd)} USGD / {formatTokenAmount(totals.maturedGdl)} GDL
             </p>
@@ -521,11 +554,11 @@ export default function FundPage() {
 
         <div className="mt-6 space-y-4">
           {loading ? (
-            <div className="governance-panel rounded-[28px] px-6 py-10 text-center text-slate-400">正在读取链上认购数据...</div>
+            <div className="governance-panel rounded-[28px] px-6 py-10 text-center text-slate-400">{pageT("states.loading")}</div>
           ) : !address ? (
-            <div className="governance-panel rounded-[28px] px-6 py-10 text-center text-slate-400">连接钱包后可查看你的认购记录</div>
+            <div className="governance-panel rounded-[28px] px-6 py-10 text-center text-slate-400">{pageT("states.connectToView")}</div>
           ) : fundState.subscriptions.length === 0 ? (
-            <div className="governance-panel rounded-[28px] px-6 py-10 text-center text-slate-400">暂无认购记录</div>
+            <div className="governance-panel rounded-[28px] px-6 py-10 text-center text-slate-400">{pageT("states.empty")}</div>
           ) : (
             fundState.subscriptions.map((subscription) => {
               const termConfig = fundState.terms[subscription.termType];
@@ -546,7 +579,8 @@ export default function FundPage() {
                       <div>
                         <h2 className="text-2xl font-semibold text-white">Subscription #{subscription.id.toString()}</h2>
                         <p className="mt-2 text-sm text-slate-400">
-                          期限: {termConfig?.months ?? "-"} 个月 · APY: {termConfig ? formatBps(termConfig.apyBps) : "-"} · GDL Bonus:{" "}
+                          {pageT("labels.term")}: {termConfig?.months ?? "-"} {pageT("labels.months")} · APY:{" "}
+                          {termConfig ? formatBps(termConfig.apyBps) : "-"} · GDL Bonus:{" "}
                           {termConfig ? `${(termConfig.gdlBonusBps / 10000).toFixed(2)}x` : "-"}
                         </p>
                       </div>
@@ -557,7 +591,7 @@ export default function FundPage() {
                             : "border border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
                         }`}
                       >
-                        {maturedDone ? "已完成到期领取" : "进行中"}
+                        {maturedDone ? pageT("status.maturedDone") : pageT("status.ongoing")}
                       </span>
                     </div>
                   </div>
@@ -566,37 +600,38 @@ export default function FundPage() {
                     <div className="governance-panel-soft rounded-3xl p-5">
                       <p className="inline-flex items-center gap-2 text-sm font-semibold text-slate-200">
                         <Icon icon="mdi:bank-transfer" width="16" className="text-[#fcd535]" />
-                        到期领取（本金 + 剩余收益 + GDL）
+                        {pageT("sections.maturedClaim")}
                       </p>
                       <div className="mt-4 space-y-2 text-sm text-slate-400">
                         <p>
-                          认购 GODL: <span className="font-semibold text-white">{formatTokenAmount(subscription.godlAmount)} GODL</span>
+                          {pageT("fields.subscribedGodl")}:{" "}
+                          <span className="font-semibold text-white">{formatTokenAmount(subscription.godlAmount)} GODL</span>
                         </p>
                         <p>
-                          认购本金:{" "}
+                          {pageT("fields.subscribedPrincipal")}:{" "}
                           <span className="font-semibold text-white">{formatTokenAmount(subscription.usgdPrincipalGross)} USGD</span>
                         </p>
                         <p>
-                          前置费用:{" "}
+                          {pageT("fields.upfrontFee")}:{" "}
                           <span className="font-semibold text-rose-300">{formatTokenAmount(subscription.upfrontFeeUsgd)} USGD</span>
                         </p>
                         <p>
-                          到期时间: <span className="font-semibold text-slate-200">{formatTimestamp(subscription.endAt)}</span>
+                          {pageT("fields.maturityTime")}: <span className="font-semibold text-slate-200">{formatTimestamp(subscription.endAt)}</span>
                         </p>
                         <p>
-                          可领本金:{" "}
+                          {pageT("fields.claimablePrincipal")}:{" "}
                           <span className="font-semibold text-[#f0cd54]">
                             {formatTokenAmount(subscription.pendingMatured.principal)} USGD
                           </span>
                         </p>
                         <p>
-                          可领收益:{" "}
+                          {pageT("fields.claimableYield")}:{" "}
                           <span className="font-semibold text-emerald-300">
                             {formatTokenAmount(subscription.pendingMatured.yieldAmount)} USGD
                           </span>
                         </p>
                         <p>
-                          可领GDL:{" "}
+                          {pageT("fields.claimableGdl")}:{" "}
                           <span className="font-semibold text-[#fcd535]">{formatTokenAmount(subscription.pendingMatured.gdl)} GDL</span>
                         </p>
                       </div>
@@ -611,33 +646,33 @@ export default function FundPage() {
                             : "cursor-not-allowed border border-white/10 bg-white/8 text-slate-500"
                         }`}
                       >
-                        {isClaimingMatured ? "处理中..." : maturedDone ? "已领取" : "领取到期收益"}
+                        {isClaimingMatured ? pageT("actions.processing") : maturedDone ? pageT("actions.claimed") : pageT("actions.claimMatured")}
                       </button>
                     </div>
 
                     <div className="governance-panel-soft rounded-3xl p-5">
                       <p className="inline-flex items-center gap-2 text-sm font-semibold text-slate-200">
                         <Icon icon="mdi:calendar-clock-outline" width="16" className="text-[#fcd535]" />
-                        周收益领取（USGD）
+                        {pageT("sections.weeklyClaim")}
                       </p>
 
                       <div className="mt-4 space-y-2 text-sm text-slate-400">
                         <p>
-                          已领周收益:{" "}
+                          {pageT("fields.claimedWeekly")}:{" "}
                           <span className="font-semibold text-slate-200">{formatTokenAmount(subscription.claimedUsgd)} USGD</span>
                         </p>
                         <p>
-                          当前可领:{" "}
+                          {pageT("fields.currentClaimable")}:{" "}
                           <span className="font-semibold text-[#f0cd54]">{formatTokenAmount(subscription.pendingWeekly)} USGD</span>
                         </p>
                         <p>
-                          上次领取: <span className="font-semibold text-slate-200">{formatTimestamp(subscription.lastClaimAt)}</span>
+                          {pageT("fields.lastClaimAt")}: <span className="font-semibold text-slate-200">{formatTimestamp(subscription.lastClaimAt)}</span>
                         </p>
                         <p>
-                          下一次可领: <span className="font-semibold text-slate-200">{formatTimestamp(nextWeeklyAt)}</span>
+                          {pageT("fields.nextClaimAt")}: <span className="font-semibold text-slate-200">{formatTimestamp(nextWeeklyAt)}</span>
                         </p>
                         <p>
-                          距下一次可领:{" "}
+                          {pageT("fields.countdown")}:{" "}
                           <span key={countdownTick} className="font-semibold text-emerald-300">
                             {formatCountdown(nextWeeklyAt)}
                           </span>
@@ -654,7 +689,7 @@ export default function FundPage() {
                             : "cursor-not-allowed border border-white/10 bg-white/8 text-slate-500"
                         }`}
                       >
-                        {isClaimingWeekly ? "处理中..." : "领取周收益"}
+                        {isClaimingWeekly ? pageT("actions.processing") : pageT("actions.claimWeekly")}
                       </button>
                     </div>
                   </div>

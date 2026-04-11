@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
+import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { formatUnits } from "ethers";
 import { useNotification } from "../components/Notification";
@@ -26,6 +27,7 @@ function calcRateString(amountIn, inDecimals, amountOut, outDecimals, inSymbol, 
 }
 
 export default function SwapPage() {
+  const location = useLocation();
   const { notify } = useNotification();
   const { t } = useTranslation();
   const { address, chainId, connect, getSigner } = useWallet();
@@ -219,6 +221,22 @@ export default function SwapPage() {
     setQuoteState({ amountOut: 0n, reserveRate: "", reserveIn: 0n, reserveOut: 0n });
   };
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const routeFromQuery = params.get("route");
+    if (!routeFromQuery) return;
+
+    const targetRoute = SWAP_ROUTES.find((item) => item.id === routeFromQuery);
+    if (!targetRoute) return;
+
+    setActiveTab(targetRoute.id);
+    setIsReversed(false);
+    setAmount("");
+    setTransactionStatus("");
+    setTransactionHash("");
+    setQuoteState({ amountOut: 0n, reserveRate: "", reserveIn: 0n, reserveOut: 0n });
+  }, [location.search]);
+
   const handleToggleDirection = () => {
     setIsReversed((prev) => !prev);
     setAmount("");
@@ -248,7 +266,12 @@ export default function SwapPage() {
   const ensureSigner = useCallback(async () => {
     let currentAddress = address;
     if (!currentAddress) {
-      currentAddress = await connect();
+      try {
+        currentAddress = await connect();
+      } catch (error) {
+        notify({ type: "error", message: toErrorMessage(error, "请先连接钱包") });
+        return null;
+      }
     }
     if (!currentAddress) return null;
 
