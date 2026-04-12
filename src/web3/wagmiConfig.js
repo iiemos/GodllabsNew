@@ -19,7 +19,7 @@ const metaMaskOnlyWallet = () => ({
   id: "metamask-only",
   name: "MetaMask",
   rdns: "io.metamask",
-  iconUrl: "/static/godl_logo.png",
+  iconUrl: "/static/logo.png",
   iconBackground: "#111111",
   installed: typeof window !== "undefined" ? Boolean(getMetaMaskProvider()) : undefined,
   createConnector: (walletDetails) =>

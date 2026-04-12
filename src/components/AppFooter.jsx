@@ -37,7 +37,7 @@ export default function AppFooter() {
         <div className="grid gap-9 md:grid-cols-[1.1fr_1fr_1fr_1.8fr]">
           <div className="space-y-4">
             <div className="inline-flex h-12 w-12 items-center justify-center p-1.5">
-              <img src="/static/godl_logo.png" alt="GODL logo" className="h-full w-full object-contain" />
+              <img src="/static/logo.png" alt="GODL logo" className="h-full w-full object-contain" />
             </div>
             <p className="text-lg font-semibold text-white">GODL LABS</p>
             <p className="text-xs tracking-[0.18em] text-slate-500">GODL.IO</p>
@@ -104,7 +104,7 @@ export default function AppFooter() {
           <p>{t("footer.copyright")}</p>
           <div className="inline-flex items-center gap-3">
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/10 bg-white/5 p-1">
-              <img src="/static/godl_logo.png" alt="GODL logo" className="h-full w-full object-contain" />
+              <img src="/static/logo.png" alt="GODL logo" className="h-full w-full object-contain" />
             </span>
             <span className="text-sm font-semibold tracking-[0.14em] text-slate-200">{t("footer.domain")}</span>
             <p className="inline-flex items-center gap-2">

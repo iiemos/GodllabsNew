@@ -164,7 +164,7 @@ export default function AppHeader() {
           <div className="flex items-center gap-2">
             <Link to="/" className="inline-flex items-center gap-2">
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl">
-                <img src="/static/godl_logo.png" alt="GODL logo" className="h-10 w-10 object-contain" />
+                <img src="/static/logo.png" alt="GODL logo" className="h-10 w-10 object-contain" />
               </span>
               <span className="hidden text-sm font-semibold tracking-[0.16em] text-slate-100 sm:inline">GODL LABS</span>
             </Link>
