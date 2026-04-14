@@ -1,6 +1,6 @@
 import { Contract } from "ethers";
-import goldStakingAbi from "../../合约配置/GoldStakingProtocol.json";
-import lpStakingAbi from "../../合约配置/LpStakingProtocol.json";
+import goldStakingAbi from "../abis/GoldStakingProtocol.json";
+import lpStakingAbi from "../abis/LpStakingProtocol.json";
 import { ADDRESSES } from "./config";
 import { erc20Abi } from "./erc20Abi";
 

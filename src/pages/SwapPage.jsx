@@ -45,6 +45,7 @@ export default function SwapPage() {
   const [quoteLoading, setQuoteLoading] = useState(false);
   const [refreshNonce, setRefreshNonce] = useState(0);
   const [tokenState, setTokenState] = useState({});
+  const [routePairs, setRoutePairs] = useState({});
   const [quoteState, setQuoteState] = useState({
     amountOut: 0n,
     reserveRate: "",
@@ -124,11 +125,33 @@ export default function SwapPage() {
     setTokenState(Object.fromEntries(entries));
   }, [address]);
 
+  const loadRoutePairs = useCallback(async () => {
+    const provider = getReadProvider();
+    const contracts = createCoreContracts(provider);
+
+    const entries = await Promise.all(
+      SWAP_ROUTES.map(async (route) => {
+        let pairAddress = route.pairAddressFallback || "";
+        if (typeof route.poolPid === "number") {
+          try {
+            const poolInfo = await contracts.lp.pools(route.poolPid);
+            if (poolInfo?.lpToken) {
+              pairAddress = String(poolInfo.lpToken);
+            }
+          } catch {}
+        }
+        return [route.id, pairAddress];
+      }),
+    );
+
+    setRoutePairs(Object.fromEntries(entries));
+  }, []);
+
   const fetchQuoteAndRate = useCallback(
     async (nextAmount) => {
       const provider = getReadProvider();
       const contracts = createCoreContracts(provider);
-      const pair = createPairContract(currentRoute.pairAddress, provider);
+      const routePairAddress = routePairs[currentRoute.id] || currentRoute.pairAddressFallback || "";
 
       const fromAddress = tokenMap[fromKey]?.address;
       const toAddress = tokenMap[toKey]?.address;
@@ -144,24 +167,32 @@ export default function SwapPage() {
 
       setQuoteLoading(true);
       try {
-        const [token0, token1, reserves] = await Promise.all([pair.token0(), pair.token1(), pair.getReserves()]);
+        let reserveIn = 0n;
+        let reserveOut = 0n;
+        let reserveRate = "";
 
-        const reserve0 = reserves.reserve0;
-        const reserve1 = reserves.reserve1;
-        const lowerToken0 = String(token0).toLowerCase();
-        const lowerFrom = fromAddress.toLowerCase();
-        const lowerTo = toAddress.toLowerCase();
+        if (routePairAddress) {
+          const pair = createPairContract(routePairAddress, provider);
+          try {
+            const [token0, reserves] = await Promise.all([pair.token0(), pair.getReserves()]);
+            const reserve0 = reserves.reserve0;
+            const reserve1 = reserves.reserve1;
+            const lowerToken0 = String(token0).toLowerCase();
+            const lowerFrom = fromAddress.toLowerCase();
+            const lowerTo = toAddress.toLowerCase();
 
-        const reserveIn = lowerToken0 === lowerFrom ? reserve0 : reserve1;
-        const reserveOut = lowerToken0 === lowerTo ? reserve0 : reserve1;
-        const reserveRate = calcRateString(
-          reserveIn,
-          fromDecimals,
-          reserveOut,
-          toDecimals,
-          fromSymbol,
-          toSymbol,
-        );
+            reserveIn = lowerToken0 === lowerFrom ? reserve0 : reserve1;
+            reserveOut = lowerToken0 === lowerTo ? reserve0 : reserve1;
+            reserveRate = calcRateString(
+              reserveIn,
+              fromDecimals,
+              reserveOut,
+              toDecimals,
+              fromSymbol,
+              toSymbol,
+            );
+          } catch {}
+        }
 
         let amountOut = 0n;
         if (nextAmount && Number(nextAmount) > 0) {
@@ -186,14 +217,17 @@ export default function SwapPage() {
         setQuoteLoading(false);
       }
     },
-    [currentRoute.pairAddress, fromKey, notify, toKey, tokenMap, tokenState],
+    [currentRoute.id, currentRoute.pairAddressFallback, fromKey, notify, routePairs, toKey, tokenMap, tokenState],
   );
 
   useEffect(() => {
     loadTokensAndBalances().catch((error) => {
       notify({ type: "error", message: toErrorMessage(error, "读取代币余额失败") });
     });
-  }, [loadTokensAndBalances, notify, refreshNonce]);
+    loadRoutePairs().catch((error) => {
+      notify({ type: "error", message: toErrorMessage(error, "读取交易对地址失败") });
+    });
+  }, [loadRoutePairs, loadTokensAndBalances, notify, refreshNonce]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -254,6 +288,7 @@ export default function SwapPage() {
     setIsRefreshing(true);
     try {
       await loadTokensAndBalances();
+      await loadRoutePairs();
       await fetchQuoteAndRate(amount);
       notify({ type: "success", message: t("swap.notifications.priceRefreshed") });
     } catch (error) {
