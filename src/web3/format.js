@@ -58,10 +58,22 @@ export function toErrorMessage(error, fallback = "Transaction failed") {
   if (!candidates.length) return fallback;
 
   const text = String(candidates[0]);
+  const lower = text.toLowerCase();
   const revertedPrefix = "execution reverted: ";
   const index = text.toLowerCase().indexOf(revertedPrefix);
   if (index >= 0) {
     return text.slice(index + revertedPrefix.length).trim() || fallback;
+  }
+
+  if (
+    lower.includes("could not decode result data") ||
+    lower.includes("bad_data") ||
+    lower.includes("missing revert data in call exception")
+  ) {
+    const label = error?.meta?.label ? ` ${error.meta.label}` : "";
+    const address = error?.meta?.address ? ` ${error.meta.address}` : "";
+    const chain = Number.isFinite(error?.meta?.chainId) ? ` chainId=${error.meta.chainId}` : "";
+    return `合约返回数据无法解析，通常是地址/网络/ABI 不匹配导致。${label}${address}${chain}`.trim();
   }
 
   return text;

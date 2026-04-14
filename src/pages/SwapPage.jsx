@@ -7,7 +7,7 @@ import { useNotification } from "../components/Notification";
 import { useWallet } from "../contexts/WalletContext";
 import { ADDRESSES, SWAP_ROUTES, TBSC_CHAIN_ID, TOKEN_ORDER } from "../web3/config";
 import { getReadProvider, isExpectedChain } from "../web3/client";
-import { createCoreContracts, createErc20Contract, createPairContract } from "../web3/contracts";
+import { assertContractCode, createCoreContracts, createErc20Contract, createPairContract, validateCoreContractAddresses } from "../web3/contracts";
 import { clampSlippage, formatTokenAmount, parseTokenAmount, toErrorMessage } from "../web3/format";
 
 const tokenUiMeta = {
@@ -100,6 +100,7 @@ export default function SwapPage() {
 
   const loadTokensAndBalances = useCallback(async () => {
     const provider = getReadProvider();
+    await validateCoreContractAddresses(provider, { includeRouter: true });
 
     const entries = await Promise.all(
       TOKEN_ORDER.map(async (token) => {
@@ -127,6 +128,7 @@ export default function SwapPage() {
 
   const loadRoutePairs = useCallback(async () => {
     const provider = getReadProvider();
+    await validateCoreContractAddresses(provider, { includeRouter: true });
     const contracts = createCoreContracts(provider);
 
     const entries = await Promise.all(
@@ -172,6 +174,7 @@ export default function SwapPage() {
         let reserveRate = "";
 
         if (routePairAddress) {
+          await assertContractCode(provider, routePairAddress, `Swap Pair (${currentRoute.id})`);
           const pair = createPairContract(routePairAddress, provider);
           try {
             const [token0, reserves] = await Promise.all([pair.token0(), pair.getReserves()]);
@@ -316,6 +319,13 @@ export default function SwapPage() {
     const network = await signer.provider.getNetwork();
     if (Number(network.chainId) !== TBSC_CHAIN_ID) {
       notify({ type: "error", message: `请切换到 BSC Testnet（ChainId=${TBSC_CHAIN_ID}）` });
+      return null;
+    }
+
+    try {
+      await validateCoreContractAddresses(getReadProvider(), { includeRouter: true });
+    } catch (error) {
+      notify({ type: "error", message: toErrorMessage(error, "合约地址校验失败") });
       return null;
     }
 

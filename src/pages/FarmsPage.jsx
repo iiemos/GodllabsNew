@@ -6,7 +6,7 @@ import { useNotification } from "../components/Notification";
 import { useWallet } from "../contexts/WalletContext";
 import { ADDRESSES, LP_POOLS, TBSC_CHAIN_ID } from "../web3/config";
 import { getReadProvider, isExpectedChain } from "../web3/client";
-import { createCoreContracts, createErc20Contract, createPairContract } from "../web3/contracts";
+import { assertContractCode, createCoreContracts, createErc20Contract, createPairContract, validateCoreContractAddresses } from "../web3/contracts";
 import { formatTokenAmount, parseTokenAmount, toErrorMessage } from "../web3/format";
 
 const tokenVisualMap = {
@@ -107,6 +107,7 @@ export default function FarmsPage() {
     const contracts = createCoreContracts(readProvider);
 
     try {
+      await validateCoreContractAddresses(readProvider);
       const [paused, whitelistMode, startTimestamp, emittedTotal] = await Promise.all([
         contracts.lp.paused(),
         contracts.lp.whitelistMode(),
@@ -133,6 +134,7 @@ export default function FarmsPage() {
         LP_POOLS.map(async (meta) => {
           const poolInfo = await contracts.lp.pools(meta.pid);
           const lpTokenAddress = String(poolInfo.lpToken);
+          await assertContractCode(readProvider, lpTokenAddress, `${meta.pair} LP Token`);
           const lpTokenContract = createErc20Contract(lpTokenAddress, readProvider);
           const [lpDecimals, lpSymbol] = await Promise.all([
             lpTokenContract.decimals().catch(() => 18),
@@ -232,6 +234,13 @@ export default function FarmsPage() {
     const network = await signer.provider.getNetwork();
     if (Number(network.chainId) !== TBSC_CHAIN_ID) {
       notify({ type: "error", message: pageT("errors.switchNetwork", { chainId: TBSC_CHAIN_ID }) });
+      return null;
+    }
+
+    try {
+      await validateCoreContractAddresses(getReadProvider(), { includeRouter: true });
+    } catch (error) {
+      notify({ type: "error", message: toErrorMessage(error, pageT("errors.actionNotAllowed")) });
       return null;
     }
 
@@ -349,6 +358,12 @@ export default function FarmsPage() {
 
       const provider = getReadProvider();
       try {
+        await Promise.all([
+          assertContractCode(provider, tokenAAddress, `${tokenAKey.toUpperCase()} Token`),
+          assertContractCode(provider, tokenBAddress, `${tokenBKey.toUpperCase()} Token`),
+          assertContractCode(provider, pool.lpTokenAddress, `${pool.pair} LP Pair`),
+        ]);
+
         const tokenAContract = createErc20Contract(tokenAAddress, provider);
         const tokenBContract = createErc20Contract(tokenBAddress, provider);
         const pairContract = createPairContract(pool.lpTokenAddress, provider);

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useNotification } from "../components/Notification";
 import { useWallet } from "../contexts/WalletContext";
 import { ADDRESSES, GOLD_TERM_OPTIONS, TBSC_CHAIN_ID } from "../web3/config";
-import { createCoreContracts } from "../web3/contracts";
+import { createCoreContracts, validateCoreContractAddresses } from "../web3/contracts";
 import { getReadProvider, isExpectedChain } from "../web3/client";
 import {
   formatBps,
@@ -41,6 +41,28 @@ function normalizeTermConfig(termConfig) {
     months: Number(termConfig.months),
     apyBps: Number(termConfig.apyBps),
     gdlBonusBps: Number(termConfig.gdlBonusBps),
+  };
+}
+
+function normalizePendingMaturedResult(pendingMatured) {
+  const resultLength = typeof pendingMatured?.length === "number" ? pendingMatured.length : 0;
+
+  if (resultLength === 2) {
+    return {
+      principal: pendingMatured?.[0] ?? pendingMatured?.usgdOut ?? pendingMatured?.usgdPrincipalOut ?? 0n,
+      yieldAmount: 0n,
+      gdl: pendingMatured?.[1] ?? pendingMatured?.gdlOut ?? 0n,
+    };
+  }
+
+  const usgdOut = pendingMatured?.[0] ?? pendingMatured?.usgdOut ?? pendingMatured?.usgdPrincipalOut ?? 0n;
+  const yieldAmount = pendingMatured?.[1] ?? pendingMatured?.usgdYieldOut ?? 0n;
+  const gdl = pendingMatured?.[2] ?? pendingMatured?.gdlOut ?? 0n;
+
+  return {
+    principal: usgdOut,
+    yieldAmount,
+    gdl,
   };
 }
 
@@ -84,6 +106,7 @@ export default function FundPage() {
     const contracts = createCoreContracts(readProvider);
 
     try {
+      await validateCoreContractAddresses(readProvider);
       const [
         paused,
         whitelistMode,
@@ -145,11 +168,7 @@ export default function FundPage() {
               return {
                 id,
                 pendingWeekly,
-                pendingMatured: {
-                  principal: pendingMatured.usgdPrincipalOut,
-                  yieldAmount: pendingMatured.usgdYieldOut,
-                  gdl: pendingMatured.gdlOut,
-                },
+                pendingMatured: normalizePendingMaturedResult(pendingMatured),
               };
             }),
           );
@@ -281,6 +300,13 @@ export default function FundPage() {
     const network = await signer.provider.getNetwork();
     if (Number(network.chainId) !== TBSC_CHAIN_ID) {
       notify({ type: "error", message: pageT("errors.switchNetwork", { chainId: TBSC_CHAIN_ID }) });
+      return null;
+    }
+
+    try {
+      await validateCoreContractAddresses(getReadProvider());
+    } catch (error) {
+      notify({ type: "error", message: toErrorMessage(error, pageT("errors.actionNotAllowed")) });
       return null;
     }
 

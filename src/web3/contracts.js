@@ -1,4 +1,4 @@
-import { Contract } from "ethers";
+import { Contract, isAddress } from "ethers";
 import goldStakingAbi from "../abis/GoldStakingProtocol.json";
 import lpStakingAbi from "../abis/LpStakingProtocol.json";
 import { ADDRESSES } from "./config";
@@ -77,6 +77,76 @@ export const pairAbi = [
     ],
   },
 ];
+
+const contractCodeCache = new Map();
+
+function buildAddressError(label, address) {
+  const error = new Error(`[${label}] invalid contract address: ${String(address || "")}`);
+  error.code = "INVALID_CONTRACT_ADDRESS";
+  error.meta = { label, address };
+  return error;
+}
+
+function buildNoCodeError(label, address, chainId) {
+  const chainPart = Number.isFinite(chainId) ? ` chainId=${chainId}` : " chainId=unknown";
+  const error = new Error(
+    `[${label}] no contract code at ${address}.${chainPart}. Check contract address/network/ABI version.`,
+  );
+  error.code = "CONTRACT_CODE_NOT_FOUND";
+  error.meta = { label, address, chainId };
+  return error;
+}
+
+async function resolveChainId(provider) {
+  try {
+    const network = await provider.getNetwork();
+    return Number(network.chainId);
+  } catch {
+    return null;
+  }
+}
+
+export async function assertContractCode(provider, address, label) {
+  if (!provider?.getCode) {
+    const error = new Error("Provider does not support getCode");
+    error.code = "INVALID_PROVIDER";
+    throw error;
+  }
+
+  if (!address || !isAddress(address)) {
+    throw buildAddressError(label, address);
+  }
+
+  const chainId = await resolveChainId(provider);
+  const cacheKey = `${Number.isFinite(chainId) ? chainId : "unknown"}:${String(address).toLowerCase()}`;
+  if (contractCodeCache.has(cacheKey)) return;
+
+  const code = await provider.getCode(address);
+  if (!code || code === "0x") {
+    throw buildNoCodeError(label, address, chainId);
+  }
+
+  contractCodeCache.set(cacheKey, true);
+}
+
+export async function validateCoreContractAddresses(provider, options = {}) {
+  const includeRouter = Boolean(options.includeRouter);
+
+  const checks = [
+    assertContractCode(provider, ADDRESSES.goldProxy, "GoldStakingProtocol Proxy"),
+    assertContractCode(provider, ADDRESSES.lpProxy, "LpStakingProtocol Proxy"),
+    assertContractCode(provider, ADDRESSES.godl, "GODL Token"),
+    assertContractCode(provider, ADDRESSES.gdl, "GDL Token"),
+    assertContractCode(provider, ADDRESSES.usgd, "USGD Token"),
+    assertContractCode(provider, ADDRESSES.usdt, "USDT Token"),
+  ];
+
+  if (includeRouter) {
+    checks.push(assertContractCode(provider, ADDRESSES.routerV2, "Pancake RouterV2"));
+  }
+
+  await Promise.all(checks);
+}
 
 export function createCoreContracts(runner) {
   return {

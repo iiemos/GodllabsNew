@@ -40,6 +40,19 @@
   },
   {
     "type": "function",
+    "name": "DEFAULT_SUBSCRIBE_SLIPPAGE_BPS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "MIN_SUBSCRIBE_GODL",
     "inputs": [],
     "outputs": [
@@ -124,6 +137,25 @@
   },
   {
     "type": "function",
+    "name": "claimGdl",
+    "inputs": [
+      {
+        "name": "subscriptionId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "gdlOut",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "claimMatured",
     "inputs": [
       {
@@ -142,11 +174,6 @@
         "name": "usgdYieldOut",
         "type": "uint256",
         "internalType": "uint256"
-      },
-      {
-        "name": "gdlOut",
-        "type": "uint256",
-        "internalType": "uint256"
       }
     ],
     "stateMutability": "nonpayable"
@@ -156,19 +183,19 @@
     "name": "claimWeekly",
     "inputs": [
       {
-        "name": "subscriptionId",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
     "outputs": [
       {
-        "name": "usgdOut",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
-    "stateMutability": "nonpayable"
+    "stateMutability": "pure"
   },
   {
     "type": "function",
@@ -205,6 +232,19 @@
         "name": "",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "gdlUsgdPair",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "view"
@@ -328,6 +368,42 @@
   },
   {
     "type": "function",
+    "name": "initializeV2",
+    "inputs": [
+      {
+        "name": "pancakeRouter_",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "maxSlippageBps_",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "gdlUsgdPair_",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "maxSlippageBps",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "nextSubscriptionId",
     "inputs": [],
     "outputs": [
@@ -335,6 +411,19 @@
         "name": "",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pancakeRouter",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "view"
@@ -361,6 +450,25 @@
   },
   {
     "type": "function",
+    "name": "pendingGdl",
+    "inputs": [
+      {
+        "name": "subscriptionId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "gdlOut",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "pendingMatured",
     "inputs": [
       {
@@ -379,11 +487,6 @@
         "name": "usgdYieldOut",
         "type": "uint256",
         "internalType": "uint256"
-      },
-      {
-        "name": "gdlOut",
-        "type": "uint256",
-        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -393,19 +496,19 @@
     "name": "pendingWeekly",
     "inputs": [
       {
-        "name": "subscriptionId",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
     "outputs": [
       {
-        "name": "usgdOut",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "pure"
   },
   {
     "type": "function",
@@ -492,9 +595,48 @@
     "name": "setGdlPriceForBonus",
     "inputs": [
       {
-        "name": "newPriceUsdE18",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "setGdlUsgdPair",
+    "inputs": [
+      {
+        "name": "newPair",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setMaxSlippageBps",
+    "inputs": [
+      {
+        "name": "newBps",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setPancakeRouter",
+    "inputs": [
+      {
+        "name": "newRouter",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [],
@@ -523,13 +665,13 @@
     "name": "setSubscriptionGodlPrice",
     "inputs": [
       {
-        "name": "newPriceUsdE18",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -569,13 +711,13 @@
     "name": "setWeeklyClaimInterval",
     "inputs": [
       {
-        "name": "newInterval",
+        "name": "",
         "type": "uint256",
         "internalType": "uint256"
       }
     ],
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -606,6 +748,35 @@
       }
     ],
     "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "subscribe",
+    "inputs": [
+      {
+        "name": "godlAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "termType",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "minUsgdOut",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "subId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
     "stateMutability": "nonpayable"
   },
   {
@@ -715,6 +886,11 @@
         "name": "settlementAdjustmentUsgd",
         "type": "int256",
         "internalType": "int256"
+      },
+      {
+        "name": "claimedGdlValueUsdE18",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -934,6 +1110,37 @@
   },
   {
     "type": "event",
+    "name": "GdlClaimed",
+    "inputs": [
+      {
+        "name": "subscriptionId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "gdlOut",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "valueUsdE18",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "GdlPriceUpdated",
     "inputs": [
       {
@@ -941,6 +1148,19 @@
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "GdlUsgdPairUpdated",
+    "inputs": [
+      {
+        "name": "pair",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
       }
     ],
     "anonymous": false
@@ -985,12 +1205,32 @@
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
-      },
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "MaxSlippageUpdated",
+    "inputs": [
       {
-        "name": "gdlOut",
+        "name": "bps",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PancakeRouterUpdated",
+    "inputs": [
+      {
+        "name": "router",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
       }
     ],
     "anonymous": false
@@ -1310,6 +1550,16 @@
   },
   {
     "type": "error",
+    "name": "Deprecated",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "GdlBonusFullyClaimed",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "InsufficientAmount",
     "inputs": []
   },
@@ -1341,6 +1591,11 @@
   {
     "type": "error",
     "name": "NotSubscriptionOwner",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SlippageExceeded",
     "inputs": []
   },
   {
