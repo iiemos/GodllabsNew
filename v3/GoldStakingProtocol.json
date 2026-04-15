@@ -40,7 +40,33 @@
   },
   {
     "type": "function",
-    "name": "MIN_SUBSCRIBE_GODL",
+    "name": "DEFAULT_PURCHASE_SLIPPAGE_BPS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "GDL_RELEASE_STEP_SECONDS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MIN_PURCHASE_GODL",
     "inputs": [],
     "outputs": [
       {
@@ -60,19 +86,6 @@
         "name": "",
         "type": "bytes32",
         "internalType": "bytes32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "SEVEN_DAYS",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -124,10 +137,29 @@
   },
   {
     "type": "function",
+    "name": "claimGdl",
+    "inputs": [
+      {
+        "name": "purchaseId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "gdlOut",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "claimMatured",
     "inputs": [
       {
-        "name": "subscriptionId",
+        "name": "purchaseId",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -140,30 +172,6 @@
       },
       {
         "name": "usgdYieldOut",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "gdlOut",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "claimWeekly",
-    "inputs": [
-      {
-        "name": "subscriptionId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "usgdOut",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -198,13 +206,13 @@
   },
   {
     "type": "function",
-    "name": "gdlPriceUsdE18",
+    "name": "gdlUsgdPair",
     "inputs": [],
     "outputs": [
       {
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "view"
@@ -313,14 +321,19 @@
         "internalType": "address"
       },
       {
-        "name": "subscriptionGodlPriceUsdE18_",
+        "name": "pancakeRouter_",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "maxSlippageBps_",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "gdlPriceUsdE18_",
-        "type": "uint256",
-        "internalType": "uint256"
+        "name": "gdlUsgdPair_",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [],
@@ -328,13 +341,39 @@
   },
   {
     "type": "function",
-    "name": "nextSubscriptionId",
+    "name": "maxSlippageBps",
     "inputs": [],
     "outputs": [
       {
         "name": "",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "nextPurchaseId",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pancakeRouter",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "stateMutability": "view"
@@ -361,10 +400,29 @@
   },
   {
     "type": "function",
+    "name": "pendingGdl",
+    "inputs": [
+      {
+        "name": "purchaseId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "gdlOut",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "pendingMatured",
     "inputs": [
       {
-        "name": "subscriptionId",
+        "name": "purchaseId",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -377,30 +435,6 @@
       },
       {
         "name": "usgdYieldOut",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "gdlOut",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "pendingWeekly",
-    "inputs": [
-      {
-        "name": "subscriptionId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "usgdOut",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -416,6 +450,128 @@
         "name": "",
         "type": "bytes32",
         "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "purchase",
+    "inputs": [
+      {
+        "name": "godlAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "termType",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "subId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "purchase",
+    "inputs": [
+      {
+        "name": "godlAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "termType",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "minUsgdOut",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "subId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "purchases",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "owner",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "godlAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "usgdPrincipalGross",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "upfrontFeeUsgd",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "termType",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "startAt",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "endAt",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "gdlBonusCapUsdE18",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maturedClaimed",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "settlementAdjustmentUsgd",
+        "type": "int256",
+        "internalType": "int256"
+      },
+      {
+        "name": "claimedGdlValueUsdE18",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -489,12 +645,38 @@
   },
   {
     "type": "function",
-    "name": "setGdlPriceForBonus",
+    "name": "setGdlUsgdPair",
     "inputs": [
       {
-        "name": "newPriceUsdE18",
+        "name": "newPair",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setMaxSlippageBps",
+    "inputs": [
+      {
+        "name": "newBps",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setPancakeRouter",
+    "inputs": [
+      {
+        "name": "newRouter",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [],
@@ -505,7 +687,7 @@
     "name": "setSettlementAdjustmentUsgd",
     "inputs": [
       {
-        "name": "subscriptionId",
+        "name": "purchaseId",
         "type": "uint256",
         "internalType": "uint256"
       },
@@ -513,19 +695,6 @@
         "name": "adjustmentUsgd",
         "type": "int256",
         "internalType": "int256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "setSubscriptionGodlPrice",
-    "inputs": [
-      {
-        "name": "newPriceUsdE18",
-        "type": "uint256",
-        "internalType": "uint256"
       }
     ],
     "outputs": [],
@@ -566,19 +735,6 @@
   },
   {
     "type": "function",
-    "name": "setWeeklyClaimInterval",
-    "inputs": [
-      {
-        "name": "newInterval",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "setWhitelistMode",
     "inputs": [
       {
@@ -607,117 +763,6 @@
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "subscribe",
-    "inputs": [
-      {
-        "name": "godlAmount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "termType",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "subId",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "subscriptionGodlPriceUsdE18",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "subscriptions",
-    "inputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "owner",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "godlAmount",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "usgdPrincipalGross",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "upfrontFeeUsgd",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "termType",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "startAt",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "endAt",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "lastClaimAt",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "claimedUsgd",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "gdlBonusCapUsdE18",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "maturedClaimed",
-        "type": "bool",
-        "internalType": "bool"
-      },
-      {
-        "name": "settlementAdjustmentUsgd",
-        "type": "int256",
-        "internalType": "int256"
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -774,6 +819,19 @@
   },
   {
     "type": "function",
+    "name": "transferUsgdOwnership",
+    "inputs": [
+      {
+        "name": "newOwner",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "unpause",
     "inputs": [],
     "outputs": [],
@@ -819,19 +877,6 @@
         "name": "",
         "type": "address",
         "internalType": "contract IERC20"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "weeklyClaimInterval",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -934,13 +979,44 @@
   },
   {
     "type": "event",
-    "name": "GdlPriceUpdated",
+    "name": "GdlClaimed",
     "inputs": [
       {
-        "name": "priceUsdE18",
+        "name": "purchaseId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "gdlOut",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      },
+      {
+        "name": "valueUsdE18",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "GdlUsgdPairUpdated",
+    "inputs": [
+      {
+        "name": "pair",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
       }
     ],
     "anonymous": false
@@ -963,7 +1039,7 @@
     "name": "MaturedClaimed",
     "inputs": [
       {
-        "name": "subscriptionId",
+        "name": "purchaseId",
         "type": "uint256",
         "indexed": true,
         "internalType": "uint256"
@@ -985,12 +1061,32 @@
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
-      },
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "MaxSlippageUpdated",
+    "inputs": [
       {
-        "name": "gdlOut",
+        "name": "bps",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PancakeRouterUpdated",
+    "inputs": [
+      {
+        "name": "router",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
       }
     ],
     "anonymous": false
@@ -1004,6 +1100,55 @@
         "type": "address",
         "indexed": false,
         "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Purchased",
+    "inputs": [
+      {
+        "name": "purchaseId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "user",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "godlAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "usgdPrincipalGross",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "upfrontFeeUsgd",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "termType",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "endAt",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -1088,7 +1233,7 @@
     "name": "SettlementAdjustmentUpdated",
     "inputs": [
       {
-        "name": "subscriptionId",
+        "name": "purchaseId",
         "type": "uint256",
         "indexed": true,
         "internalType": "uint256"
@@ -1098,68 +1243,6 @@
         "type": "int256",
         "indexed": false,
         "internalType": "int256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "Subscribed",
-    "inputs": [
-      {
-        "name": "subscriptionId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "godlAmount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "usgdPrincipalGross",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "upfrontFeeUsgd",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "termType",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "endAt",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "SubscriptionPriceUpdated",
-    "inputs": [
-      {
-        "name": "priceUsdE18",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -1229,44 +1312,13 @@
   },
   {
     "type": "event",
-    "name": "WeeklyClaimIntervalUpdated",
+    "name": "UsgdOwnershipTransferred",
     "inputs": [
       {
-        "name": "interval",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "WeeklyClaimed",
-    "inputs": [
-      {
-        "name": "subscriptionId",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "user",
+        "name": "newOwner",
         "type": "address",
         "indexed": true,
         "internalType": "address"
-      },
-      {
-        "name": "usgdOut",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "claimAt",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -1315,11 +1367,6 @@
   },
   {
     "type": "error",
-    "name": "InsufficientUsgdLiquidity",
-    "inputs": []
-  },
-  {
-    "type": "error",
     "name": "InvalidSettlementAdjustment",
     "inputs": []
   },
@@ -1340,17 +1387,17 @@
   },
   {
     "type": "error",
-    "name": "NotSubscriptionOwner",
+    "name": "NotPurchaseOwner",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "SubscriptionNotFound",
+    "name": "PurchaseNotFound",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "WeeklyClaimNotReady",
+    "name": "SlippageExceeded",
     "inputs": []
   },
   {

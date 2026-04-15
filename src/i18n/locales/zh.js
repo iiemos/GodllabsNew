@@ -100,6 +100,14 @@ const zh = {
     description:
       "展示 USDT、USGD、GDL、GODL 与基金份额余额，并保留交易记录。收益均在各自池中独立处理，此处不提供一键领取。",
     goSwap: "前往兑换中心",
+    refresh: "刷新",
+    connectHint: "连接钱包后可查看你的链上资产与最近认购记录。",
+    connectWallet: "连接钱包",
+    connectFailed: "连接钱包失败，请稍后重试",
+    loadFailed: "读取资产数据失败",
+    switchNetwork: "请切换到 BSC（ChainId={{chainId}}）后查看链上资产",
+    loading: "正在读取链上资产数据...",
+    emptyRecords: "暂无链上认购记录",
     balances: {
       usdt: "USDT",
       usgd: "USGD",
@@ -108,7 +116,7 @@ const zh = {
       fundShares: "基金份额",
     },
     recordsTitle: "记录明细",
-    recentCount: "最近 4 条",
+    recentCount: "最近 {{count}} 条",
     table: {
       time: "时间",
       type: "类型",
@@ -125,7 +133,7 @@ const zh = {
   },
   swap: {
     title: "兑换中心",
-    subtitle: "支持 USDT↔USGD、USGD↔GODL 双兑换对，基于链上路由进行实时报价与成交。",
+    subtitle: "支持 USDT↔USGD、USGD↔GODL、USGD↔GDL 三个兑换对，基于链上路由进行实时报价与成交。",
     tabs: {
       usdtUsgd: {
         label: "USDT ↔ USGD",
@@ -134,6 +142,10 @@ const zh = {
       usgdGodl: {
         label: "USGD ↔ GODL",
         helper: "通过链上池子储备与路由返回进行实时换算。",
+      },
+      usgdGdl: {
+        label: "USGD ↔ GDL",
+        helper: "通过 GDL/USGD 池储备与路由结果进行实时换算。",
       },
     },
     settings: {
@@ -176,6 +188,17 @@ const zh = {
       insufficientBalance: "余额不足，当前可用 {{balance}} {{token}}",
       requestProcessing: "兑换请求处理中...",
       swapSuccess: "{{from}} → {{to}} 兑换成功",
+      loadQuoteFailed: "读取兑换报价失败",
+      loadTokenBalanceFailed: "读取代币余额失败",
+      loadPairAddressFailed: "读取交易对地址失败",
+      refreshFailed: "刷新价格失败",
+      connectWalletFirst: "请先连接钱包",
+      switchNetwork: "请切换到 BSC（ChainId={{chainId}}）",
+      contractCheckFailed: "合约地址校验失败",
+      missingRoute: "兑换路径配置缺失",
+      unlimitedApprove: "正在进行 {{token}} 无限授权...",
+      swapFailed: "兑换失败",
+      networkMismatch: "检测到当前钱包网络非目标 BSC 网络，请切换后再执行交易。",
     },
   },
   farms: {
@@ -382,7 +405,7 @@ const zh = {
       errors: {
         loadData: "读取挖矿数据失败",
         connectWalletFirst: "请先连接钱包",
-        switchNetwork: "请切换到 BSC Testnet（ChainId={{chainId}}）",
+        switchNetwork: "请切换到 BSC（ChainId={{chainId}}）",
         paused: "挖矿合约已暂停",
         blacklisted: "当前地址在黑名单中",
         notWhitelisted: "当前地址不在白名单中",
@@ -406,7 +429,7 @@ const zh = {
         addLiquiditySuccess: "{{pair}} 添加流动性成功",
       },
       warnings: {
-        networkMismatch: "检测到当前钱包网络非 BSC Testnet，请切换后再执行交易。",
+        networkMismatch: "检测到当前钱包网络非目标 BSC 网络，请切换后再执行交易。",
       },
       summary: {
         totalStakedLp: "总质押 LP",
@@ -493,26 +516,30 @@ const zh = {
       errors: {
         loadData: "读取基金合约数据失败",
         connectWalletFirst: "请先连接钱包",
-        switchNetwork: "请切换到 BSC Testnet（ChainId={{chainId}}）",
+        switchNetwork: "请切换到 BSC（ChainId={{chainId}}）",
         paused: "协议已暂停，暂不可写入",
         blacklisted: "当前地址在黑名单中",
         notWhitelisted: "当前地址不在白名单中",
         invalidGodlAmount: "请输入有效的 GODL 数量",
+        minPurchase: "最低认购 {{amount}} GODL",
         minSubscribe: "最低认购 {{amount}} GODL",
         actionNotAllowed: "当前状态不可执行写入",
+        purchaseFailed: "认购失败",
         subscribeFailed: "认购失败",
-        weeklyClaimFailed: "领取周收益失败",
+        gdlClaimFailed: "领取 GDL 奖励失败",
         maturedClaimFailed: "到期领取失败",
       },
       notices: {
         approvingGodl: "正在进行 GODL 授权...",
+        purchaseSuccessWithId: "认购成功，订单编号 #{{id}}",
+        purchaseSuccess: "认购成功",
         subscribeSuccessWithId: "认购成功，订阅编号 #{{id}}",
         subscribeSuccess: "认购成功",
-        weeklyClaimSuccess: "周收益领取成功 #{{id}}",
+        gdlClaimSuccess: "GDL 奖励领取成功 #{{id}}",
         maturedClaimSuccess: "到期收益领取成功 #{{id}}",
       },
       warnings: {
-        networkMismatch: "检测到当前钱包网络非 BSC Testnet，请切换后再执行交易。",
+        networkMismatch: "检测到当前钱包网络非目标 BSC 网络，请切换后再执行交易。",
       },
       header: {
         contractMode: "基金认购（真实合约）",
@@ -528,12 +555,10 @@ const zh = {
         maturityTime: "到期时间",
         claimablePrincipal: "可领本金",
         claimableYield: "可领收益",
-        claimableGdl: "可领GDL",
-        claimedWeekly: "已领周收益",
-        currentClaimable: "当前可领",
-        lastClaimAt: "上次领取",
-        nextClaimAt: "下一次可领",
-        countdown: "距下一次可领",
+        claimableGdl: "可领 GDL",
+        gdlBonusCapUsd: "GDL 奖励上限价值",
+        claimedGdlValueUsd: "已领取 GDL 价值",
+        releaseStep: "释放步进间隔",
       },
       estimates: {
         principal: "预估本金",
@@ -545,6 +570,7 @@ const zh = {
       },
       summary: {
         principal: "认购本金（USGD）",
+        pendingGdl: "当前可领 GDL",
         weeklyClaimable: "当前可领周收益（USGD）",
         maturedClaimable: "当前可领到期收益",
       },
@@ -552,26 +578,34 @@ const zh = {
         goSwapGodl: "去兑换 GODL",
         refresh: "刷新",
         processing: "处理中...",
+        approveAndPurchase: "授权并认购",
         approveAndSubscribe: "授权并认购",
         claimed: "已领取",
         claimMatured: "领取到期收益",
+        claimGdl: "领取 GDL 奖励",
         claimWeekly: "领取周收益",
       },
       states: {
-        loading: "正在读取链上认购数据...",
-        connectToView: "连接钱包后可查看你的认购记录",
+        loading: "正在读取链上认购订单数据...",
+        connectToView: "连接钱包后可查看你的认购订单",
         empty: "暂无认购记录",
       },
       labels: {
         term: "期限",
         months: "个月",
+        termMonths: "{{months}}个月",
       },
       status: {
         maturedDone: "已完成到期领取",
         ongoing: "进行中",
       },
+      filters: {
+        ongoing: "进行中",
+        completed: "已完成",
+      },
       sections: {
-        maturedClaim: "到期领取（本金 + 剩余收益 + GDL）",
+        maturedClaim: "到期领取（本金 + 剩余收益）",
+        gdlClaim: "GDL 奖励领取（3秒步进释放）",
         weeklyClaim: "周收益领取（USGD）",
       },
     },
@@ -805,19 +839,42 @@ const zh = {
       },
     ],
     plans: {
-      freeItems: [
-        "认购范围：500 - 5000 USGD",
-        "锁仓周期：3个月",
-        "年化收益：13%",
-        "收益按规则线性释放",
-        "支持链上状态查询",
-      ],
-      proItems: [
-        "锁仓周期：12个月",
-        "年化收益：30%",
-        "额外 GDL 激励系数：1.6x",
-        "适配长期资产配置策略",
-        "收益与激励分轨可查",
+      planCards: [
+        {
+          cycle: "3个月周期",
+          apy: "15%",
+          description: "短周期配置，兼顾流动性与稳健收益。",
+          items: [
+            "锁仓期限：3个月（按链上配置）",
+            "GDL 激励系数：0.8x",
+            "支持每7天领取周收益",
+            "到期可领取本金 + 剩余收益 + GDL",
+          ],
+        },
+        {
+          cycle: "6个月周期",
+          apy: "21%",
+          description: "中周期配置，收益与周期平衡更优。",
+          items: [
+            "锁仓期限：6个月（按链上配置）",
+            "GDL 激励系数：1.2x",
+            "支持每7天领取周收益",
+            "到期可领取本金 + 剩余收益 + GDL",
+          ],
+        },
+        {
+          cycle: "12个月周期",
+          apy: "31%",
+          badge: "高配推荐",
+          highlight: true,
+          description: "长期配置方案，收益率与激励系数更高。",
+          items: [
+            "锁仓期限：12个月（按链上配置）",
+            "GDL 激励系数：1.6x",
+            "支持每7天领取周收益",
+            "到期可领取本金 + 剩余收益 + GDL",
+          ],
+        },
       ],
     },
     faqItems: [
@@ -880,7 +937,7 @@ const zh = {
       partnerSubtitle: "围绕监管、资产与流通三条主线推进合作，持续扩展跨境资管网络。",
       plansBase: "黄金基金",
       plansHighlight: "认购方案",
-      plansSubtitle: "认购金额范围 500-5000 USGD，按周期配置收益与激励。",
+      plansSubtitle: "展示 3/6/12 个月锁定周期与收益配置，具体参数以链上 termConfigs 为准。",
       faqBase: "常见问题与",
       faqHighlight: "解惑",
       faqSubtitle: "围绕稳定锚定、资产映射、收益释放和挖矿规则的核心问题说明。",

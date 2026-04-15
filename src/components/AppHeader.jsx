@@ -13,7 +13,6 @@ const navItems = [
   { key: "portfolio", href: "/portfolio" },
   { key: "swap", href: "/swap" },
   { key: "docs", href: "/docs" },
-  { key: "bridge", action: "bridge" },
 ];
 
 function formatAddress(address) {

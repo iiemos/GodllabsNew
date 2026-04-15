@@ -1,8 +1,8 @@
 import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { createConnector, http } from "wagmi";
 import { injected } from "wagmi/connectors";
-import { bscTestnet } from "wagmi/chains";
-import { TBSC_RPC_URL } from "./config";
+import { bsc, bscTestnet } from "wagmi/chains";
+import { TBSC_CHAIN_ID, TBSC_RPC_URL } from "./config";
 
 const walletConnectProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || "00000000000000000000000000000000";
 
@@ -41,7 +41,7 @@ export const wagmiConfig = getDefaultConfig({
   appDescription: "GODL Labs DApp",
   appUrl: "https://godl.io",
   projectId: walletConnectProjectId,
-  chains: [bscTestnet],
+  chains: [TBSC_CHAIN_ID === 56 ? bsc : bscTestnet],
   wallets: [
     {
       groupName: "Recommended",
@@ -49,7 +49,7 @@ export const wagmiConfig = getDefaultConfig({
     },
   ],
   transports: {
-    [bscTestnet.id]: http(TBSC_RPC_URL),
+    [TBSC_CHAIN_ID]: http(TBSC_RPC_URL),
   },
   ssr: false,
 });

@@ -1,6 +1,9 @@
 import { Contract, isAddress } from "ethers";
-import goldStakingAbi from "../abis/GoldStakingProtocol.json";
-import lpStakingAbi from "../abis/LpStakingProtocol.json";
+import gdlTokenAbi from "../abi/GDLToken.json";
+import godlTokenAbi from "../abi/GODLToken.json";
+import goldStakingAbi from "../abi/GoldStakingProtocol.json";
+import lpStakingAbi from "../abi/LpStakingProtocol.json";
+import usgdTokenAbi from "../abi/USGDToken.json";
 import { ADDRESSES } from "./config";
 import { erc20Abi } from "./erc20Abi";
 
@@ -152,9 +155,9 @@ export function createCoreContracts(runner) {
   return {
     gold: new Contract(ADDRESSES.goldProxy, goldStakingAbi, runner),
     lp: new Contract(ADDRESSES.lpProxy, lpStakingAbi, runner),
-    godl: new Contract(ADDRESSES.godl, erc20Abi, runner),
-    usgd: new Contract(ADDRESSES.usgd, erc20Abi, runner),
-    gdl: new Contract(ADDRESSES.gdl, erc20Abi, runner),
+    godl: new Contract(ADDRESSES.godl, godlTokenAbi, runner),
+    usgd: new Contract(ADDRESSES.usgd, usgdTokenAbi, runner),
+    gdl: new Contract(ADDRESSES.gdl, gdlTokenAbi, runner),
     usdt: new Contract(ADDRESSES.usdt, erc20Abi, runner),
     router: new Contract(ADDRESSES.routerV2, routerV2Abi, runner),
   };

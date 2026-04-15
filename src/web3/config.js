@@ -1,24 +1,25 @@
 const env = import.meta.env;
 
 const fallbackAddresses = {
-  mockUsdt: "0xF5e8F3A4C0a41394bd4F1699B22bCae5E62b6E49",
-  usgd: "0x47065d4979cc5Cb8E0B7BE5E4ec8F88969C83746",
-  godl: "0xd6ad237E1c2430d1C88a6f43B1f6655425eAa483",
-  gdl: "0xebe71b55F31798Ac34E96e1e82D6b726Ad29e026",
-  goldProxy: "0x937d0f1413CE78beD34C8Cf2f7c0DEFF729a4462",
-  lpProxy: "0x73BAc544A0CaBf141cc763b987AA43666Ca73754",
-  lp0: "0x98E744b538d53d8d5eA5e0B5FaeCAD01d2C6b4a3",
-  lp1: "0xeA28c0500F9127941071b96Ec4f22dB77d7FAcB3",
-  lp2: "0x08eF334B67d6b1A7a9E161830d64bB8a9c264652",
-  routerV2: "0xD99D1c33F9fC3444f8101754aBC46c52416550D1",
+  mockUsdt: "0x55d398326f99059fF775485246999027B3197955",
+  usgd: "0x4828a032fE584Fe27ce0b6AC7065f60ebbFd45F0",
+  godl: "0x01875a9668845DEB2B26010570521073d3f7d4aE",
+  gdl: "0xf0474C0f36035E5Fdc72eAd145F8de67ffD6A3Ea",
+  goldProxy: "0xd227c98015A8842afF0DA1587Be859B9632DB1F8",
+  lpProxy: "0x02E13C7e739914AE128ee0A68c62FA11FF7AF4f0",
+  lp0: "0x1C04325D9C975427C83578a4eb26AFdEE678d4D8",
+  lp1: "0xBB04AD248F3c178c806c40540FEc6ABaE8978537",
+  lp2: "0x891c0E8f18f80B951F38D06e93De81e710B9D721",
+  routerV2: "0x10ED43C718714eb63d5aA57B78B54704E256024E",
 };
 
 function fromEnv(key, fallbackValue) {
   return env[`VITE_${key}`] || env[key] || fallbackValue;
 }
 
-export const TBSC_CHAIN_ID = Number(env.VITE_CHAIN_ID || 97);
-export const TBSC_RPC_URL = env.VITE_RPC_URL || "https://bsc-testnet-rpc.publicnode.com";
+export const TBSC_CHAIN_ID = Number(env.VITE_CHAIN_ID || 56);
+export const TBSC_RPC_URL = env.VITE_RPC_URL || "https://bsc-rpc.publicnode.com";
+export const BSC_SCAN_BASE_URL = TBSC_CHAIN_ID === 56 ? "https://bscscan.com" : "https://testnet.bscscan.com";
 
 export const ADDRESSES = Object.freeze({
   goldProxy: fromEnv("GOLD_PROXY_ADDRESS", fallbackAddresses.goldProxy),
@@ -88,5 +89,14 @@ export const SWAP_ROUTES = Object.freeze([
     pairAddressFallback: ADDRESSES.lp1,
     fromKey: "usgd",
     toKey: "godl",
+  },
+  {
+    id: "usgd-gdl",
+    labelKey: "swap.tabs.usgdGdl.label",
+    helperKey: "swap.tabs.usgdGdl.helper",
+    poolPid: 2,
+    pairAddressFallback: ADDRESSES.lp2,
+    fromKey: "usgd",
+    toKey: "gdl",
   },
 ]);

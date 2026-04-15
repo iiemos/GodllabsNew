@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -52,29 +52,9 @@ export default function HomePage() {
   const institutionalPillars = t("home.institutionalPillars", { returnObjects: true });
   const tokenRows = t("home.tokenRows", { returnObjects: true });
   const helpCards = t("home.helpCards", { returnObjects: true });
-  const securityOpsCards = t("home.securityOpsCards", { returnObjects: true });
-  const testimonialCards = t("home.testimonialCards", { returnObjects: true });
   const comparisonRows = t("home.comparisonRows", { returnObjects: true });
   const projectCards = t("home.projectCards", { returnObjects: true });
-  const freePlanItems = t("home.plans.freeItems", { returnObjects: true });
-  const proPlanItems = t("home.plans.proItems", { returnObjects: true });
-  const faqItems = t("home.faqItems", { returnObjects: true });
-  const faqItemsWithAudit = [
-    ...faqItems,
-    ...testimonialCards.map((card, index) => ({
-      id: `faq-audit-${index}`,
-      question: `${card.name} · ${card.company}`,
-      answer: card.quote,
-    })),
-  ];
-
-  const [openFaqId, setOpenFaqId] = useState("faq-peg");
-
-  useEffect(() => {
-    if (!faqItemsWithAudit.some((item) => item.id === openFaqId)) {
-      setOpenFaqId(faqItemsWithAudit[0]?.id ?? null);
-    }
-  }, [faqItemsWithAudit, openFaqId]);
+  const planCards = t("home.plans.planCards", { returnObjects: true });
 
   useEffect(() => {
     const canvas = heroCanvasRef.current;
@@ -308,6 +288,70 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section id="pricing" className="px-4 pb-32 md:pb-40">
+        <SectionHeading
+          title={
+            <>
+              {t("home.sectionHeadings.plansBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.plansHighlight")}</span>
+            </>
+          }
+          subtitle={t("home.sectionHeadings.plansSubtitle")}
+        />
+
+        <div className="mx-auto mt-12 grid max-w-6xl gap-5 lg:grid-cols-3">
+          {planCards.map((plan) => (
+            <article
+              key={plan.cycle}
+              className={`glass-card relative min-h-[520px] overflow-hidden rounded-[28px] p-6 md:p-7 ${
+                plan.highlight ? "border border-[#fcd535]/45" : ""
+              }`}
+            >
+              <div
+                className={`pointer-events-none absolute inset-0 ${
+                  plan.highlight
+                    ? "bg-[radial-gradient(circle_at_76%_88%,rgba(252,213,53,0.24),rgba(252,213,53,0)_50%)]"
+                    : "bg-[radial-gradient(circle_at_24%_86%,rgba(252,213,53,0.18),rgba(252,213,53,0)_50%)]"
+                }`}
+              />
+              <div className="relative">
+                <div className="flex items-center justify-between gap-3">
+                  <p className={`text-[17px] font-medium ${plan.highlight ? "text-slate-100" : "text-slate-300"}`}>{plan.cycle}</p>
+                  {plan.badge ? (
+                    <span className="inline-flex rounded-full border border-[#fcd535]/40 bg-[#fcd535]/12 px-2.5 py-1 text-[11px] font-semibold text-[#f8de7a]">
+                      {plan.badge}
+                    </span>
+                  ) : null}
+                </div>
+
+                <p className="mt-3 text-[52px] font-semibold leading-none text-[#fcd535]">
+                  {plan.apy}
+                  <span className="ml-1 text-[30px] text-slate-200">APY</span>
+                </p>
+                <p className="mt-3 text-[15px] text-slate-400">{plan.description}</p>
+
+                <Link
+                  to="/fund"
+                  className={`mt-8 inline-flex h-12 w-full items-center justify-center text-sm font-semibold ${
+                    plan.highlight ? "morgan-btn-primary" : "morgan-btn-secondary"
+                  }`}
+                >
+                  {t("home.blocks.planButton")}
+                </Link>
+
+                <ul className={`mt-11 space-y-3.5 text-[15px] leading-6 ${plan.highlight ? "text-slate-200" : "text-slate-300"}`}>
+                  {plan.items.map((item) => (
+                    <li key={item} className="flex items-start gap-2">
+                      <span className={`mt-[2px] h-1.5 w-1.5 rounded-full ${plan.highlight ? "bg-slate-200/90" : "bg-slate-300/80"}`} />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <section className="px-4 pb-32 md:pb-40" id="overview">
         <SectionHeading
           title={
@@ -503,40 +547,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="px-4 pb-32 md:pb-40">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid gap-6 lg:grid-cols-[1.25fr_0.9fr] lg:items-end">
-            <h2 className="text-4xl font-semibold leading-tight text-white md:text-6xl">
-              {t("home.blocks.dataPlatformTitleBase")} <span className="font-serif italic text-[#fcd535]">{t("home.blocks.dataPlatformTitleHighlight")}</span> {t("home.blocks.dataPlatformTitleSuffix")}
-            </h2>
-            <p className="max-w-xl text-sm leading-7 text-slate-400 md:text-base">
-              {t("home.blocks.dataPlatformDescription")}
-            </p>
-          </div>
-
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {securityOpsCards.map((card) => (
-              <article key={card.title} className="relative overflow-hidden p-6 md:p-7" style={glowCardStyle}>
-                <CardBaseBackground />
-
-                <div className="relative z-10 flex min-h-[340px] flex-col">
-                  <div className="flex flex-1 items-center justify-center">
-                    <img src={card.image} alt={card.title} className="h-[200px] w-full object-contain md:h-[220px]" />
-                  </div>
-
-                  <div className="mt-5 flex items-end justify-between gap-4">
-                    <h4 className="max-w-[220px] text-[38px] font-medium leading-tight text-white md:text-[43px]">{card.title}</h4>
-                    <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-white/25 bg-black/20 text-[#f0cd54]">
-                      <Icon icon={card.icon} width="20" />
-                    </span>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <section id="why-aligno" className="px-4 pb-32 md:pb-40">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-4xl font-semibold text-white md:text-5xl">
@@ -628,147 +638,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="pricing" className="px-4 pb-32 md:pb-40">
-        <SectionHeading
-          title={
-            <>
-              {t("home.sectionHeadings.plansBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.plansHighlight")}</span>
-            </>
-          }
-          subtitle={t("home.sectionHeadings.plansSubtitle")}
-        />
-
-        <div className="mx-auto mt-12 grid max-w-[940px] gap-5 lg:grid-cols-2">
-          <article className="glass-card relative min-h-[520px] overflow-hidden rounded-[28px] p-6 md:p-7">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_86%,rgba(252,213,53,0.2),rgba(252,213,53,0)_50%)]" />
-            <div className="relative">
-              <p className="text-[17px] font-medium text-slate-300">{t("home.blocks.planFreeCycle")}</p>
-              <p className="mt-3 text-[52px] font-semibold leading-none text-[#fcd535]">
-                13%<span className="ml-1 text-[30px] text-slate-200">APY</span>
-              </p>
-              <p className="mt-3 text-[15px] text-slate-400">{t("home.blocks.planFreeDescription")}</p>
-
-              <button className="morgan-btn-secondary mt-8 inline-flex h-12 w-full items-center justify-center text-sm font-semibold">
-                {t("home.blocks.planButton")}
-              </button>
-              <p className="mt-2 text-center text-xs text-slate-500">{t("home.blocks.frontEndDemo")}</p>
-
-              <ul className="mt-11 space-y-3.5 text-[15px] leading-6 text-slate-300">
-                {freePlanItems.map((item) => (
-                  <li key={item} className="flex items-start gap-2">
-                    <span className="mt-[2px] h-1.5 w-1.5 rounded-full bg-slate-300/80" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </article>
-
-          <article className="glass-card relative min-h-[520px] overflow-hidden rounded-[28px] border border-[#fcd535]/45 p-6 md:p-7">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_76%_88%,rgba(252,213,53,0.24),rgba(252,213,53,0)_50%)]" />
-            <div className="relative">
-              <div className="flex items-center justify-between">
-                <p className="text-[17px] font-medium text-slate-100">{t("home.blocks.planProCycle")}</p>
-                <span className="inline-flex items-center gap-2 text-xs text-slate-400">
-                  {t("home.blocks.planProIncludeGdl")}
-                  <span className="relative h-[17px] w-[30px] rounded-full border border-white/20 bg-white/10">
-                    <span className="absolute right-[2px] top-[2px] h-3 w-3 rounded-full bg-[#fcd535] shadow-[0_0_0_2px_rgba(255,255,255,0.08)]" />
-                  </span>
-                </span>
-              </div>
-
-              <p className="mt-3 text-[52px] font-semibold leading-none text-[#fcd535]">
-                30%<span className="ml-1 text-[30px] text-slate-200">APY</span>
-              </p>
-              <p className="mt-3 text-[15px] text-slate-400">{t("home.blocks.planProDescription")}</p>
-
-              <button className="morgan-btn-primary mt-8 inline-flex h-12 w-full items-center justify-center text-sm font-semibold">
-                {t("home.blocks.planButton")}
-              </button>
-              <p className="mt-2 text-center text-xs text-slate-500">{t("home.blocks.frontEndDemo")}</p>
-
-              <ul className="mt-11 space-y-3.5 text-[15px] leading-6 text-slate-200">
-                <li className="flex items-start gap-2">
-                  <span className="mt-[2px] h-1.5 w-1.5 rounded-full bg-slate-200/90" />
-                  <span>{t("home.blocks.planMidIntro")}</span>
-                </li>
-                {proPlanItems.map((item) => (
-                  <li key={item} className="flex items-start gap-2">
-                    <span className="mt-[2px] h-1.5 w-1.5 rounded-full bg-slate-200/90" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section id="faq" className="px-4 pb-32 md:pb-40">
-        <SectionHeading
-          title={
-            <>
-              {t("home.sectionHeadings.faqBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.faqHighlight")}</span>
-            </>
-          }
-          subtitle={t("home.sectionHeadings.faqSubtitle")}
-        />
-
-        <div className="mx-auto mt-12 max-w-4xl space-y-4">
-          {faqItemsWithAudit.map((item) => {
-            const isOpen = openFaqId === item.id;
-            return (
-              <article
-                key={item.id}
-                onClick={() => setOpenFaqId((prev) => (prev === item.id ? null : item.id))}
-                className="cursor-pointer overflow-hidden rounded-2xl border border-[rgba(252,213,53,0.28)] bg-transparent px-6 py-4 transition hover:border-[rgba(252,213,53,0.52)]"
-              >
-                <div className="flex w-full items-center justify-between gap-4 py-1 text-left">
-                  <span className="text-sm text-slate-200">{item.question}</span>
-                  <Icon
-                    icon="mdi:plus"
-                    width="20"
-                    className={`shrink-0 text-slate-100 transition ${isOpen ? "rotate-45 text-[#fcd535]" : "rotate-0"}`}
-                  />
-                </div>
-
-                <div className={`grid transition-all duration-300 ${isOpen ? "grid-rows-[1fr] pt-2 opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
-                  <div className="overflow-hidden">
-                    <p className="text-sm leading-6 text-slate-400">{item.answer}</p>
-                  </div>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="px-4 pb-32 md:pb-40">
-        <div className="mx-auto max-w-4xl">
-          <div className="glass-card overflow-hidden rounded-3xl px-6 py-12 text-center md:px-10 md:py-14">
-            <h3 className="text-4xl font-semibold leading-tight text-white md:text-5xl">
-              {t("home.sectionHeadings.finalBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.finalHighlight")}</span>
-            </h3>
-            <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-slate-400 md:text-base">
-              {t("home.blocks.finalDescription")}
-            </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-2">
-              <Link
-                to="/fund"
-                className="morgan-btn-primary inline-flex px-6 py-2.5 text-sm font-semibold"
-              >
-                {t("home.blocks.finalButtonPrimary")}
-              </Link>
-              <Link
-                to="/portfolio"
-                className="morgan-btn-secondary inline-flex px-6 py-2.5 text-sm font-medium"
-              >
-                {t("home.blocks.finalButtonSecondary")}
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
     </>
   );
 }

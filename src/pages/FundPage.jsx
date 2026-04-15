@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -7,30 +7,23 @@ import { useWallet } from "../contexts/WalletContext";
 import { ADDRESSES, GOLD_TERM_OPTIONS, TBSC_CHAIN_ID } from "../web3/config";
 import { createCoreContracts, validateCoreContractAddresses } from "../web3/contracts";
 import { getReadProvider, isExpectedChain } from "../web3/client";
-import {
-  formatBps,
-  formatCountdown,
-  formatTimestamp,
-  formatTokenAmount,
-  parseTokenAmount,
-  toErrorMessage,
-} from "../web3/format";
+import { formatBps, formatTimestamp, formatTokenAmount, parseTokenAmount, toErrorMessage } from "../web3/format";
 
 const ONE_E18 = 10n ** 18n;
-const ZERO_PENDING_MATURED = { principal: 0n, yieldAmount: 0n, gdl: 0n };
+const ZERO_PENDING_MATURED = { principal: 0n, yieldAmount: 0n };
 
-function estimateSubscription(godlAmount, price, termMonths, apyBps, gdlBonusBps, gdlPrice) {
-  if (godlAmount <= 0n || price <= 0n) {
+function estimatePurchase(godlAmount, spotGodlPrice, termDuration, termMonths, apyBps, gdlBonusBps, spotGdlPrice) {
+  if (godlAmount <= 0n || spotGodlPrice <= 0n) {
     return { principal: 0n, upfrontFee: 0n, yieldTotal: 0n, principalOut: 0n, gdlBonusUsd: 0n, gdlOut: 0n };
   }
 
-  const principal = (godlAmount * price) / ONE_E18;
+  const principal = (godlAmount * spotGodlPrice) / ONE_E18;
+  const durationDays = termDuration > 0n ? termDuration / 86400n : termMonths === 3 ? 90n : termMonths === 6 ? 180n : 365n;
   const upfrontFee = (principal * 200n * BigInt(termMonths)) / (12n * 10000n);
-  const durationDays = termMonths === 3 ? 90n : termMonths === 6 ? 180n : 365n;
   const yieldTotal = (principal * BigInt(apyBps) * durationDays) / (365n * 10000n);
   const principalOut = principal - upfrontFee;
   const gdlBonusUsd = (yieldTotal * BigInt(gdlBonusBps)) / 10000n;
-  const gdlOut = gdlPrice > 0n ? (gdlBonusUsd * ONE_E18) / gdlPrice : 0n;
+  const gdlOut = spotGdlPrice > 0n ? (gdlBonusUsd * ONE_E18) / spotGdlPrice : 0n;
 
   return { principal, upfrontFee, yieldTotal, principalOut, gdlBonusUsd, gdlOut };
 }
@@ -45,25 +38,15 @@ function normalizeTermConfig(termConfig) {
 }
 
 function normalizePendingMaturedResult(pendingMatured) {
-  const resultLength = typeof pendingMatured?.length === "number" ? pendingMatured.length : 0;
-
-  if (resultLength === 2) {
-    return {
-      principal: pendingMatured?.[0] ?? pendingMatured?.usgdOut ?? pendingMatured?.usgdPrincipalOut ?? 0n,
-      yieldAmount: 0n,
-      gdl: pendingMatured?.[1] ?? pendingMatured?.gdlOut ?? 0n,
-    };
-  }
-
-  const usgdOut = pendingMatured?.[0] ?? pendingMatured?.usgdOut ?? pendingMatured?.usgdPrincipalOut ?? 0n;
-  const yieldAmount = pendingMatured?.[1] ?? pendingMatured?.usgdYieldOut ?? 0n;
-  const gdl = pendingMatured?.[2] ?? pendingMatured?.gdlOut ?? 0n;
-
   return {
-    principal: usgdOut,
-    yieldAmount,
-    gdl,
+    principal: pendingMatured?.[0] ?? pendingMatured?.usgdPrincipalOut ?? pendingMatured?.usgdOut ?? 0n,
+    yieldAmount: pendingMatured?.[1] ?? pendingMatured?.usgdYieldOut ?? 0n,
   };
+}
+
+function normalizePendingGdlResult(pendingGdl) {
+  if (typeof pendingGdl === "bigint") return pendingGdl;
+  return pendingGdl?.[0] ?? pendingGdl?.gdlOut ?? 0n;
 }
 
 export default function FundPage() {
@@ -74,12 +57,13 @@ export default function FundPage() {
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [claimingWeeklyId, setClaimingWeeklyId] = useState("");
   const [claimingMaturedId, setClaimingMaturedId] = useState("");
+  const [claimingGdlId, setClaimingGdlId] = useState("");
   const [amountInput, setAmountInput] = useState("");
   const [selectedTermType, setSelectedTermType] = useState(0);
+  const [recordFilter, setRecordFilter] = useState("ongoing");
   const [refreshNonce, setRefreshNonce] = useState(0);
-  const [countdownTick, setCountdownTick] = useState(0);
+  const purchaseIdsRef = useRef([]);
 
   const [fundState, setFundState] = useState({
     paused: false,
@@ -87,17 +71,21 @@ export default function FundPage() {
     whitelisted: true,
     blacklisted: false,
     godlBalance: 0n,
-    weeklyClaimInterval: 0n,
-    minSubscribe: parseTokenAmount("0.1"),
-    price: 0n,
-    gdlPrice: 0n,
+    minPurchase: parseTokenAmount("0.1"),
+    releaseStepSeconds: 0n,
+    spotGodlPrice: 0n,
+    spotGdlPrice: 0n,
     terms: {},
-    subscriptions: [],
+    purchases: [],
   });
 
-  useEffect(() => {
-    const timer = window.setInterval(() => setCountdownTick((prev) => prev + 1), 1000);
-    return () => window.clearInterval(timer);
+  const loadSpotPrice = useCallback(async (router, tokenIn, tokenOut) => {
+    try {
+      const amounts = await router.getAmountsOut(ONE_E18, [tokenIn, tokenOut]);
+      return amounts?.[amounts.length - 1] ?? 0n;
+    } catch {
+      return 0n;
+    }
   }, []);
 
   const reloadFundData = useCallback(async () => {
@@ -106,25 +94,17 @@ export default function FundPage() {
     const contracts = createCoreContracts(readProvider);
 
     try {
-      await validateCoreContractAddresses(readProvider);
-      const [
-        paused,
-        whitelistMode,
-        price,
-        gdlPrice,
-        weeklyClaimInterval,
-        nextSubscriptionId,
-        minSubscribe,
-        rawTerms,
-      ] = await Promise.all([
+      await validateCoreContractAddresses(readProvider, { includeRouter: true });
+
+      const [paused, whitelistMode, minPurchase, releaseStepSeconds, nextPurchaseId, rawTerms, spotGodlPrice, spotGdlPrice] = await Promise.all([
         contracts.gold.paused(),
         contracts.gold.whitelistMode(),
-        contracts.gold.subscriptionGodlPriceUsdE18(),
-        contracts.gold.gdlPriceUsdE18(),
-        contracts.gold.weeklyClaimInterval(),
-        contracts.gold.nextSubscriptionId(),
-        contracts.gold.MIN_SUBSCRIBE_GODL().catch(() => parseTokenAmount("0.1")),
+        contracts.gold.MIN_PURCHASE_GODL().catch(() => parseTokenAmount("0.1")),
+        contracts.gold.GDL_RELEASE_STEP_SECONDS().catch(() => 0n),
+        contracts.gold.nextPurchaseId(),
         Promise.all(GOLD_TERM_OPTIONS.map(async ({ termType }) => [termType, await contracts.gold.termConfigs(termType)])),
+        loadSpotPrice(contracts.router, ADDRESSES.godl, ADDRESSES.usgd),
+        loadSpotPrice(contracts.router, ADDRESSES.gdl, ADDRESSES.usgd),
       ]);
 
       const terms = Object.fromEntries(rawTerms.map(([termType, termConfig]) => [termType, normalizeTermConfig(termConfig)]));
@@ -132,7 +112,7 @@ export default function FundPage() {
       let whitelisted = true;
       let blacklisted = false;
       let godlBalance = 0n;
-      let subscriptions = [];
+      let purchases = [];
 
       if (address) {
         [whitelisted, blacklisted, godlBalance] = await Promise.all([
@@ -142,40 +122,40 @@ export default function FundPage() {
         ]);
 
         const ids = [];
-        for (let id = 1n; id < nextSubscriptionId; id += 1n) {
+        for (let id = 1n; id < nextPurchaseId; id += 1n) {
           ids.push(id);
         }
 
         if (ids.length > 0) {
-          const subscriptionRecords = await Promise.all(
+          const purchaseRecords = await Promise.all(
             ids.map(async (id) => ({
               id,
-              detail: await contracts.gold.subscriptions(id),
+              detail: await contracts.gold.purchases(id),
             })),
           );
 
           const ownerLower = address.toLowerCase();
-          const ownedSubscriptions = subscriptionRecords.filter(
+          const ownedPurchases = purchaseRecords.filter(
             (item) => item.detail.owner && String(item.detail.owner).toLowerCase() === ownerLower,
           );
 
           const pendingRecords = await Promise.all(
-            ownedSubscriptions.map(async ({ id }) => {
-              const [pendingWeekly, pendingMatured] = await Promise.all([
-                contracts.gold.pendingWeekly(id),
+            ownedPurchases.map(async ({ id }) => {
+              const [pendingMatured, pendingGdl] = await Promise.all([
                 contracts.gold.pendingMatured(id),
+                contracts.gold.pendingGdl(id),
               ]);
               return {
                 id,
-                pendingWeekly,
                 pendingMatured: normalizePendingMaturedResult(pendingMatured),
+                pendingGdl: normalizePendingGdlResult(pendingGdl),
               };
             }),
           );
 
           const pendingMap = new Map(pendingRecords.map((item) => [item.id.toString(), item]));
 
-          subscriptions = ownedSubscriptions
+          purchases = ownedPurchases
             .map(({ id, detail }) => {
               const pending = pendingMap.get(id.toString());
               return {
@@ -187,13 +167,12 @@ export default function FundPage() {
                 termType: Number(detail.termType),
                 startAt: detail.startAt,
                 endAt: detail.endAt,
-                lastClaimAt: detail.lastClaimAt,
-                claimedUsgd: detail.claimedUsgd,
                 gdlBonusCapUsdE18: detail.gdlBonusCapUsdE18,
                 maturedClaimed: detail.maturedClaimed,
                 settlementAdjustmentUsgd: detail.settlementAdjustmentUsgd,
-                pendingWeekly: pending?.pendingWeekly ?? 0n,
+                claimedGdlValueUsdE18: detail.claimedGdlValueUsdE18,
                 pendingMatured: pending?.pendingMatured ?? ZERO_PENDING_MATURED,
+                pendingGdl: pending?.pendingGdl ?? 0n,
               };
             })
             .sort((a, b) => Number(b.id - a.id));
@@ -206,25 +185,83 @@ export default function FundPage() {
         whitelisted,
         blacklisted,
         godlBalance,
-        weeklyClaimInterval,
-        minSubscribe,
-        price,
-        gdlPrice,
+        minPurchase,
+        releaseStepSeconds,
+        spotGodlPrice,
+        spotGdlPrice,
         terms,
-        subscriptions,
+        purchases,
       });
     } catch (error) {
       notify({ type: "error", message: toErrorMessage(error, pageT("errors.loadData")) });
     } finally {
       setLoading(false);
     }
-  }, [address, notify]);
+  }, [address, loadSpotPrice, notify, pageT]);
 
   useEffect(() => {
     reloadFundData();
   }, [reloadFundData, refreshNonce]);
 
+  useEffect(() => {
+    purchaseIdsRef.current = fundState.purchases.map((purchase) => purchase.id);
+  }, [fundState.purchases]);
+
+  const refreshPendingRewards = useCallback(async () => {
+    if (!address) return;
+
+    const ids = purchaseIdsRef.current;
+    if (!ids.length) return;
+
+    const readProvider = getReadProvider();
+    const contracts = createCoreContracts(readProvider);
+
+    const entries = await Promise.all(
+      ids.map(async (id) => {
+        try {
+          const [pendingMatured, pendingGdl] = await Promise.all([contracts.gold.pendingMatured(id), contracts.gold.pendingGdl(id)]);
+          return [
+            id.toString(),
+            {
+              pendingMatured: normalizePendingMaturedResult(pendingMatured),
+              pendingGdl: normalizePendingGdlResult(pendingGdl),
+            },
+          ];
+        } catch {
+          return [id.toString(), null];
+        }
+      }),
+    );
+
+    const pendingMap = new Map(entries.filter(([, value]) => value !== null));
+    if (pendingMap.size === 0) return;
+
+    setFundState((prev) => ({
+      ...prev,
+      purchases: prev.purchases.map((purchase) => {
+        const next = pendingMap.get(purchase.id.toString());
+        if (!next) return purchase;
+        return {
+          ...purchase,
+          pendingMatured: next.pendingMatured,
+          pendingGdl: next.pendingGdl,
+        };
+      }),
+    }));
+  }, [address]);
+
+  useEffect(() => {
+    if (!address || fundState.purchases.length === 0) return undefined;
+
+    const timer = window.setInterval(() => {
+      refreshPendingRewards().catch(() => {});
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [address, fundState.purchases.length, refreshPendingRewards]);
+
   const activeTerm = fundState.terms[selectedTermType] ?? {
+    duration: 0n,
     months: 3,
     apyBps: 0,
     gdlBonusBps: 0,
@@ -240,29 +277,44 @@ export default function FundPage() {
 
   const estimate = useMemo(
     () =>
-      estimateSubscription(
+      estimatePurchase(
         parsedAmount,
-        fundState.price,
+        fundState.spotGodlPrice,
+        activeTerm.duration ?? 0n,
         activeTerm.months ?? 3,
         activeTerm.apyBps ?? 0,
         activeTerm.gdlBonusBps ?? 0,
-        fundState.gdlPrice,
+        fundState.spotGdlPrice,
       ),
-    [activeTerm.apyBps, activeTerm.gdlBonusBps, activeTerm.months, fundState.gdlPrice, fundState.price, parsedAmount],
+    [
+      activeTerm.apyBps,
+      activeTerm.duration,
+      activeTerm.gdlBonusBps,
+      activeTerm.months,
+      fundState.spotGdlPrice,
+      fundState.spotGodlPrice,
+      parsedAmount,
+    ],
   );
 
   const totals = useMemo(() => {
-    return fundState.subscriptions.reduce(
-      (acc, subscription) => {
-        acc.principal += subscription.usgdPrincipalGross;
-        acc.weekly += subscription.pendingWeekly;
-        acc.maturedUsgd += subscription.pendingMatured.principal + subscription.pendingMatured.yieldAmount;
-        acc.maturedGdl += subscription.pendingMatured.gdl;
+    return fundState.purchases.reduce(
+      (acc, purchase) => {
+        acc.principal += purchase.usgdPrincipalGross;
+        acc.maturedUsgd += purchase.pendingMatured.principal + purchase.pendingMatured.yieldAmount;
+        acc.pendingGdl += purchase.pendingGdl;
         return acc;
       },
-      { principal: 0n, weekly: 0n, maturedUsgd: 0n, maturedGdl: 0n },
+      { principal: 0n, maturedUsgd: 0n, pendingGdl: 0n },
     );
-  }, [fundState.subscriptions]);
+  }, [fundState.purchases]);
+
+  const filteredPurchases = useMemo(() => {
+    if (recordFilter === "completed") {
+      return fundState.purchases.filter((purchase) => purchase.maturedClaimed);
+    }
+    return fundState.purchases.filter((purchase) => !purchase.maturedClaimed);
+  }, [fundState.purchases, recordFilter]);
 
   const canWrite = useMemo(() => {
     if (!address) return false;
@@ -304,16 +356,16 @@ export default function FundPage() {
     }
 
     try {
-      await validateCoreContractAddresses(getReadProvider());
+      await validateCoreContractAddresses(getReadProvider(), { includeRouter: true });
     } catch (error) {
       notify({ type: "error", message: toErrorMessage(error, pageT("errors.actionNotAllowed")) });
       return null;
     }
 
     return { signer, currentAddress };
-  }, [address, connect, getSigner, notify]);
+  }, [address, connect, getSigner, notify, pageT]);
 
-  const handleSubscribe = async () => {
+  const handlePurchase = async () => {
     if (submitting) return;
 
     let amount;
@@ -329,10 +381,10 @@ export default function FundPage() {
       return;
     }
 
-    if (amount < fundState.minSubscribe) {
+    if (amount < fundState.minPurchase) {
       notify({
         type: "error",
-        message: pageT("errors.minSubscribe", { amount: formatTokenAmount(fundState.minSubscribe) }),
+        message: pageT("errors.minPurchase", { amount: formatTokenAmount(fundState.minPurchase) }),
       });
       return;
     }
@@ -356,51 +408,37 @@ export default function FundPage() {
         await approveTx.wait();
       }
 
-      const tx = await contracts.gold.subscribe(amount, selectedTermType);
+      let minUsgdOut = 0n;
+      try {
+        const quote = await contracts.router.getAmountsOut(amount, [ADDRESSES.godl, ADDRESSES.usgd]);
+        const expectedOut = quote?.[quote.length - 1] ?? 0n;
+        minUsgdOut = expectedOut > 0n ? (expectedOut * 9500n) / 10000n : 0n;
+      } catch {}
+
+      const tx =
+        minUsgdOut > 0n
+          ? await contracts.gold.purchase(amount, selectedTermType, minUsgdOut)
+          : await contracts.gold.purchase(amount, selectedTermType);
+
       const receipt = await tx.wait();
-      const subscribedLog = receipt.logs.find((log) => log.fragment?.name === "Subscribed");
-      const subId = subscribedLog?.args?.subscriptionId;
+      const purchasedLog = receipt.logs.find((log) => log.fragment?.name === "Purchased");
+      const purchaseId = purchasedLog?.args?.purchaseId;
 
       notify({
         type: "success",
-        message: subId ? pageT("notices.subscribeSuccessWithId", { id: subId.toString() }) : pageT("notices.subscribeSuccess"),
+        message: purchaseId ? pageT("notices.purchaseSuccessWithId", { id: purchaseId.toString() }) : pageT("notices.purchaseSuccess"),
       });
 
       setAmountInput("");
       setRefreshNonce((prev) => prev + 1);
     } catch (error) {
-      notify({ type: "error", message: toErrorMessage(error, pageT("errors.subscribeFailed")) });
+      notify({ type: "error", message: toErrorMessage(error, pageT("errors.purchaseFailed")) });
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleClaimWeekly = async (subscriptionId) => {
-    if (claimingWeeklyId) return;
-
-    const signerContext = await ensureSigner();
-    if (!signerContext) return;
-
-    if (!canWrite) {
-      notify({ type: "error", message: writeBlockReason || pageT("errors.actionNotAllowed") });
-      return;
-    }
-
-    setClaimingWeeklyId(subscriptionId.toString());
-    try {
-      const contracts = createCoreContracts(signerContext.signer);
-      const tx = await contracts.gold.claimWeekly(subscriptionId);
-      await tx.wait();
-      notify({ type: "success", message: pageT("notices.weeklyClaimSuccess", { id: subscriptionId.toString() }) });
-      setRefreshNonce((prev) => prev + 1);
-    } catch (error) {
-      notify({ type: "error", message: toErrorMessage(error, pageT("errors.weeklyClaimFailed")) });
-    } finally {
-      setClaimingWeeklyId("");
-    }
-  };
-
-  const handleClaimMatured = async (subscriptionId) => {
+  const handleClaimMatured = async (purchaseId) => {
     if (claimingMaturedId) return;
 
     const signerContext = await ensureSigner();
@@ -411,17 +449,42 @@ export default function FundPage() {
       return;
     }
 
-    setClaimingMaturedId(subscriptionId.toString());
+    setClaimingMaturedId(purchaseId.toString());
     try {
       const contracts = createCoreContracts(signerContext.signer);
-      const tx = await contracts.gold.claimMatured(subscriptionId);
+      const tx = await contracts.gold.claimMatured(purchaseId);
       await tx.wait();
-      notify({ type: "success", message: pageT("notices.maturedClaimSuccess", { id: subscriptionId.toString() }) });
+      notify({ type: "success", message: pageT("notices.maturedClaimSuccess", { id: purchaseId.toString() }) });
       setRefreshNonce((prev) => prev + 1);
     } catch (error) {
       notify({ type: "error", message: toErrorMessage(error, pageT("errors.maturedClaimFailed")) });
     } finally {
       setClaimingMaturedId("");
+    }
+  };
+
+  const handleClaimGdl = async (purchaseId) => {
+    if (claimingGdlId) return;
+
+    const signerContext = await ensureSigner();
+    if (!signerContext) return;
+
+    if (!canWrite) {
+      notify({ type: "error", message: writeBlockReason || pageT("errors.actionNotAllowed") });
+      return;
+    }
+
+    setClaimingGdlId(purchaseId.toString());
+    try {
+      const contracts = createCoreContracts(signerContext.signer);
+      const tx = await contracts.gold.claimGdl(purchaseId);
+      await tx.wait();
+      notify({ type: "success", message: pageT("notices.gdlClaimSuccess", { id: purchaseId.toString() }) });
+      setRefreshNonce((prev) => prev + 1);
+    } catch (error) {
+      notify({ type: "error", message: toErrorMessage(error, pageT("errors.gdlClaimFailed")) });
+    } finally {
+      setClaimingGdlId("");
     }
   };
 
@@ -446,38 +509,17 @@ export default function FundPage() {
               <p className="text-xs uppercase tracking-[0.18em] text-slate-500">GoldStakingProtocol</p>
               <p className="text-xl font-semibold text-white">{pageT("header.contractMode")}</p>
               <p className="text-sm text-slate-400">
-                {pageT("header.currentPrice")}:{" "}
-                <span className="font-semibold text-[#fcd535]">{formatTokenAmount(fundState.price)} USGD / GODL</span>
+                {pageT("header.currentPrice")}: {" "}
+                <span className="font-semibold text-[#fcd535]">
+                  {fundState.spotGodlPrice > 0n ? `${formatTokenAmount(fundState.spotGodlPrice)} USGD / GODL` : "-"}
+                </span>
               </p>
               <p className="text-sm text-slate-400">
-                {pageT("header.gdlPrice")}:{" "}
-                <span className="font-semibold text-[#f0cd54]">{formatTokenAmount(fundState.gdlPrice)} USGD / GDL</span>
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <div className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#fcd535]/25 bg-[#fcd535]/10 px-3 text-sm text-[#f0cd54]">
-                <span className="text-xs text-slate-300">{pageT("header.godlBalance")}</span>
-                <span className="font-semibold">
-                  {address ? `${formatTokenAmount(fundState.godlBalance, 18, 6)} GODL` : "--"}
+                {pageT("header.gdlPrice")}: {" "}
+                <span className="font-semibold text-[#f0cd54]">
+                  {fundState.spotGdlPrice > 0n ? `${formatTokenAmount(fundState.spotGdlPrice)} USGD / GDL` : "-"}
                 </span>
-              </div>
-
-              <Link
-                to="/swap?route=usgd-godl"
-                className="inline-flex h-10 items-center justify-center rounded-xl border border-[#fcd535]/35 bg-[#fcd535]/12 px-3 text-xs font-semibold text-[#f0cd54] transition hover:bg-[#fcd535]/20"
-              >
-                {pageT("actions.goSwapGodl")}
-              </Link>
-
-              <button
-                type="button"
-                onClick={() => setRefreshNonce((prev) => prev + 1)}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-slate-200 transition hover:border-white/25 hover:text-white"
-              >
-                <Icon icon="mdi:refresh" width="16" />
-                {pageT("actions.refresh")}
-              </button>
+              </p>
             </div>
           </div>
 
@@ -485,6 +527,7 @@ export default function FundPage() {
             {GOLD_TERM_OPTIONS.map(({ termType, label }) => {
               const config = fundState.terms[termType];
               const active = selectedTermType === termType;
+              const termLabel = config?.months ? pageT("labels.termMonths", { months: config.months }) : label;
 
               return (
                 <button
@@ -495,10 +538,9 @@ export default function FundPage() {
                     active ? "border-[#fcd535]/40 bg-[#fcd535]/12" : "border-white/10 bg-white/5 hover:border-white/25"
                   }`}
                 >
-                  <p className="text-sm font-semibold text-white">{label}</p>
+                  <p className="text-sm font-semibold text-white">{termLabel}</p>
                   <p className="mt-1 text-xs text-slate-400">
-                    APY {config ? formatBps(config.apyBps) : "-"} / GDL Bonus{" "}
-                    {config ? `${(config.gdlBonusBps / 10000).toFixed(2)}x` : "-"}
+                    APY {config ? formatBps(config.apyBps) : "-"} / GDL Bonus {config ? `${(config.gdlBonusBps / 10000).toFixed(2)}x` : "-"}
                   </p>
                 </button>
               );
@@ -521,7 +563,7 @@ export default function FundPage() {
 
             <button
               type="button"
-              onClick={handleSubscribe}
+              onClick={handlePurchase}
               disabled={submitting || !amountInput}
               className={`h-full min-h-[72px] rounded-2xl text-sm font-semibold transition ${
                 submitting || !amountInput
@@ -529,7 +571,32 @@ export default function FundPage() {
                   : "morgan-btn-primary border-0 text-[#111111]"
               }`}
             >
-              {submitting ? pageT("actions.processing") : pageT("actions.approveAndSubscribe")}
+              {submitting ? pageT("actions.processing") : pageT("actions.approveAndPurchase")}
+            </button>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+            <div className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#fcd535]/25 bg-[#fcd535]/10 px-3 text-sm text-[#f0cd54]">
+              <span className="text-xs text-slate-300">{pageT("header.godlBalance")}</span>
+              <span className="font-semibold">
+                {address ? `${formatTokenAmount(fundState.godlBalance, 18, 6)} GODL` : "--"}
+              </span>
+            </div>
+
+            <Link
+              to="/swap?route=usgd-godl"
+              className="inline-flex h-10 items-center justify-center rounded-xl border border-[#fcd535]/35 bg-[#fcd535]/12 px-3 text-xs font-semibold text-[#f0cd54] transition hover:bg-[#fcd535]/20"
+            >
+              {pageT("actions.goSwapGodl")}
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => setRefreshNonce((prev) => prev + 1)}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 text-sm text-slate-200 transition hover:border-white/25 hover:text-white"
+            >
+              <Icon icon="mdi:refresh" width="16" />
+              {pageT("actions.refresh")}
             </button>
           </div>
 
@@ -567,43 +634,58 @@ export default function FundPage() {
             <p className="mt-2 text-3xl font-semibold text-white">{formatTokenAmount(totals.principal)} USGD</p>
           </article>
           <article className="governance-panel-soft rounded-3xl p-5">
-            <p className="text-sm text-slate-500">{pageT("summary.weeklyClaimable")}</p>
-            <p className="mt-2 text-3xl font-semibold text-emerald-300">{formatTokenAmount(totals.weekly)} USGD</p>
+            <p className="text-sm text-slate-500">{pageT("summary.pendingGdl")}</p>
+            <p className="mt-2 text-3xl font-semibold text-[#fcd535]">{formatTokenAmount(totals.pendingGdl)} GDL</p>
           </article>
           <article className="governance-panel-soft rounded-3xl p-5">
             <p className="text-sm text-slate-500">{pageT("summary.maturedClaimable")}</p>
-            <p className="mt-2 text-xl font-semibold text-[#fcd535]">
-              {formatTokenAmount(totals.maturedUsgd)} USGD / {formatTokenAmount(totals.maturedGdl)} GDL
-            </p>
+            <p className="mt-2 text-3xl font-semibold text-emerald-300">{formatTokenAmount(totals.maturedUsgd)} USGD</p>
           </article>
         </div>
 
-        <div className="mt-6 space-y-4">
+        <div className="mt-6 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setRecordFilter("ongoing")}
+            className={`px-4 py-1.5 text-sm ${
+              recordFilter === "ongoing" ? "morgan-btn-primary border-0 text-[#111111]" : "morgan-btn-secondary text-slate-300"
+            }`}
+          >
+            {pageT("filters.ongoing")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setRecordFilter("completed")}
+            className={`px-4 py-1.5 text-sm ${
+              recordFilter === "completed" ? "morgan-btn-primary border-0 text-[#111111]" : "morgan-btn-secondary text-slate-300"
+            }`}
+          >
+            {pageT("filters.completed")}
+          </button>
+        </div>
+
+        <div className="mt-4 space-y-4">
           {loading ? (
             <div className="governance-panel rounded-[28px] px-6 py-10 text-center text-slate-400">{pageT("states.loading")}</div>
           ) : !address ? (
             <div className="governance-panel rounded-[28px] px-6 py-10 text-center text-slate-400">{pageT("states.connectToView")}</div>
-          ) : fundState.subscriptions.length === 0 ? (
+          ) : filteredPurchases.length === 0 ? (
             <div className="governance-panel rounded-[28px] px-6 py-10 text-center text-slate-400">{pageT("states.empty")}</div>
           ) : (
-            fundState.subscriptions.map((subscription) => {
-              const termConfig = fundState.terms[subscription.termType];
-              const nextWeeklyAt = Number(subscription.lastClaimAt) + Number(fundState.weeklyClaimInterval);
-              const weeklyReady = subscription.pendingWeekly > 0n;
+            filteredPurchases.map((purchase) => {
+              const termConfig = fundState.terms[purchase.termType];
               const maturedReady =
-                subscription.pendingMatured.principal > 0n ||
-                subscription.pendingMatured.yieldAmount > 0n ||
-                subscription.pendingMatured.gdl > 0n;
-              const maturedDone = subscription.maturedClaimed;
-              const isClaimingWeekly = claimingWeeklyId === subscription.id.toString();
-              const isClaimingMatured = claimingMaturedId === subscription.id.toString();
+                !purchase.maturedClaimed && (purchase.pendingMatured.principal > 0n || purchase.pendingMatured.yieldAmount > 0n);
+              const gdlReady = purchase.pendingGdl > 0n;
+              const isClaimingMatured = claimingMaturedId === purchase.id.toString();
+              const isClaimingGdl = claimingGdlId === purchase.id.toString();
 
               return (
-                <article key={subscription.id.toString()} className="governance-panel overflow-hidden rounded-[28px]">
+                <article key={purchase.id.toString()} className="governance-panel overflow-hidden rounded-[28px]">
                   <div className="border-b border-white/10 p-5 md:p-6">
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                       <div>
-                        <h2 className="text-2xl font-semibold text-white">Subscription #{subscription.id.toString()}</h2>
+                        <h2 className="text-2xl font-semibold text-white">Purchase #{purchase.id.toString()}</h2>
                         <p className="mt-2 text-sm text-slate-400">
                           {pageT("labels.term")}: {termConfig?.months ?? "-"} {pageT("labels.months")} · APY:{" "}
                           {termConfig ? formatBps(termConfig.apyBps) : "-"} · GDL Bonus:{" "}
@@ -612,12 +694,12 @@ export default function FundPage() {
                       </div>
                       <span
                         className={`inline-flex h-9 items-center rounded-full px-3 text-xs font-semibold ${
-                          maturedDone
+                          purchase.maturedClaimed
                             ? "border border-white/15 bg-white/5 text-slate-300"
                             : "border border-emerald-400/30 bg-emerald-400/10 text-emerald-300"
                         }`}
                       >
-                        {maturedDone ? pageT("status.maturedDone") : pageT("status.ongoing")}
+                        {purchase.maturedClaimed ? pageT("status.maturedDone") : pageT("status.ongoing")}
                       </span>
                     </div>
                   </div>
@@ -631,91 +713,78 @@ export default function FundPage() {
                       <div className="mt-4 space-y-2 text-sm text-slate-400">
                         <p>
                           {pageT("fields.subscribedGodl")}:{" "}
-                          <span className="font-semibold text-white">{formatTokenAmount(subscription.godlAmount)} GODL</span>
+                          <span className="font-semibold text-white">{formatTokenAmount(purchase.godlAmount)} GODL</span>
                         </p>
                         <p>
                           {pageT("fields.subscribedPrincipal")}:{" "}
-                          <span className="font-semibold text-white">{formatTokenAmount(subscription.usgdPrincipalGross)} USGD</span>
+                          <span className="font-semibold text-white">{formatTokenAmount(purchase.usgdPrincipalGross)} USGD</span>
                         </p>
                         <p>
                           {pageT("fields.upfrontFee")}:{" "}
-                          <span className="font-semibold text-rose-300">{formatTokenAmount(subscription.upfrontFeeUsgd)} USGD</span>
+                          <span className="font-semibold text-rose-300">{formatTokenAmount(purchase.upfrontFeeUsgd)} USGD</span>
                         </p>
                         <p>
-                          {pageT("fields.maturityTime")}: <span className="font-semibold text-slate-200">{formatTimestamp(subscription.endAt)}</span>
+                          {pageT("fields.maturityTime")}: <span className="font-semibold text-slate-200">{formatTimestamp(purchase.endAt)}</span>
                         </p>
                         <p>
                           {pageT("fields.claimablePrincipal")}:{" "}
-                          <span className="font-semibold text-[#f0cd54]">
-                            {formatTokenAmount(subscription.pendingMatured.principal)} USGD
-                          </span>
+                          <span className="font-semibold text-[#f0cd54]">{formatTokenAmount(purchase.pendingMatured.principal)} USGD</span>
                         </p>
                         <p>
                           {pageT("fields.claimableYield")}:{" "}
-                          <span className="font-semibold text-emerald-300">
-                            {formatTokenAmount(subscription.pendingMatured.yieldAmount)} USGD
-                          </span>
-                        </p>
-                        <p>
-                          {pageT("fields.claimableGdl")}:{" "}
-                          <span className="font-semibold text-[#fcd535]">{formatTokenAmount(subscription.pendingMatured.gdl)} GDL</span>
+                          <span className="font-semibold text-emerald-300">{formatTokenAmount(purchase.pendingMatured.yieldAmount)} USGD</span>
                         </p>
                       </div>
 
                       <button
                         type="button"
-                        onClick={() => handleClaimMatured(subscription.id)}
-                        disabled={!maturedReady || maturedDone || isClaimingMatured || !canWrite}
+                        onClick={() => handleClaimMatured(purchase.id)}
+                        disabled={!maturedReady || isClaimingMatured || !canWrite}
                         className={`mt-5 h-12 w-full rounded-2xl text-sm font-semibold transition ${
-                          maturedReady && !maturedDone && !isClaimingMatured && canWrite
+                          maturedReady && !isClaimingMatured && canWrite
                             ? "morgan-btn-primary border-0 text-[#111111]"
                             : "cursor-not-allowed border border-white/10 bg-white/8 text-slate-500"
                         }`}
                       >
-                        {isClaimingMatured ? pageT("actions.processing") : maturedDone ? pageT("actions.claimed") : pageT("actions.claimMatured")}
+                        {isClaimingMatured ? pageT("actions.processing") : pageT("actions.claimMatured")}
                       </button>
                     </div>
 
                     <div className="governance-panel-soft rounded-3xl p-5">
                       <p className="inline-flex items-center gap-2 text-sm font-semibold text-slate-200">
-                        <Icon icon="mdi:calendar-clock-outline" width="16" className="text-[#fcd535]" />
-                        {pageT("sections.weeklyClaim")}
+                        <Icon icon="mdi:cash-plus" width="16" className="text-[#fcd535]" />
+                        {pageT("sections.gdlClaim")}
                       </p>
 
                       <div className="mt-4 space-y-2 text-sm text-slate-400">
                         <p>
-                          {pageT("fields.claimedWeekly")}:{" "}
-                          <span className="font-semibold text-slate-200">{formatTokenAmount(subscription.claimedUsgd)} USGD</span>
+                          {pageT("fields.gdlBonusCapUsd")}:{" "}
+                          <span className="font-semibold text-slate-200">{formatTokenAmount(purchase.gdlBonusCapUsdE18)} USGD</span>
                         </p>
                         <p>
-                          {pageT("fields.currentClaimable")}:{" "}
-                          <span className="font-semibold text-[#f0cd54]">{formatTokenAmount(subscription.pendingWeekly)} USGD</span>
+                          {pageT("fields.claimedGdlValueUsd")}:{" "}
+                          <span className="font-semibold text-slate-200">{formatTokenAmount(purchase.claimedGdlValueUsdE18)} USGD</span>
                         </p>
                         <p>
-                          {pageT("fields.lastClaimAt")}: <span className="font-semibold text-slate-200">{formatTimestamp(subscription.lastClaimAt)}</span>
+                          {pageT("fields.claimableGdl")}:{" "}
+                          <span className="font-semibold text-[#f0cd54]">{formatTokenAmount(purchase.pendingGdl)} GDL</span>
                         </p>
                         <p>
-                          {pageT("fields.nextClaimAt")}: <span className="font-semibold text-slate-200">{formatTimestamp(nextWeeklyAt)}</span>
-                        </p>
-                        <p>
-                          {pageT("fields.countdown")}:{" "}
-                          <span key={countdownTick} className="font-semibold text-emerald-300">
-                            {formatCountdown(nextWeeklyAt)}
-                          </span>
+                          {pageT("fields.releaseStep")}: <span className="font-semibold text-slate-200">{String(fundState.releaseStepSeconds)}s</span>
                         </p>
                       </div>
 
                       <button
                         type="button"
-                        onClick={() => handleClaimWeekly(subscription.id)}
-                        disabled={!weeklyReady || isClaimingWeekly || !canWrite}
+                        onClick={() => handleClaimGdl(purchase.id)}
+                        disabled={!gdlReady || isClaimingGdl || !canWrite}
                         className={`mt-5 h-12 w-full rounded-2xl text-sm font-semibold transition ${
-                          weeklyReady && !isClaimingWeekly && canWrite
+                          gdlReady && !isClaimingGdl && canWrite
                             ? "border border-[#fcd535]/35 bg-[#fcd535]/10 text-[#f0cd54] hover:bg-[#fcd535]/15"
                             : "cursor-not-allowed border border-white/10 bg-white/8 text-slate-500"
                         }`}
                       >
-                        {isClaimingWeekly ? pageT("actions.processing") : pageT("actions.claimWeekly")}
+                        {isClaimingGdl ? pageT("actions.processing") : pageT("actions.claimGdl")}
                       </button>
                     </div>
                   </div>

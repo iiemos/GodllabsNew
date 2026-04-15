@@ -102,6 +102,14 @@ const en = {
     description:
       "Displays balances of USDT, USGD, GDL, GODL and fund shares, with transaction history retained. Yield is handled independently per pool, so one-click claim is not provided here.",
     goSwap: "Go to Swap Center",
+    refresh: "Refresh",
+    connectHint: "Connect wallet to view your on-chain balances and recent purchase records.",
+    connectWallet: "Connect Wallet",
+    connectFailed: "Wallet connection failed. Please try again later.",
+    loadFailed: "Failed to load portfolio data",
+    switchNetwork: "Please switch to BSC (ChainId={{chainId}}) to view on-chain assets",
+    loading: "Loading on-chain portfolio data...",
+    emptyRecords: "No on-chain purchase records",
     balances: {
       usdt: "USDT",
       usgd: "USGD",
@@ -110,7 +118,7 @@ const en = {
       fundShares: "Fund Shares",
     },
     recordsTitle: "Record Details",
-    recentCount: "Latest 4",
+    recentCount: "Latest {{count}}",
     table: {
       time: "Time",
       type: "Type",
@@ -127,7 +135,7 @@ const en = {
   },
   swap: {
     title: "Swap Center",
-    subtitle: "Supports USDT↔USGD and USGD↔GODL with on-chain routing, live quotes, and exact-in execution.",
+    subtitle: "Supports USDT↔USGD, USGD↔GODL, and USGD↔GDL with on-chain routing, live quotes, and exact-in execution.",
     tabs: {
       usdtUsgd: {
         label: "USDT ↔ USGD",
@@ -136,6 +144,10 @@ const en = {
       usgdGodl: {
         label: "USGD ↔ GODL",
         helper: "Pricing is calculated from live pool reserves and router path results.",
+      },
+      usgdGdl: {
+        label: "USGD ↔ GDL",
+        helper: "Pricing is calculated from the GDL/USGD pool reserves and router outputs.",
       },
     },
     settings: {
@@ -178,6 +190,17 @@ const en = {
       insufficientBalance: "Insufficient balance, available {{balance}} {{token}}",
       requestProcessing: "Swap request processing...",
       swapSuccess: "{{from}} → {{to}} swap successful",
+      loadQuoteFailed: "Failed to load swap quote",
+      loadTokenBalanceFailed: "Failed to load token balances",
+      loadPairAddressFailed: "Failed to load pair addresses",
+      refreshFailed: "Failed to refresh price",
+      connectWalletFirst: "Please connect your wallet first",
+      switchNetwork: "Please switch to BSC (ChainId={{chainId}})",
+      contractCheckFailed: "Contract validation failed",
+      missingRoute: "Swap route configuration is missing",
+      unlimitedApprove: "Approving unlimited {{token}} allowance...",
+      swapFailed: "Swap failed",
+      networkMismatch: "Detected wallet network is not the target BSC network. Please switch before submitting transactions.",
     },
   },
   farms: {
@@ -385,7 +408,7 @@ const en = {
       errors: {
         loadData: "Failed to load farming data",
         connectWalletFirst: "Please connect your wallet first",
-        switchNetwork: "Please switch to BSC Testnet (ChainId={{chainId}})",
+        switchNetwork: "Please switch to BSC (ChainId={{chainId}})",
         paused: "Farming contract is paused",
         blacklisted: "Current address is blacklisted",
         notWhitelisted: "Current address is not in whitelist",
@@ -409,7 +432,7 @@ const en = {
         addLiquiditySuccess: "{{pair}} liquidity added successfully",
       },
       warnings: {
-        networkMismatch: "Detected wallet network is not BSC Testnet. Please switch before submitting transactions.",
+        networkMismatch: "Detected wallet network is not the target BSC network. Please switch before submitting transactions.",
       },
       summary: {
         totalStakedLp: "Total Staked LP",
@@ -497,26 +520,30 @@ const en = {
       errors: {
         loadData: "Failed to load fund contract data",
         connectWalletFirst: "Please connect your wallet first",
-        switchNetwork: "Please switch to BSC Testnet (ChainId={{chainId}})",
+        switchNetwork: "Please switch to BSC (ChainId={{chainId}})",
         paused: "Protocol is paused. Writes are disabled",
         blacklisted: "Current address is blacklisted",
         notWhitelisted: "Current address is not in whitelist",
         invalidGodlAmount: "Please enter a valid GODL amount",
+        minPurchase: "Minimum purchase is {{amount}} GODL",
         minSubscribe: "Minimum subscription is {{amount}} GODL",
         actionNotAllowed: "Current state does not allow write operation",
+        purchaseFailed: "Purchase failed",
         subscribeFailed: "Subscription failed",
-        weeklyClaimFailed: "Weekly claim failed",
+        gdlClaimFailed: "GDL claim failed",
         maturedClaimFailed: "Matured claim failed",
       },
       notices: {
         approvingGodl: "Approving GODL...",
+        purchaseSuccessWithId: "Purchase successful, ID #{{id}}",
+        purchaseSuccess: "Purchase successful",
         subscribeSuccessWithId: "Subscription successful, ID #{{id}}",
         subscribeSuccess: "Subscription successful",
-        weeklyClaimSuccess: "Weekly claim successful #{{id}}",
+        gdlClaimSuccess: "GDL claim successful #{{id}}",
         maturedClaimSuccess: "Matured claim successful #{{id}}",
       },
       warnings: {
-        networkMismatch: "Detected wallet network is not BSC Testnet. Please switch before submitting transactions.",
+        networkMismatch: "Detected wallet network is not the target BSC network. Please switch before submitting transactions.",
       },
       header: {
         contractMode: "Fund Subscription (Live Contract)",
@@ -533,11 +560,9 @@ const en = {
         claimablePrincipal: "Claimable Principal",
         claimableYield: "Claimable Yield",
         claimableGdl: "Claimable GDL",
-        claimedWeekly: "Claimed Weekly Yield",
-        currentClaimable: "Currently Claimable",
-        lastClaimAt: "Last Claim",
-        nextClaimAt: "Next Claim Time",
-        countdown: "Time to Next Claim",
+        gdlBonusCapUsd: "GDL Bonus Cap Value",
+        claimedGdlValueUsd: "Claimed GDL Value",
+        releaseStep: "Release Step Interval",
       },
       estimates: {
         principal: "Estimated Principal",
@@ -549,6 +574,7 @@ const en = {
       },
       summary: {
         principal: "Subscribed Principal (USGD)",
+        pendingGdl: "Current Claimable GDL",
         weeklyClaimable: "Current Weekly Claimable (USGD)",
         maturedClaimable: "Current Matured Claimable",
       },
@@ -556,26 +582,34 @@ const en = {
         goSwapGodl: "Swap to GODL",
         refresh: "Refresh",
         processing: "Processing...",
+        approveAndPurchase: "Approve & Purchase",
         approveAndSubscribe: "Approve & Subscribe",
         claimed: "Claimed",
         claimMatured: "Claim Matured Payout",
+        claimGdl: "Claim GDL Reward",
         claimWeekly: "Claim Weekly Yield",
       },
       states: {
-        loading: "Loading on-chain subscription data...",
-        connectToView: "Connect wallet to view your subscriptions",
+        loading: "Loading on-chain purchase data...",
+        connectToView: "Connect wallet to view your purchases",
         empty: "No subscription records",
       },
       labels: {
         term: "Term",
         months: "months",
+        termMonths: "{{months}} months",
       },
       status: {
         maturedDone: "Matured Claim Completed",
         ongoing: "Ongoing",
       },
+      filters: {
+        ongoing: "Ongoing",
+        completed: "Completed",
+      },
       sections: {
-        maturedClaim: "Matured Claim (Principal + Remaining Yield + GDL)",
+        maturedClaim: "Matured Claim (Principal + Remaining Yield)",
+        gdlClaim: "GDL Claim (3-second step release)",
         weeklyClaim: "Weekly Yield Claim (USGD)",
       },
     },
@@ -822,19 +856,42 @@ const en = {
       },
     ],
     plans: {
-      freeItems: [
-        "Subscription range: 500 - 5000 USGD",
-        "Lock period: 3 months",
-        "Annualized yield: 13%",
-        "Yield released linearly by rules",
-        "On-chain status query supported",
-      ],
-      proItems: [
-        "Lock period: 12 months",
-        "Annualized yield: 30%",
-        "Extra GDL incentive multiplier: 1.6x",
-        "Fits long-term asset allocation strategy",
-        "Yield and incentives are trackable separately",
+      planCards: [
+        {
+          cycle: "3-Month Cycle",
+          apy: "15%",
+          description: "Short-cycle allocation balancing liquidity with stable yield.",
+          items: [
+            "Lock term: 3 months (on-chain governed)",
+            "GDL incentive multiplier: 0.8x",
+            "Weekly yield claim available every 7 days",
+            "Maturity payout: principal + remaining yield + GDL",
+          ],
+        },
+        {
+          cycle: "6-Month Cycle",
+          apy: "21%",
+          description: "Mid-cycle option with a stronger yield-duration balance.",
+          items: [
+            "Lock term: 6 months (on-chain governed)",
+            "GDL incentive multiplier: 1.2x",
+            "Weekly yield claim available every 7 days",
+            "Maturity payout: principal + remaining yield + GDL",
+          ],
+        },
+        {
+          cycle: "12-Month Cycle",
+          apy: "31%",
+          badge: "Featured",
+          highlight: true,
+          description: "Long-cycle allocation with higher yield and incentive multiplier.",
+          items: [
+            "Lock term: 12 months (on-chain governed)",
+            "GDL incentive multiplier: 1.6x",
+            "Weekly yield claim available every 7 days",
+            "Maturity payout: principal + remaining yield + GDL",
+          ],
+        },
       ],
     },
     faqItems: [
@@ -898,7 +955,7 @@ const en = {
       partnerSubtitle: "Advancing collaboration across regulation, assets, and circulation to expand cross-border asset-management networks.",
       plansBase: "Gold Fund",
       plansHighlight: "Subscription Plans",
-      plansSubtitle: "Subscription range 500-5000 USGD with yield and incentives configured by cycle.",
+      plansSubtitle: "Displays 3/6/12-month lock cycles and yield settings. Final parameters follow on-chain termConfigs.",
       faqBase: "FAQ and",
       faqHighlight: "Clarifications",
       faqSubtitle: "Core explanations on stable anchoring, asset mapping, reward release, and mining rules.",

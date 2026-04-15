@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { formatUnits } from "ethers";
+import { MaxUint256, formatUnits } from "ethers";
 import { useNotification } from "../components/Notification";
 import { useWallet } from "../contexts/WalletContext";
 import { ADDRESSES, SWAP_ROUTES, TBSC_CHAIN_ID, TOKEN_ORDER } from "../web3/config";
@@ -215,22 +215,22 @@ export default function SwapPage() {
         setQuoteState({ amountOut, reserveRate, reserveIn, reserveOut });
       } catch (error) {
         setQuoteState({ amountOut: 0n, reserveRate: "", reserveIn: 0n, reserveOut: 0n });
-        notify({ type: "error", message: toErrorMessage(error, "读取兑换报价失败") });
+        notify({ type: "error", message: toErrorMessage(error, t("swap.notifications.loadQuoteFailed")) });
       } finally {
         setQuoteLoading(false);
       }
     },
-    [currentRoute.id, currentRoute.pairAddressFallback, fromKey, notify, routePairs, toKey, tokenMap, tokenState],
+    [currentRoute.id, currentRoute.pairAddressFallback, fromKey, notify, routePairs, t, toKey, tokenMap, tokenState],
   );
 
   useEffect(() => {
     loadTokensAndBalances().catch((error) => {
-      notify({ type: "error", message: toErrorMessage(error, "读取代币余额失败") });
+      notify({ type: "error", message: toErrorMessage(error, t("swap.notifications.loadTokenBalanceFailed")) });
     });
     loadRoutePairs().catch((error) => {
-      notify({ type: "error", message: toErrorMessage(error, "读取交易对地址失败") });
+      notify({ type: "error", message: toErrorMessage(error, t("swap.notifications.loadPairAddressFailed")) });
     });
-  }, [loadRoutePairs, loadTokensAndBalances, notify, refreshNonce]);
+  }, [loadRoutePairs, loadTokensAndBalances, notify, refreshNonce, t]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -295,7 +295,7 @@ export default function SwapPage() {
       await fetchQuoteAndRate(amount);
       notify({ type: "success", message: t("swap.notifications.priceRefreshed") });
     } catch (error) {
-      notify({ type: "error", message: toErrorMessage(error, "刷新价格失败") });
+      notify({ type: "error", message: toErrorMessage(error, t("swap.notifications.refreshFailed")) });
     } finally {
       setIsRefreshing(false);
     }
@@ -307,7 +307,7 @@ export default function SwapPage() {
       try {
         currentAddress = await connect();
       } catch (error) {
-        notify({ type: "error", message: toErrorMessage(error, "请先连接钱包") });
+        notify({ type: "error", message: toErrorMessage(error, t("swap.notifications.connectWalletFirst")) });
         return null;
       }
     }
@@ -318,19 +318,19 @@ export default function SwapPage() {
 
     const network = await signer.provider.getNetwork();
     if (Number(network.chainId) !== TBSC_CHAIN_ID) {
-      notify({ type: "error", message: `请切换到 BSC Testnet（ChainId=${TBSC_CHAIN_ID}）` });
+      notify({ type: "error", message: t("swap.notifications.switchNetwork", { chainId: TBSC_CHAIN_ID }) });
       return null;
     }
 
     try {
       await validateCoreContractAddresses(getReadProvider(), { includeRouter: true });
     } catch (error) {
-      notify({ type: "error", message: toErrorMessage(error, "合约地址校验失败") });
+      notify({ type: "error", message: toErrorMessage(error, t("swap.notifications.contractCheckFailed")) });
       return null;
     }
 
     return { signer, currentAddress };
-  }, [address, connect, getSigner, notify]);
+  }, [address, connect, getSigner, notify, t]);
 
   const handleConfirmSwap = async () => {
     if (isProcessing) return;
@@ -365,7 +365,7 @@ export default function SwapPage() {
     const fromAddress = tokenMap[fromKey]?.address;
     const toAddress = tokenMap[toKey]?.address;
     if (!fromAddress || !toAddress) {
-      notify({ type: "error", message: "兑换路径配置缺失" });
+      notify({ type: "error", message: t("swap.notifications.missingRoute") });
       return;
     }
 
@@ -385,8 +385,8 @@ export default function SwapPage() {
 
       const allowance = await fromTokenContract.allowance(signerContext.currentAddress, ADDRESSES.routerV2);
       if (allowance < amountIn) {
-        notify({ type: "info", message: `正在授权 ${fromToken.symbol}...` });
-        const approveTx = await fromTokenContract.approve(ADDRESSES.routerV2, amountIn);
+        notify({ type: "info", message: t("swap.notifications.unlimitedApprove", { token: fromToken.symbol }) });
+        const approveTx = await fromTokenContract.approve(ADDRESSES.routerV2, MaxUint256);
         await approveTx.wait();
       }
 
@@ -407,7 +407,7 @@ export default function SwapPage() {
       setRefreshNonce((prev) => prev + 1);
     } catch (error) {
       setTransactionStatus("");
-      notify({ type: "error", message: toErrorMessage(error, "兑换失败") });
+      notify({ type: "error", message: toErrorMessage(error, t("swap.notifications.swapFailed")) });
     } finally {
       setIsProcessing(false);
     }
@@ -423,7 +423,7 @@ export default function SwapPage() {
 
         {!isExpectedChain(chainId) && address && (
           <div className="mx-auto mt-4 max-w-[520px] rounded-2xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-            检测到当前钱包网络非 BSC Testnet，请切换后再执行交易。
+            {t("swap.notifications.networkMismatch")}
           </div>
         )}
 
@@ -625,17 +625,17 @@ export default function SwapPage() {
               </div>
             )}
 
-            <button
-              type="button"
-              onClick={handleConfirmSwap}
-              disabled={!amount || isProcessing || quoteLoading}
-              className={`morgan-btn-primary mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-semibold ${
-                !amount || isProcessing || quoteLoading ? "cursor-not-allowed opacity-55" : ""
-              }`}
-            >
-              <Icon icon={isProcessing ? "mdi:refresh" : "mdi:check-circle"} className={isProcessing ? "animate-spin" : ""} width="16" />
-              {isProcessing ? t("swap.buttons.processing") : "Confirm Swap (Exact In)"}
-            </button>
+              <button
+                type="button"
+                onClick={handleConfirmSwap}
+                disabled={!amount || isProcessing || quoteLoading}
+                className={`morgan-btn-primary mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-semibold ${
+                  !amount || isProcessing || quoteLoading ? "cursor-not-allowed opacity-55" : ""
+                }`}
+              >
+                <Icon icon={isProcessing ? "mdi:refresh" : "mdi:check-circle"} className={isProcessing ? "animate-spin" : ""} width="16" />
+                {isProcessing ? t("swap.buttons.processing") : t("swap.buttons.confirmSwap")}
+              </button>
 
             <button
               type="button"

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Icon } from "@iconify/react";
-import { formatUnits } from "ethers";
+import { MaxUint256, formatUnits } from "ethers";
 import { useTranslation } from "react-i18next";
 import { useNotification } from "../components/Notification";
 import { useWallet } from "../contexts/WalletContext";
-import { ADDRESSES, LP_POOLS, TBSC_CHAIN_ID } from "../web3/config";
+import { ADDRESSES, BSC_SCAN_BASE_URL, LP_POOLS, TBSC_CHAIN_ID } from "../web3/config";
 import { getReadProvider, isExpectedChain } from "../web3/client";
 import { assertContractCode, createCoreContracts, createErc20Contract, createPairContract, validateCoreContractAddresses } from "../web3/contracts";
 import { formatTokenAmount, parseTokenAmount, toErrorMessage } from "../web3/format";
@@ -197,6 +197,41 @@ export default function FarmsPage() {
   useEffect(() => {
     loadFarmData();
   }, [loadFarmData, refreshNonce]);
+
+  const poolPids = useMemo(() => farmState.pools.map((pool) => pool.pid), [farmState.pools]);
+
+  const refreshPendingRewards = useCallback(async () => {
+    if (!address || poolPids.length === 0) return;
+
+    const readProvider = getReadProvider();
+    const contracts = createCoreContracts(readProvider);
+    const entries = await Promise.all(
+      poolPids.map(async (pid) => {
+        try {
+          const pending = await contracts.lp.pendingMining(pid, address);
+          return [pid, pending];
+        } catch {
+          return [pid, null];
+        }
+      }),
+    );
+
+    const pendingMap = new Map(entries.filter(([, pending]) => pending !== null));
+    if (pendingMap.size === 0) return;
+
+    setFarmState((prev) => ({
+      ...prev,
+      pools: prev.pools.map((pool) => (pendingMap.has(pool.pid) ? { ...pool, pending: pendingMap.get(pool.pid) } : pool)),
+    }));
+  }, [address, poolPids]);
+
+  useEffect(() => {
+    if (!address || poolPids.length === 0) return undefined;
+    const timer = window.setInterval(() => {
+      refreshPendingRewards().catch(() => {});
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [address, poolPids.length, refreshPendingRewards]);
 
   const canWrite = useMemo(() => {
     if (!address) return false;
@@ -533,13 +568,13 @@ export default function FarmsPage() {
 
       if (allowanceA < amountA) {
         notify({ type: "info", message: pageT("notices.approvingToken", { symbol: snapshot.tokenASymbol }) });
-        const approveATx = await tokenAContract.approve(ADDRESSES.routerV2, amountA);
+        const approveATx = await tokenAContract.approve(ADDRESSES.routerV2, MaxUint256);
         await approveATx.wait();
       }
 
       if (allowanceB < amountB) {
         notify({ type: "info", message: pageT("notices.approvingToken", { symbol: snapshot.tokenBSymbol }) });
-        const approveBTx = await tokenBContract.approve(ADDRESSES.routerV2, amountB);
+        const approveBTx = await tokenBContract.approve(ADDRESSES.routerV2, MaxUint256);
         await approveBTx.wait();
       }
 
@@ -574,7 +609,7 @@ export default function FarmsPage() {
   };
 
   const handleOpenContract = (pool) => {
-    window.open(`https://testnet.bscscan.com/address/${pool.lpTokenAddress}`, "_blank", "noopener,noreferrer");
+    window.open(`${BSC_SCAN_BASE_URL}/address/${pool.lpTokenAddress}`, "_blank", "noopener,noreferrer");
   };
 
   const filteredPools = useMemo(() => {
