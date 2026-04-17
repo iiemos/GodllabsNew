@@ -404,6 +404,10 @@ export default function FundPage() {
 
       if (allowance < amount) {
         notify({ type: "info", message: pageT("notices.approvingGodl") });
+        if (allowance > 0n) {
+          const resetApproveTx = await contracts.godl.approve(ADDRESSES.goldProxy, 0n);
+          await resetApproveTx.wait();
+        }
         const approveTx = await contracts.godl.approve(ADDRESSES.goldProxy, amount);
         await approveTx.wait();
       }
@@ -417,8 +421,8 @@ export default function FundPage() {
 
       const tx =
         minUsgdOut > 0n
-          ? await contracts.gold.purchase(amount, selectedTermType, minUsgdOut)
-          : await contracts.gold.purchase(amount, selectedTermType);
+          ? await contracts.gold["purchase(uint256,uint256,uint256)"](amount, selectedTermType, minUsgdOut)
+          : await contracts.gold["purchase(uint256,uint256)"](amount, selectedTermType);
 
       const receipt = await tx.wait();
       const purchasedLog = receipt.logs.find((log) => log.fragment?.name === "Purchased");
