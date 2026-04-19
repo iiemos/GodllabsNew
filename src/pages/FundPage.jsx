@@ -12,28 +12,37 @@ import { formatBps, formatTimestamp, formatTokenAmount, parseTokenAmount, toErro
 const ONE_E18 = 10n ** 18n;
 const ZERO_PENDING_MATURED = { principal: 0n, yieldAmount: 0n };
 
-function estimatePurchase(godlAmount, spotGodlPrice, termDuration, termMonths, apyBps, gdlBonusBps, spotGdlPrice) {
+function estimatePurchase(godlAmount, spotGodlPrice, termDuration, yieldDuration, termMonths, apyBps, gdlBonusBps, spotGdlPrice) {
   if (godlAmount <= 0n || spotGodlPrice <= 0n) {
-    return { principal: 0n, upfrontFee: 0n, yieldTotal: 0n, principalOut: 0n, gdlBonusUsd: 0n, gdlOut: 0n };
+    return { principal: 0n, upfrontFee: 0n, yieldTotal: 0n, maturityOut: 0n, gdlBonusUsd: 0n, gdlOut: 0n };
   }
 
   const principal = (godlAmount * spotGodlPrice) / ONE_E18;
-  const durationDays = termDuration > 0n ? termDuration / 86400n : termMonths === 3 ? 90n : termMonths === 6 ? 180n : 365n;
+  const effectiveYieldDuration = yieldDuration > 0n ? yieldDuration : termDuration;
+  const durationDays = effectiveYieldDuration > 0n ? effectiveYieldDuration / 86400n : termMonths === 3 ? 90n : termMonths === 6 ? 180n : 365n;
   const upfrontFee = (principal * 200n * BigInt(termMonths)) / (12n * 10000n);
   const yieldTotal = (principal * BigInt(apyBps) * durationDays) / (365n * 10000n);
   const principalOut = principal - upfrontFee;
+  const maturityOut = principalOut + yieldTotal;
   const gdlBonusUsd = (yieldTotal * BigInt(gdlBonusBps)) / 10000n;
   const gdlOut = spotGdlPrice > 0n ? (gdlBonusUsd * ONE_E18) / spotGdlPrice : 0n;
 
-  return { principal, upfrontFee, yieldTotal, principalOut, gdlBonusUsd, gdlOut };
+  return { principal, upfrontFee, yieldTotal, maturityOut, gdlBonusUsd, gdlOut };
 }
 
 function normalizeTermConfig(termConfig) {
+  const duration = termConfig?.duration ?? termConfig?.[0] ?? 0n;
+  const yieldDuration = termConfig?.yieldDuration ?? termConfig?.[1] ?? duration;
+  const months = Number(termConfig?.months ?? termConfig?.[2] ?? 0);
+  const apyBps = Number(termConfig?.apyBps ?? termConfig?.[3] ?? 0);
+  const gdlBonusBps = Number(termConfig?.gdlBonusBps ?? termConfig?.[4] ?? 0);
+
   return {
-    duration: termConfig.duration,
-    months: Number(termConfig.months),
-    apyBps: Number(termConfig.apyBps),
-    gdlBonusBps: Number(termConfig.gdlBonusBps),
+    duration,
+    yieldDuration,
+    months,
+    apyBps,
+    gdlBonusBps,
   };
 }
 
@@ -64,6 +73,7 @@ export default function FundPage() {
   const [recordFilter, setRecordFilter] = useState("ongoing");
   const [refreshNonce, setRefreshNonce] = useState(0);
   const purchaseIdsRef = useRef([]);
+  const pendingRefreshRef = useRef(false);
 
   const [fundState, setFundState] = useState({
     paused: false,
@@ -251,17 +261,39 @@ export default function FundPage() {
   }, [address]);
 
   useEffect(() => {
-    if (!address || fundState.purchases.length === 0) return undefined;
+    if (!address || fundState.purchases.length === 0 || typeof document === "undefined") return undefined;
 
+    const runRefresh = async () => {
+      if (document.hidden || pendingRefreshRef.current) return;
+      pendingRefreshRef.current = true;
+      try {
+        await refreshPendingRewards();
+      } finally {
+        pendingRefreshRef.current = false;
+      }
+    };
+
+    runRefresh().catch(() => {});
     const timer = window.setInterval(() => {
-      refreshPendingRewards().catch(() => {});
-    }, 5000);
+      runRefresh().catch(() => {});
+    }, 15000);
+    const onWake = () => {
+      runRefresh().catch(() => {});
+    };
 
-    return () => window.clearInterval(timer);
+    document.addEventListener("visibilitychange", onWake);
+    window.addEventListener("focus", onWake);
+
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", onWake);
+      window.removeEventListener("focus", onWake);
+    };
   }, [address, fundState.purchases.length, refreshPendingRewards]);
 
   const activeTerm = fundState.terms[selectedTermType] ?? {
     duration: 0n,
+    yieldDuration: 0n,
     months: 3,
     apyBps: 0,
     gdlBonusBps: 0,
@@ -281,6 +313,7 @@ export default function FundPage() {
         parsedAmount,
         fundState.spotGodlPrice,
         activeTerm.duration ?? 0n,
+        activeTerm.yieldDuration ?? 0n,
         activeTerm.months ?? 3,
         activeTerm.apyBps ?? 0,
         activeTerm.gdlBonusBps ?? 0,
@@ -291,6 +324,7 @@ export default function FundPage() {
       activeTerm.duration,
       activeTerm.gdlBonusBps,
       activeTerm.months,
+      activeTerm.yieldDuration,
       fundState.spotGdlPrice,
       fundState.spotGodlPrice,
       parsedAmount,
@@ -424,14 +458,8 @@ export default function FundPage() {
           ? await contracts.gold["purchase(uint256,uint256,uint256)"](amount, selectedTermType, minUsgdOut)
           : await contracts.gold["purchase(uint256,uint256)"](amount, selectedTermType);
 
-      const receipt = await tx.wait();
-      const purchasedLog = receipt.logs.find((log) => log.fragment?.name === "Purchased");
-      const purchaseId = purchasedLog?.args?.purchaseId;
-
-      notify({
-        type: "success",
-        message: purchaseId ? pageT("notices.purchaseSuccessWithId", { id: purchaseId.toString() }) : pageT("notices.purchaseSuccess"),
-      });
+      await tx.wait();
+      notify({ type: "success", message: pageT("notices.purchaseSuccess") });
 
       setAmountInput("");
       setRefreshNonce((prev) => prev + 1);
@@ -614,7 +642,7 @@ export default function FundPage() {
             </p>
             <p>
               {pageT("estimates.principalOut")}:{" "}
-              <span className="font-semibold text-[#f0cd54]">{formatTokenAmount(estimate.principalOut)} USGD</span>
+              <span className="font-semibold text-[#f0cd54]">{formatTokenAmount(estimate.maturityOut)} USGD</span>
             </p>
             <p>
               {pageT("estimates.yieldTotal")}:{" "}
@@ -689,7 +717,7 @@ export default function FundPage() {
                   <div className="border-b border-white/10 p-5 md:p-6">
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                       <div>
-                        <h2 className="text-2xl font-semibold text-white">Purchase #{purchase.id.toString()}</h2>
+                        <h2 className="text-2xl font-semibold text-white">{pageT("labels.recordTitle")}</h2>
                         <p className="mt-2 text-sm text-slate-400">
                           {pageT("labels.term")}: {termConfig?.months ?? "-"} {pageT("labels.months")} · APY:{" "}
                           {termConfig ? formatBps(termConfig.apyBps) : "-"} · GDL Bonus:{" "}

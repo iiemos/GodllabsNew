@@ -206,6 +206,19 @@
   },
   {
     "type": "function",
+    "name": "gdlBonusMultiplierBps",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "gdlUsgdPair",
     "inputs": [],
     "outputs": [
@@ -645,6 +658,19 @@
   },
   {
     "type": "function",
+    "name": "setGdlBonusMultiplierBps",
+    "inputs": [
+      {
+        "name": "newBps",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "setGdlUsgdPair",
     "inputs": [
       {
@@ -735,6 +761,44 @@
   },
   {
     "type": "function",
+    "name": "setTermConfigWithYieldDuration",
+    "inputs": [
+      {
+        "name": "termType",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "duration",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "yieldDuration",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "months",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "apyBps",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "gdlBonusBps",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "setWhitelistMode",
     "inputs": [
       {
@@ -796,6 +860,11 @@
     "outputs": [
       {
         "name": "duration",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "yieldDuration",
         "type": "uint256",
         "internalType": "uint256"
       },
@@ -973,6 +1042,19 @@
         "type": "address",
         "indexed": false,
         "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "GdlBonusMultiplierUpdated",
+    "inputs": [
+      {
+        "name": "bps",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -1411,6 +1493,7 @@
     "inputs": []
   }
 ]
+
 
 
 

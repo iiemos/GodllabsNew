@@ -9,7 +9,7 @@ const navItems = [
   { key: "home", href: "/" },
   { key: "fund", href: "/fund" },
   { key: "defi", href: "/defi" },
-  { key: "governance", href: "/governance" },
+  { key: "governance", href: "/governance", actionMessageKey: "governanceComingSoon" },
   { key: "portfolio", href: "/portfolio" },
   { key: "swap", href: "/swap" },
   { key: "docs", href: "/docs" },
@@ -132,13 +132,13 @@ export default function AppHeader() {
   };
 
   const renderNavItem = (item, className, onNavigate) => {
-    if (item.action === "bridge") {
+    if (item.actionMessageKey) {
       return (
         <button
           key={item.key}
           type="button"
           onClick={() => {
-            notify({ type: "info", message: t("header.bridgeComingSoon") });
+            notify({ type: "info", message: t(`header.${item.actionMessageKey}`) });
             onNavigate?.();
           }}
           className={`${className} cursor-pointer border-0 bg-transparent text-left`}

@@ -6,34 +6,68 @@ import { TBSC_CHAIN_ID, TBSC_RPC_URL } from "./config";
 
 const walletConnectProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || "00000000000000000000000000000000";
 
-function getMetaMaskProvider() {
+function getInjectedProvider(filter) {
   if (typeof window === "undefined") return undefined;
-  const ethereum = window.ethereum;
-  if (!ethereum) return undefined;
+  const providers = [];
 
-  const providers = Array.isArray(ethereum.providers) ? ethereum.providers : [ethereum];
-  return providers.find((provider) => provider?.isMetaMask) || undefined;
+  if (window.ethereum) {
+    if (Array.isArray(window.ethereum.providers)) {
+      providers.push(...window.ethereum.providers);
+    } else {
+      providers.push(window.ethereum);
+    }
+  }
+
+  if (window.phantom?.ethereum) {
+    providers.push(window.phantom.ethereum);
+  }
+
+  return providers.find((provider) => filter(provider)) || undefined;
 }
 
-const metaMaskOnlyWallet = () => ({
-  id: "metamask-only",
+function getMetaMaskProvider() {
+  return getInjectedProvider((provider) => provider?.isMetaMask);
+}
+
+function getPhantomProvider() {
+  return getInjectedProvider((provider) => provider?.isPhantom);
+}
+
+function createInjectedWallet({ id, name, rdns, providerResolver }) {
+  return () => ({
+    id,
+    name,
+    rdns,
+    iconUrl: "/static/logo.png",
+    iconBackground: "#111111",
+    installed: typeof window !== "undefined" ? Boolean(providerResolver()) : undefined,
+    createConnector: (walletDetails) =>
+      createConnector((config) => ({
+        ...injected({
+          shimDisconnect: true,
+          target: {
+            id,
+            name,
+            provider: providerResolver,
+          },
+        })(config),
+        ...walletDetails,
+      })),
+  });
+}
+
+const metaMaskWallet = createInjectedWallet({
+  id: "metaMask",
   name: "MetaMask",
   rdns: "io.metamask",
-  iconUrl: "/static/logo.png",
-  iconBackground: "#111111",
-  installed: typeof window !== "undefined" ? Boolean(getMetaMaskProvider()) : undefined,
-  createConnector: (walletDetails) =>
-    createConnector((config) => ({
-      ...injected({
-        shimDisconnect: true,
-        target: {
-          id: "metaMask",
-          name: "MetaMask",
-          provider: getMetaMaskProvider,
-        },
-      })(config),
-      ...walletDetails,
-    })),
+  providerResolver: getMetaMaskProvider,
+});
+
+const phantomWallet = createInjectedWallet({
+  id: "phantom",
+  name: "Phantom",
+  rdns: "app.phantom",
+  providerResolver: getPhantomProvider,
 });
 
 export const wagmiConfig = getDefaultConfig({
@@ -45,7 +79,7 @@ export const wagmiConfig = getDefaultConfig({
   wallets: [
     {
       groupName: "Recommended",
-      wallets: [metaMaskOnlyWallet],
+      wallets: [metaMaskWallet, phantomWallet],
     },
   ],
   transports: {

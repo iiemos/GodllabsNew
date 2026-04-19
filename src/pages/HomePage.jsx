@@ -132,6 +132,11 @@ export default function HomePage() {
     };
 
     const draw = (time) => {
+      if (document.hidden) {
+        frame = 0;
+        return;
+      }
+
       context.clearRect(0, 0, width, height);
       followX += (followTargetX - followX) * 0.08;
       followY += (followTargetY - followY) * 0.08;
@@ -157,21 +162,41 @@ export default function HomePage() {
       frame = window.requestAnimationFrame(draw);
     };
 
+    const startAnimation = () => {
+      if (frame !== 0 || document.hidden) return;
+      frame = window.requestAnimationFrame(draw);
+    };
+
+    const stopAnimation = () => {
+      if (frame === 0) return;
+      window.cancelAnimationFrame(frame);
+      frame = 0;
+    };
+
     resize();
-    frame = window.requestAnimationFrame(draw);
+    startAnimation();
 
     const observer = new ResizeObserver(resize);
     observer.observe(container);
     window.addEventListener("resize", resize);
     container.addEventListener("pointermove", onPointerMove, { passive: true });
     container.addEventListener("pointerleave", onPointerLeave);
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        stopAnimation();
+      } else {
+        startAnimation();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
       observer.disconnect();
       window.removeEventListener("resize", resize);
       container.removeEventListener("pointermove", onPointerMove);
       container.removeEventListener("pointerleave", onPointerLeave);
-      window.cancelAnimationFrame(frame);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      stopAnimation();
     };
   }, []);
 

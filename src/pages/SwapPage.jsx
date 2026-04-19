@@ -432,7 +432,7 @@ export default function SwapPage() {
           <div className="pointer-events-none absolute -bottom-24 -right-24 h-52 w-52 rounded-full bg-[radial-gradient(circle,rgba(252,213,53,0.16)_0%,rgba(252,213,53,0)_72%)] blur-2xl" />
 
           <div className="relative z-10">
-            <div>
+            <div className="flex flex-nowrap items-center justify-center gap-1 overflow-x-auto pb-1 sm:gap-2">
               {SWAP_ROUTES.map((tab) => {
                 const active = tab.id === activeTab;
                 return (
@@ -440,7 +440,7 @@ export default function SwapPage() {
                     key={tab.id}
                     type="button"
                     onClick={() => handleSelectTab(tab.id)}
-                    className={`mx-1 rounded-full px-4 py-2 text-sm transition ${
+                    className={`shrink-0 rounded-full px-2.5 py-1.5 text-[11px] transition sm:px-4 sm:py-2 sm:text-sm ${
                       active
                         ? "morgan-btn-primary border-0 font-semibold text-[#111111] shadow-[0_10px_18px_rgba(0,0,0,0.44)]"
                         : "morgan-btn-secondary border border-transparent bg-transparent text-slate-300 hover:text-white"
