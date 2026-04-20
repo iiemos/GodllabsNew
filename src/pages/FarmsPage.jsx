@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
-import { MaxUint256, formatUnits } from "ethers";
+import { MaxUint256, formatUnits, isAddress } from "ethers";
 import { useTranslation } from "react-i18next";
 import { useNotification } from "../components/Notification";
 import { useWallet } from "../contexts/WalletContext";
@@ -22,6 +22,27 @@ const tokenAddressByKey = {
   godl: ADDRESSES.godl,
   gdl: ADDRESSES.gdl,
 };
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+function isUsableAddress(value) {
+  return typeof value === "string" && isAddress(value) && value.toLowerCase() !== ZERO_ADDRESS;
+}
+
+async function resolveLpTokenAddress(provider, label, onChainAddress, fallbackAddress) {
+  const candidates = [onChainAddress, fallbackAddress]
+    .map((value) => String(value || ""))
+    .filter((value, index, list) => isUsableAddress(value) && list.indexOf(value) === index);
+
+  for (const candidate of candidates) {
+    try {
+      await assertContractCode(provider, candidate, label);
+      return candidate;
+    } catch {}
+  }
+
+  return "";
+}
 
 function createInitialLiquidityState() {
   return {
@@ -116,8 +137,6 @@ export default function FarmsPage() {
 
   const [farmState, setFarmState] = useState({
     paused: false,
-    whitelistMode: false,
-    whitelisted: true,
     blacklisted: false,
     startTimestamp: 0n,
     emittedTotal: 0n,
@@ -132,9 +151,8 @@ export default function FarmsPage() {
 
     try {
       await validateCoreContractAddresses(readProvider);
-      const [paused, whitelistMode, startTimestamp, emittedTotal] = await Promise.all([
+      const [paused, startTimestamp, emittedTotal] = await Promise.all([
         contracts.lp.paused(),
-        contracts.lp.whitelistMode(),
         contracts.lp.startTimestamp(),
         contracts.lp.emittedTotal(),
       ]);
@@ -144,21 +162,39 @@ export default function FarmsPage() {
       const dayIndex = nowTs > startTs ? Math.floor((nowTs - startTs) / 86400) : 0;
       const currentDailyEmission = await contracts.lp.dailyEmission(dayIndex);
 
-      let whitelisted = true;
       let blacklisted = false;
 
       if (address) {
-        [whitelisted, blacklisted] = await Promise.all([
-          contracts.lp.whitelisted(address),
-          contracts.lp.blacklisted(address),
-        ]);
+        if (typeof contracts.lp.blacklisted === "function") {
+          blacklisted = await contracts.lp.blacklisted(address).catch(() => false);
+        }
       }
 
       const pools = await Promise.all(
         LP_POOLS.map(async (meta) => {
           const [poolInfo, poolEnabled] = await Promise.all([contracts.lp.pools(meta.pid), contracts.lp.poolEnabled(meta.pid).catch(() => true)]);
-          const lpTokenAddress = String(poolInfo.lpToken);
-          await assertContractCode(readProvider, lpTokenAddress, `${meta.pair} LP Token`);
+          const lpTokenAddress = await resolveLpTokenAddress(
+            readProvider,
+            `${meta.pair} LP Token`,
+            poolInfo.lpToken,
+            meta.lpAddress,
+          );
+
+          if (!lpTokenAddress) {
+            return {
+              ...meta,
+              lpTokenAddress: ZERO_ADDRESS,
+              lpSymbol: "LP",
+              lpDecimals: 18,
+              allocPoint: poolInfo.allocPoint,
+              totalStaked: poolInfo.totalStaked,
+              poolEnabled: false,
+              walletBalance: 0n,
+              stakedAmount: 0n,
+              pending: 0n,
+              status: "ended",
+            };
+          }
           const lpTokenContract = createErc20Contract(lpTokenAddress, readProvider);
           const [lpDecimals, lpSymbol] = await Promise.all([
             lpTokenContract.decimals().catch(() => 18),
@@ -205,8 +241,6 @@ export default function FarmsPage() {
 
       setFarmState({
         paused,
-        whitelistMode,
-        whitelisted,
         blacklisted,
         startTimestamp,
         emittedTotal,
@@ -287,18 +321,16 @@ export default function FarmsPage() {
     if (!isExpectedChain(chainId)) return false;
     if (farmState.paused) return false;
     if (farmState.blacklisted) return false;
-    if (farmState.whitelistMode && !farmState.whitelisted) return false;
     return true;
-  }, [address, chainId, farmState.blacklisted, farmState.paused, farmState.whitelistMode, farmState.whitelisted]);
+  }, [address, chainId, farmState.blacklisted, farmState.paused]);
 
   const writeBlockReason = useMemo(() => {
     if (!address) return pageT("errors.connectWalletFirst");
     if (!isExpectedChain(chainId)) return pageT("errors.switchNetwork", { chainId: TBSC_CHAIN_ID });
     if (farmState.paused) return pageT("errors.paused");
     if (farmState.blacklisted) return pageT("errors.blacklisted");
-    if (farmState.whitelistMode && !farmState.whitelisted) return pageT("errors.notWhitelisted");
     return "";
-  }, [address, chainId, farmState.blacklisted, farmState.paused, farmState.whitelistMode, farmState.whitelisted, pageT]);
+  }, [address, chainId, farmState.blacklisted, farmState.paused, pageT]);
 
   const ensureSigner = useCallback(async () => {
     let currentAddress = address;

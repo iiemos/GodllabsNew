@@ -1,4 +1,4 @@
-# 前端对接文档（260415）
+# 前端对接文档（260418）
 
 
 > 适用合约：`GoldStakingProtocol`、`LpStakingProtocol`（代理地址）
@@ -38,11 +38,12 @@
 
 - `nextPurchaseId() -> uint256`
 - `purchases(uint256 purchaseId) -> (owner, godlAmount, usgdPrincipalGross, upfrontFeeUsgd, termType, startAt, endAt, gdlBonusCapUsdE18, maturedClaimed, settlementAdjustmentUsgd, claimedGdlValueUsdE18)`
-- `termConfigs(uint256 termType) -> (duration, months, apyBps, gdlBonusBps)`
+- `termConfigs(uint256 termType) -> (duration, yieldDuration, months, apyBps, gdlBonusBps)`
 - `pendingMatured(uint256 purchaseId) -> (usgdPrincipalOut, usgdYieldOut)`
 - `pendingGdl(uint256 purchaseId) -> (gdlOut)`
 - `MIN_PURCHASE_GODL()`
 - `GDL_RELEASE_STEP_SECONDS()`（当前为 3）
+- `gdlBonusMultiplierBps()`
 - `whitelistMode()` / `whitelisted(address)` / `blacklisted(address)` / `paused()`
 - `feeTreasury()` / `pancakeRouter()` / `maxSlippageBps()` / `gdlUsgdPair()`
 
@@ -70,6 +71,8 @@
 
 - `setFeeTreasury(address)`
 - `setTermConfig(termType, duration, months, apyBps, gdlBonusBps)`
+- `setTermConfigWithYieldDuration(termType, duration, yieldDuration, months, apyBps, gdlBonusBps)`
+- `setGdlBonusMultiplierBps(uint256)`
 - `setSettlementAdjustmentUsgd(purchaseId, int256 adjustmentUsgd)`
 - `setWhitelistMode(bool)` / `setWhitelisted(address,bool)` / `setBlacklisted(address,bool)`
 - `setPancakeRouter(address)` / `setMaxSlippageBps(uint256)` / `setGdlUsgdPair(address)`
@@ -137,6 +140,8 @@ if (p > 0n || y > 0n) await (await gold.claimMatured(purchaseId)).wait();
 - `pools(uint8 pid) -> (lpToken, allocPoint, accRewardPerShare, lastRewardTime, totalStaked)`，pid 仅 `0/1/2`
 - `users(uint8 pid, address user) -> (amount, rewardDebt, pendingCredit)`
 - `pendingMining(uint8 pid, address user) -> uint256`
+- `poolEnabled(uint8 pid) -> bool`
+- `pendingBurnableFromDisabledPools() -> uint256`
 - `dailyEmission(uint256 dayIndex) -> uint256`
 - `startTimestamp()` / `emittedTotal()` / `EMISSION_CAP()`
 - `whitelistMode()` / `whitelisted(address)` / `blacklisted(address)` / `paused()`
@@ -165,16 +170,30 @@ if (p > 0n || y > 0n) await (await gold.claimMatured(purchaseId)).wait();
 - `Withdrawn(user, pid, amount)`
 - `Claimed(user, pid, amount)`
 - `SyncDay(at)`
+- `PoolEnabledUpdated(pid, enabled)`
+- `EmissionParamsUpdated(dailyEmissionRate, dailyDecayRate)`
+- `PoolAllocPointsUpdated(alloc0, alloc1, alloc2)`
+- `DisabledPoolRewardsBurned(amount, burnAddress)`
 
 
 ### 3.4 常见错误
 
 
 - `InvalidPid`：pid 非 0/1/2
+- `PoolDisabled`：矿池被关闭
 - `NotStarted`：挖矿未开始
 - `ZeroAmount`：金额为 0
 - `InsufficientAmount`：提取数量超过已质押
 - `NotListed`：白黑名单限制
+
+
+### 3.5 管理后台方法（管理员角色）
+
+
+- `setEmissionParams(uint256 dailyEmission, uint256 dailyDecay)`
+- `setPoolAllocPoints(uint256[3] allocPoints)`（总和必须 10000）
+- `setPoolEnabled(uint8 pid, bool enabled)`（关闭池要求当前池无质押）
+- `burnDisabledPoolAccrued()`（把关闭池累计奖励转入 `0x...dEaD`）
 
 
 ---

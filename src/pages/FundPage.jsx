@@ -77,8 +77,6 @@ export default function FundPage() {
 
   const [fundState, setFundState] = useState({
     paused: false,
-    whitelistMode: false,
-    whitelisted: true,
     blacklisted: false,
     godlBalance: 0n,
     minPurchase: parseTokenAmount("0.1"),
@@ -106,9 +104,8 @@ export default function FundPage() {
     try {
       await validateCoreContractAddresses(readProvider, { includeRouter: true });
 
-      const [paused, whitelistMode, minPurchase, releaseStepSeconds, nextPurchaseId, rawTerms, spotGodlPrice, spotGdlPrice] = await Promise.all([
+      const [paused, minPurchase, releaseStepSeconds, nextPurchaseId, rawTerms, spotGodlPrice, spotGdlPrice] = await Promise.all([
         contracts.gold.paused(),
-        contracts.gold.whitelistMode(),
         contracts.gold.MIN_PURCHASE_GODL().catch(() => parseTokenAmount("0.1")),
         contracts.gold.GDL_RELEASE_STEP_SECONDS().catch(() => 0n),
         contracts.gold.nextPurchaseId(),
@@ -119,17 +116,12 @@ export default function FundPage() {
 
       const terms = Object.fromEntries(rawTerms.map(([termType, termConfig]) => [termType, normalizeTermConfig(termConfig)]));
 
-      let whitelisted = true;
       let blacklisted = false;
       let godlBalance = 0n;
       let purchases = [];
 
       if (address) {
-        [whitelisted, blacklisted, godlBalance] = await Promise.all([
-          contracts.gold.whitelisted(address),
-          contracts.gold.blacklisted(address),
-          contracts.godl.balanceOf(address).catch(() => 0n),
-        ]);
+        [blacklisted, godlBalance] = await Promise.all([contracts.gold.blacklisted(address), contracts.godl.balanceOf(address).catch(() => 0n)]);
 
         const ids = [];
         for (let id = 1n; id < nextPurchaseId; id += 1n) {
@@ -191,8 +183,6 @@ export default function FundPage() {
 
       setFundState({
         paused,
-        whitelistMode,
-        whitelisted,
         blacklisted,
         godlBalance,
         minPurchase,
@@ -355,18 +345,16 @@ export default function FundPage() {
     if (!isExpectedChain(chainId)) return false;
     if (fundState.paused) return false;
     if (fundState.blacklisted) return false;
-    if (fundState.whitelistMode && !fundState.whitelisted) return false;
     return true;
-  }, [address, chainId, fundState.blacklisted, fundState.paused, fundState.whitelistMode, fundState.whitelisted]);
+  }, [address, chainId, fundState.blacklisted, fundState.paused]);
 
   const writeBlockReason = useMemo(() => {
     if (!address) return pageT("errors.connectWalletFirst");
     if (!isExpectedChain(chainId)) return pageT("errors.switchNetwork", { chainId: TBSC_CHAIN_ID });
     if (fundState.paused) return pageT("errors.paused");
     if (fundState.blacklisted) return pageT("errors.blacklisted");
-    if (fundState.whitelistMode && !fundState.whitelisted) return pageT("errors.notWhitelisted");
     return "";
-  }, [address, chainId, fundState.blacklisted, fundState.paused, fundState.whitelistMode, fundState.whitelisted, pageT]);
+  }, [address, chainId, fundState.blacklisted, fundState.paused, pageT]);
 
   const ensureSigner = useCallback(async () => {
     let currentAddress = address;

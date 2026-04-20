@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { MaxUint256, formatUnits } from "ethers";
+import { MaxUint256, formatUnits, isAddress } from "ethers";
 import { useNotification } from "../components/Notification";
 import { useWallet } from "../contexts/WalletContext";
 import { ADDRESSES, SWAP_ROUTES, TBSC_CHAIN_ID, TOKEN_ORDER } from "../web3/config";
@@ -16,6 +16,27 @@ const tokenUiMeta = {
   GODL: { icon: "mdi:gold", chipClass: "bg-amber-500/20 text-amber-300" },
   GDL: { icon: "mdi:chart-donut-variant", chipClass: "bg-orange-500/20 text-orange-300" },
 };
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+function isUsableAddress(value) {
+  return typeof value === "string" && isAddress(value) && value.toLowerCase() !== ZERO_ADDRESS;
+}
+
+async function resolvePairAddress(provider, label, onChainAddress, fallbackAddress) {
+  const candidates = [onChainAddress, fallbackAddress]
+    .map((value) => String(value || ""))
+    .filter((value, index, list) => isUsableAddress(value) && list.indexOf(value) === index);
+
+  for (const candidate of candidates) {
+    try {
+      await assertContractCode(provider, candidate, label);
+      return candidate;
+    } catch {}
+  }
+
+  return "";
+}
 
 function calcRateString(amountIn, inDecimals, amountOut, outDecimals, inSymbol, outSymbol) {
   if (amountIn <= 0n || amountOut <= 0n) {
@@ -133,15 +154,19 @@ export default function SwapPage() {
 
     const entries = await Promise.all(
       SWAP_ROUTES.map(async (route) => {
-        let pairAddress = route.pairAddressFallback || "";
+        let onChainPairAddress = "";
         if (typeof route.poolPid === "number") {
           try {
             const poolInfo = await contracts.lp.pools(route.poolPid);
-            if (poolInfo?.lpToken) {
-              pairAddress = String(poolInfo.lpToken);
-            }
+            onChainPairAddress = String(poolInfo?.lpToken || "");
           } catch {}
         }
+        const pairAddress = await resolvePairAddress(
+          provider,
+          `Swap Pair (${route.id})`,
+          onChainPairAddress,
+          route.pairAddressFallback,
+        );
         return [route.id, pairAddress];
       }),
     );
@@ -153,7 +178,7 @@ export default function SwapPage() {
     async (nextAmount) => {
       const provider = getReadProvider();
       const contracts = createCoreContracts(provider);
-      const routePairAddress = routePairs[currentRoute.id] || currentRoute.pairAddressFallback || "";
+      const routePairAddress = String(routePairs[currentRoute.id] || "");
 
       const fromAddress = tokenMap[fromKey]?.address;
       const toAddress = tokenMap[toKey]?.address;
@@ -220,7 +245,7 @@ export default function SwapPage() {
         setQuoteLoading(false);
       }
     },
-    [currentRoute.id, currentRoute.pairAddressFallback, fromKey, notify, routePairs, t, toKey, tokenMap, tokenState],
+    [currentRoute.id, fromKey, notify, routePairs, t, toKey, tokenMap, tokenState],
   );
 
   useEffect(() => {
