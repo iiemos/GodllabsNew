@@ -578,6 +578,8 @@ const en = {
         maturityTime: "Maturity Time",
         claimablePrincipal: "Claimable Principal",
         claimableYield: "Claimable Yield",
+        claimableGdlValue: "Claimable GDL Bonus Value",
+        claimableTotalWithGdl: "Claimable Total Value (with GDL Bonus)",
         claimableGdl: "Claimable GDL",
         gdlBonusCapUsd: "GDL Bonus Cap Value",
         claimedGdlValueUsd: "Claimed GDL Value",
@@ -590,12 +592,14 @@ const en = {
         yieldTotal: "Estimated Total Yield",
         gdlBonusUsd: "GDL Bonus Value",
         gdlBonus: "Estimated GDL Bonus",
+        totalWithGdlBonus: "Total Maturity Value (with GDL Bonus)",
       },
       summary: {
         principal: "Subscribed Principal (USGD)",
         pendingGdl: "Current Claimable GDL",
         weeklyClaimable: "Current Weekly Claimable (USGD)",
         maturedClaimable: "Current Matured Claimable",
+        maturedWithGdl: "Current Total Claimable Value (with GDL Bonus)",
       },
       actions: {
         goSwapGodl: "Swap to GODL",

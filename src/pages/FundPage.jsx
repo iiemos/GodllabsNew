@@ -11,10 +11,48 @@ import { formatBps, formatTimestamp, formatTokenAmount, parseTokenAmount, toErro
 
 const ONE_E18 = 10n ** 18n;
 const ZERO_PENDING_MATURED = { principal: 0n, yieldAmount: 0n };
+const DEFAULT_GDL_BONUS_MULTIPLIER_BPS = 10000;
+const FIXED_GDL_BONUS_BPS_BY_MONTH = Object.freeze({
+  3: 4000,
+  6: 6000,
+  12: 8000,
+});
+
+function toPositiveInt(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 0;
+  return Math.floor(parsed);
+}
+
+function getEffectiveGdlBonusBps(termMonths, rawGdlBonusBps, gdlBonusMultiplierBps = DEFAULT_GDL_BONUS_MULTIPLIER_BPS) {
+  const months = toPositiveInt(termMonths);
+  const fixedBps = FIXED_GDL_BONUS_BPS_BY_MONTH[months];
+  if (typeof fixedBps === "number") return fixedBps;
+
+  const rawBps = toPositiveInt(rawGdlBonusBps);
+  const multiplierBps = toPositiveInt(gdlBonusMultiplierBps);
+  if (!rawBps || !multiplierBps) return 0;
+  return Number((BigInt(rawBps) * BigInt(multiplierBps)) / 10000n);
+}
+
+function adjustRewardUsdByBonusConfig(usdValue, termMonths, rawGdlBonusBps, gdlBonusMultiplierBps = DEFAULT_GDL_BONUS_MULTIPLIER_BPS) {
+  if (usdValue <= 0n) return 0n;
+  const rawBps = toPositiveInt(rawGdlBonusBps);
+  if (!rawBps) return usdValue;
+
+  const effectiveBps = getEffectiveGdlBonusBps(termMonths, rawBps, gdlBonusMultiplierBps);
+  if (!effectiveBps || effectiveBps === rawBps) return usdValue;
+  return (usdValue * BigInt(effectiveBps)) / BigInt(rawBps);
+}
+
+function convertGdlToUsd(gdlAmount, spotGdlPrice) {
+  if (gdlAmount <= 0n || spotGdlPrice <= 0n) return 0n;
+  return (gdlAmount * spotGdlPrice) / ONE_E18;
+}
 
 function estimatePurchase(godlAmount, spotGodlPrice, termDuration, yieldDuration, termMonths, apyBps, gdlBonusBps, spotGdlPrice) {
   if (godlAmount <= 0n || spotGodlPrice <= 0n) {
-    return { principal: 0n, upfrontFee: 0n, yieldTotal: 0n, maturityOut: 0n, gdlBonusUsd: 0n, gdlOut: 0n };
+    return { principal: 0n, upfrontFee: 0n, yieldTotal: 0n, maturityOut: 0n, gdlBonusUsd: 0n, gdlOut: 0n, totalWithGdlBonus: 0n };
   }
 
   const principal = (godlAmount * spotGodlPrice) / ONE_E18;
@@ -26,8 +64,9 @@ function estimatePurchase(godlAmount, spotGodlPrice, termDuration, yieldDuration
   const maturityOut = principalOut + yieldTotal;
   const gdlBonusUsd = (yieldTotal * BigInt(gdlBonusBps)) / 10000n;
   const gdlOut = spotGdlPrice > 0n ? (gdlBonusUsd * ONE_E18) / spotGdlPrice : 0n;
+  const totalWithGdlBonus = maturityOut + gdlBonusUsd;
 
-  return { principal, upfrontFee, yieldTotal, maturityOut, gdlBonusUsd, gdlOut };
+  return { principal, upfrontFee, yieldTotal, maturityOut, gdlBonusUsd, gdlOut, totalWithGdlBonus };
 }
 
 function normalizeTermConfig(termConfig) {
@@ -83,6 +122,7 @@ export default function FundPage() {
     releaseStepSeconds: 0n,
     spotGodlPrice: 0n,
     spotGdlPrice: 0n,
+    gdlBonusMultiplierBps: DEFAULT_GDL_BONUS_MULTIPLIER_BPS,
     terms: {},
     purchases: [],
   });
@@ -104,15 +144,17 @@ export default function FundPage() {
     try {
       await validateCoreContractAddresses(readProvider, { includeRouter: true });
 
-      const [paused, minPurchase, releaseStepSeconds, nextPurchaseId, rawTerms, spotGodlPrice, spotGdlPrice] = await Promise.all([
-        contracts.gold.paused(),
-        contracts.gold.MIN_PURCHASE_GODL().catch(() => parseTokenAmount("0.1")),
-        contracts.gold.GDL_RELEASE_STEP_SECONDS().catch(() => 0n),
-        contracts.gold.nextPurchaseId(),
-        Promise.all(GOLD_TERM_OPTIONS.map(async ({ termType }) => [termType, await contracts.gold.termConfigs(termType)])),
-        loadSpotPrice(contracts.router, ADDRESSES.godl, ADDRESSES.usgd),
-        loadSpotPrice(contracts.router, ADDRESSES.gdl, ADDRESSES.usgd),
-      ]);
+      const [paused, minPurchase, releaseStepSeconds, gdlBonusMultiplier, nextPurchaseId, rawTerms, spotGodlPrice, spotGdlPrice] =
+        await Promise.all([
+          contracts.gold.paused(),
+          contracts.gold.MIN_PURCHASE_GODL().catch(() => parseTokenAmount("0.1")),
+          contracts.gold.GDL_RELEASE_STEP_SECONDS().catch(() => 0n),
+          contracts.gold.gdlBonusMultiplierBps().catch(() => 10000n),
+          contracts.gold.nextPurchaseId(),
+          Promise.all(GOLD_TERM_OPTIONS.map(async ({ termType }) => [termType, await contracts.gold.termConfigs(termType)])),
+          loadSpotPrice(contracts.router, ADDRESSES.godl, ADDRESSES.usgd),
+          loadSpotPrice(contracts.router, ADDRESSES.gdl, ADDRESSES.usgd),
+        ]);
 
       const terms = Object.fromEntries(rawTerms.map(([termType, termConfig]) => [termType, normalizeTermConfig(termConfig)]));
 
@@ -189,6 +231,7 @@ export default function FundPage() {
         releaseStepSeconds,
         spotGodlPrice,
         spotGdlPrice,
+        gdlBonusMultiplierBps: toPositiveInt(gdlBonusMultiplier) || DEFAULT_GDL_BONUS_MULTIPLIER_BPS,
         terms,
         purchases,
       });
@@ -289,6 +332,16 @@ export default function FundPage() {
     gdlBonusBps: 0,
   };
 
+  const activeTermEffectiveGdlBonusBps = useMemo(
+    () =>
+      getEffectiveGdlBonusBps(
+        activeTerm.months ?? 0,
+        activeTerm.gdlBonusBps ?? 0,
+        fundState.gdlBonusMultiplierBps ?? DEFAULT_GDL_BONUS_MULTIPLIER_BPS,
+      ),
+    [activeTerm.gdlBonusBps, activeTerm.months, fundState.gdlBonusMultiplierBps],
+  );
+
   const parsedAmount = useMemo(() => {
     try {
       return parseTokenAmount(amountInput);
@@ -306,13 +359,13 @@ export default function FundPage() {
         activeTerm.yieldDuration ?? 0n,
         activeTerm.months ?? 3,
         activeTerm.apyBps ?? 0,
-        activeTerm.gdlBonusBps ?? 0,
+        activeTermEffectiveGdlBonusBps,
         fundState.spotGdlPrice,
       ),
     [
       activeTerm.apyBps,
       activeTerm.duration,
-      activeTerm.gdlBonusBps,
+      activeTermEffectiveGdlBonusBps,
       activeTerm.months,
       activeTerm.yieldDuration,
       fundState.spotGdlPrice,
@@ -324,14 +377,24 @@ export default function FundPage() {
   const totals = useMemo(() => {
     return fundState.purchases.reduce(
       (acc, purchase) => {
+        const termConfig = fundState.terms[purchase.termType];
+        const pendingGdlUsd = convertGdlToUsd(purchase.pendingGdl, fundState.spotGdlPrice);
         acc.principal += purchase.usgdPrincipalGross;
         acc.maturedUsgd += purchase.pendingMatured.principal + purchase.pendingMatured.yieldAmount;
         acc.pendingGdl += purchase.pendingGdl;
+        acc.pendingGdlUsd += pendingGdlUsd;
+        acc.maturedWithGdlValue += purchase.pendingMatured.principal + purchase.pendingMatured.yieldAmount + pendingGdlUsd;
+        acc.adjustedGdlBonusCapUsd += adjustRewardUsdByBonusConfig(
+          purchase.gdlBonusCapUsdE18,
+          termConfig?.months ?? 0,
+          termConfig?.gdlBonusBps ?? 0,
+          fundState.gdlBonusMultiplierBps,
+        );
         return acc;
       },
-      { principal: 0n, maturedUsgd: 0n, pendingGdl: 0n },
+      { principal: 0n, maturedUsgd: 0n, pendingGdl: 0n, pendingGdlUsd: 0n, maturedWithGdlValue: 0n, adjustedGdlBonusCapUsd: 0n },
     );
-  }, [fundState.purchases]);
+  }, [fundState.gdlBonusMultiplierBps, fundState.purchases, fundState.spotGdlPrice, fundState.terms]);
 
   const filteredPurchases = useMemo(() => {
     if (recordFilter === "completed") {
@@ -548,6 +611,13 @@ export default function FundPage() {
               const config = fundState.terms[termType];
               const active = selectedTermType === termType;
               const termLabel = config?.months ? pageT("labels.termMonths", { months: config.months }) : label;
+              const displayGdlBonusBps = config
+                ? getEffectiveGdlBonusBps(
+                    config.months ?? 0,
+                    config.gdlBonusBps ?? 0,
+                    fundState.gdlBonusMultiplierBps ?? DEFAULT_GDL_BONUS_MULTIPLIER_BPS,
+                  )
+                : 0;
 
               return (
                 <button
@@ -560,7 +630,7 @@ export default function FundPage() {
                 >
                   <p className="text-sm font-semibold text-white">{termLabel}</p>
                   <p className="mt-1 text-xs text-slate-400">
-                    APY {config ? formatBps(config.apyBps) : "-"} / GDL Bonus {config ? `${(config.gdlBonusBps / 10000).toFixed(2)}x` : "-"}
+                    APY {config ? formatBps(config.apyBps) : "-"} / GDL Bonus {config ? `${(displayGdlBonusBps / 10000).toFixed(2)}x` : "-"}
                   </p>
                 </button>
               );
@@ -643,6 +713,10 @@ export default function FundPage() {
             <p>
               {pageT("estimates.gdlBonus")}: <span className="font-semibold text-[#fcd535]">{formatTokenAmount(estimate.gdlOut)} GDL</span>
             </p>
+            <p>
+              {pageT("estimates.totalWithGdlBonus")}:{" "}
+              <span className="font-semibold text-[#fcd535]">{formatTokenAmount(estimate.totalWithGdlBonus)} USGD</span>
+            </p>
           </div>
 
           {!canWrite && <p className="mt-3 text-xs text-amber-300">{writeBlockReason}</p>}
@@ -652,14 +726,23 @@ export default function FundPage() {
           <article className="governance-panel-soft rounded-3xl p-5">
             <p className="text-sm text-slate-500">{pageT("summary.principal")}</p>
             <p className="mt-2 text-3xl font-semibold text-white">{formatTokenAmount(totals.principal)} USGD</p>
+            <p className="mt-2 text-xs text-slate-500">
+              {pageT("fields.gdlBonusCapUsd")}: {formatTokenAmount(totals.adjustedGdlBonusCapUsd)} USGD
+            </p>
           </article>
           <article className="governance-panel-soft rounded-3xl p-5">
             <p className="text-sm text-slate-500">{pageT("summary.pendingGdl")}</p>
             <p className="mt-2 text-3xl font-semibold text-[#fcd535]">{formatTokenAmount(totals.pendingGdl)} GDL</p>
+            <p className="mt-2 text-xs text-slate-500">
+              {pageT("estimates.gdlBonusUsd")}: {formatTokenAmount(totals.pendingGdlUsd)} USGD
+            </p>
           </article>
           <article className="governance-panel-soft rounded-3xl p-5">
-            <p className="text-sm text-slate-500">{pageT("summary.maturedClaimable")}</p>
-            <p className="mt-2 text-3xl font-semibold text-emerald-300">{formatTokenAmount(totals.maturedUsgd)} USGD</p>
+            <p className="text-sm text-slate-500">{pageT("summary.maturedWithGdl")}</p>
+            <p className="mt-2 text-3xl font-semibold text-emerald-300">{formatTokenAmount(totals.maturedWithGdlValue)} USGD</p>
+            <p className="mt-2 text-xs text-slate-500">
+              {pageT("summary.maturedClaimable")}: {formatTokenAmount(totals.maturedUsgd)} USGD
+            </p>
           </article>
         </div>
 
@@ -694,6 +777,26 @@ export default function FundPage() {
           ) : (
             filteredPurchases.map((purchase) => {
               const termConfig = fundState.terms[purchase.termType];
+              const effectiveBonusBps = getEffectiveGdlBonusBps(
+                termConfig?.months ?? 0,
+                termConfig?.gdlBonusBps ?? 0,
+                fundState.gdlBonusMultiplierBps ?? DEFAULT_GDL_BONUS_MULTIPLIER_BPS,
+              );
+              const adjustedGdlBonusCapUsd = adjustRewardUsdByBonusConfig(
+                purchase.gdlBonusCapUsdE18,
+                termConfig?.months ?? 0,
+                termConfig?.gdlBonusBps ?? 0,
+                fundState.gdlBonusMultiplierBps,
+              );
+              const adjustedClaimedGdlValueUsd = adjustRewardUsdByBonusConfig(
+                purchase.claimedGdlValueUsdE18,
+                termConfig?.months ?? 0,
+                termConfig?.gdlBonusBps ?? 0,
+                fundState.gdlBonusMultiplierBps,
+              );
+              const pendingGdlValueUsd = convertGdlToUsd(purchase.pendingGdl, fundState.spotGdlPrice);
+              const claimableTotalWithGdl =
+                purchase.pendingMatured.principal + purchase.pendingMatured.yieldAmount + pendingGdlValueUsd;
               const maturedReady =
                 !purchase.maturedClaimed && (purchase.pendingMatured.principal > 0n || purchase.pendingMatured.yieldAmount > 0n);
               const gdlReady = purchase.pendingGdl > 0n;
@@ -709,7 +812,7 @@ export default function FundPage() {
                         <p className="mt-2 text-sm text-slate-400">
                           {pageT("labels.term")}: {termConfig?.months ?? "-"} {pageT("labels.months")} · APY:{" "}
                           {termConfig ? formatBps(termConfig.apyBps) : "-"} · GDL Bonus:{" "}
-                          {termConfig ? `${(termConfig.gdlBonusBps / 10000).toFixed(2)}x` : "-"}
+                          {termConfig ? `${(effectiveBonusBps / 10000).toFixed(2)}x` : "-"}
                         </p>
                       </div>
                       <span
@@ -754,6 +857,14 @@ export default function FundPage() {
                           {pageT("fields.claimableYield")}:{" "}
                           <span className="font-semibold text-emerald-300">{formatTokenAmount(purchase.pendingMatured.yieldAmount)} USGD</span>
                         </p>
+                        <p>
+                          {pageT("fields.claimableGdlValue")}:{" "}
+                          <span className="font-semibold text-[#f0cd54]">{formatTokenAmount(pendingGdlValueUsd)} USGD</span>
+                        </p>
+                        <p>
+                          {pageT("fields.claimableTotalWithGdl")}:{" "}
+                          <span className="font-semibold text-[#fcd535]">{formatTokenAmount(claimableTotalWithGdl)} USGD</span>
+                        </p>
                       </div>
 
                       <button
@@ -779,11 +890,11 @@ export default function FundPage() {
                       <div className="mt-4 space-y-2 text-sm text-slate-400">
                         <p>
                           {pageT("fields.gdlBonusCapUsd")}:{" "}
-                          <span className="font-semibold text-slate-200">{formatTokenAmount(purchase.gdlBonusCapUsdE18)} USGD</span>
+                          <span className="font-semibold text-slate-200">{formatTokenAmount(adjustedGdlBonusCapUsd)} USGD</span>
                         </p>
                         <p>
                           {pageT("fields.claimedGdlValueUsd")}:{" "}
-                          <span className="font-semibold text-slate-200">{formatTokenAmount(purchase.claimedGdlValueUsdE18)} USGD</span>
+                          <span className="font-semibold text-slate-200">{formatTokenAmount(adjustedClaimedGdlValueUsd)} USGD</span>
                         </p>
                         <p>
                           {pageT("fields.claimableGdl")}:{" "}

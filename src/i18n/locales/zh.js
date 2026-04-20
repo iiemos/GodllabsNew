@@ -574,6 +574,8 @@ const zh = {
         maturityTime: "到期时间",
         claimablePrincipal: "可领本金",
         claimableYield: "可领收益",
+        claimableGdlValue: "可领 GDL 奖励价值",
+        claimableTotalWithGdl: "可领总价值（含 GDL 奖励）",
         claimableGdl: "可领 GDL",
         gdlBonusCapUsd: "GDL 奖励上限价值",
         claimedGdlValueUsd: "已领取 GDL 价值",
@@ -586,12 +588,14 @@ const zh = {
         yieldTotal: "预估总收益",
         gdlBonusUsd: "GDL 奖励价值",
         gdlBonus: "预估 GDL 奖励",
+        totalWithGdlBonus: "到期总价值（含 GDL 奖励）",
       },
       summary: {
         principal: "认购本金（USGD）",
         pendingGdl: "当前可领 GDL",
         weeklyClaimable: "当前可领周收益（USGD）",
         maturedClaimable: "当前可领到期收益",
+        maturedWithGdl: "当前可领总价值（含 GDL 奖励）",
       },
       actions: {
         goSwapGodl: "去兑换 GODL",
