@@ -29,6 +29,13 @@ export const erc20Abi = [
   },
   {
     type: "function",
+    name: "totalSupply",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
     name: "allowance",
     stateMutability: "view",
     inputs: [

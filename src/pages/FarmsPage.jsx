@@ -525,6 +525,8 @@ export default function FarmsPage() {
         const tokenBContract = createErc20Contract(tokenBAddress, provider);
         const lpTokenContract = createErc20Contract(pool.lpTokenAddress, provider);
         const pairContract = createPairContract(pool.lpTokenAddress, provider);
+        const totalLpSupplyPromise =
+          typeof lpTokenContract.totalSupply === "function" ? lpTokenContract.totalSupply().catch(() => 0n) : Promise.resolve(0n);
 
         const [tokenADecimals, tokenASymbol, tokenBDecimals, tokenBSymbol, tokenABalance, tokenBBalance, lpBalance, totalLpSupply, token0, reserves] =
           await Promise.all([
@@ -535,7 +537,7 @@ export default function FarmsPage() {
           address ? tokenAContract.balanceOf(address).catch(() => 0n) : 0n,
           address ? tokenBContract.balanceOf(address).catch(() => 0n) : 0n,
           address ? lpTokenContract.balanceOf(address).catch(() => 0n) : 0n,
-          lpTokenContract.totalSupply().catch(() => 0n),
+          totalLpSupplyPromise,
           pairContract.token0().catch(() => tokenAAddress),
           pairContract.getReserves().catch(() => ({ reserve0: 0n, reserve1: 0n })),
           ]);
