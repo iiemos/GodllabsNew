@@ -120,6 +120,12 @@ function estimatePoolApy(dailyReward, totalStaked, lpDecimals) {
   return Number.isFinite(apyPercent) ? apyPercent : null;
 }
 
+function formatApyPercent(value) {
+  if (value === null || !Number.isFinite(value) || value < 0) return "--";
+  const formatter = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 2 });
+  return `${formatter.format(value)}%`;
+}
+
 export default function FarmsPage() {
   const { t } = useTranslation();
   const { notify } = useNotification();
@@ -227,7 +233,7 @@ export default function FarmsPage() {
             walletBalance,
             stakedAmount,
             pending,
-            status: poolInfo.allocPoint > 0n ? "active" : "ended",
+            status: poolInfo.allocPoint > 0n && poolEnabled ? "active" : "ended",
           };
         }),
       );
@@ -855,7 +861,11 @@ export default function FarmsPage() {
   const filteredPools = useMemo(() => {
     let result = farmState.pools;
     if (statusFilter !== "all") {
-      result = result.filter((pool) => pool.status === statusFilter);
+      if (statusFilter === "active") {
+        result = result.filter((pool) => pool.status === "active" && pool.poolEnabled);
+      } else {
+        result = result.filter((pool) => pool.status === "ended" || !pool.poolEnabled);
+      }
     }
     if (onlyStaked) {
       result = result.filter((pool) => pool.stakedAmount > 0n);
@@ -867,7 +877,7 @@ export default function FarmsPage() {
     return farmState.pools.reduce(
       (acc, pool) => {
         acc.poolCount += 1;
-        if (pool.status === "active") acc.activeCount += 1;
+        if (pool.status === "active" && pool.poolEnabled) acc.activeCount += 1;
         acc.totalStaked += pool.totalStaked;
         return acc;
       },
@@ -1029,9 +1039,7 @@ export default function FarmsPage() {
                       </div>
                       <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
                         <p className="text-xs text-slate-500">{pageT("fields.estimatedApy")}</p>
-                        <p className="mt-1 text-lg font-semibold text-cyan-300">
-                          {pool.estimatedApy === null ? "--" : `${pool.estimatedApy.toLocaleString("en-US", { maximumFractionDigits: 2 })}%`}
-                        </p>
+                        <p className="mt-1 text-lg font-semibold text-cyan-300">{formatApyPercent(pool.estimatedApy)}</p>
                       </div>
                       <div className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
                         <p className="text-xs text-slate-500">{pageT("fields.claimableReward")}</p>
