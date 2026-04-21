@@ -36,14 +36,19 @@ function getEffectiveGdlBonusBps(termMonths, rawGdlBonusBps, gdlBonusMultiplierB
   return Number((BigInt(rawBps) * BigInt(multiplierBps)) / 10000n);
 }
 
-function adjustRewardUsdByBonusConfig(usdValue, termMonths, rawGdlBonusBps, gdlBonusMultiplierBps = DEFAULT_GDL_BONUS_MULTIPLIER_BPS) {
-  if (usdValue <= 0n) return 0n;
+function getContractConfiguredGdlBonusBps(rawGdlBonusBps, gdlBonusMultiplierBps = DEFAULT_GDL_BONUS_MULTIPLIER_BPS) {
   const rawBps = toPositiveInt(rawGdlBonusBps);
-  if (!rawBps) return usdValue;
+  const multiplierBps = toPositiveInt(gdlBonusMultiplierBps);
+  if (!rawBps || !multiplierBps) return 0;
+  return Number((BigInt(rawBps) * BigInt(multiplierBps)) / 10000n);
+}
 
-  const effectiveBps = getEffectiveGdlBonusBps(termMonths, rawBps, gdlBonusMultiplierBps);
-  if (!effectiveBps || effectiveBps === rawBps) return usdValue;
-  return (usdValue * BigInt(effectiveBps)) / BigInt(rawBps);
+function normalizeRewardUsdForDisplay(usdValue, termMonths, rawGdlBonusBps, gdlBonusMultiplierBps = DEFAULT_GDL_BONUS_MULTIPLIER_BPS) {
+  if (usdValue <= 0n) return 0n;
+  const displayBps = getEffectiveGdlBonusBps(termMonths, rawGdlBonusBps, gdlBonusMultiplierBps);
+  const contractBps = getContractConfiguredGdlBonusBps(rawGdlBonusBps, gdlBonusMultiplierBps);
+  if (!displayBps || !contractBps || displayBps === contractBps) return usdValue;
+  return (usdValue * BigInt(displayBps)) / BigInt(contractBps);
 }
 
 function convertGdlToUsd(gdlAmount, spotGdlPrice) {
@@ -55,22 +60,6 @@ function toInputAmount(value, decimals = 18) {
   const raw = formatUnits(value ?? 0n, decimals);
   if (!raw.includes(".")) return raw;
   return raw.replace(/\.?0+$/, "");
-}
-
-function estimateMaturedPayout(purchase, termConfig) {
-  if (!purchase) return 0n;
-
-  const principalOut = purchase.usgdPrincipalGross > purchase.upfrontFeeUsgd ? purchase.usgdPrincipalGross - purchase.upfrontFeeUsgd : 0n;
-  if (!termConfig) return principalOut + (purchase.settlementAdjustmentUsgd ?? 0n);
-
-  const duration = termConfig.duration ?? 0n;
-  const yieldDuration = termConfig.yieldDuration ?? duration;
-  const termMonths = Number(termConfig.months ?? 0);
-  const apyBps = toPositiveInt(termConfig.apyBps ?? 0);
-  const effectiveYieldDuration = yieldDuration > 0n ? yieldDuration : duration;
-  const durationDays = effectiveYieldDuration > 0n ? effectiveYieldDuration / 86400n : termMonths === 3 ? 90n : termMonths === 6 ? 180n : 365n;
-  const yieldTotal = (purchase.usgdPrincipalGross * BigInt(apyBps) * durationDays) / (365n * 10000n);
-  return principalOut + yieldTotal + (purchase.settlementAdjustmentUsgd ?? 0n);
 }
 
 function estimatePurchase(godlAmount, spotGodlPrice, termDuration, yieldDuration, termMonths, apyBps, gdlBonusBps, spotGdlPrice) {
@@ -419,7 +408,13 @@ export default function FundPage() {
     return fundState.purchases.reduce(
       (acc, purchase) => {
         const termConfig = fundState.terms[purchase.termType];
-        const pendingGdlUsd = convertGdlToUsd(purchase.pendingGdl, fundState.spotGdlPrice);
+        const pendingGdlUsdRaw = convertGdlToUsd(purchase.pendingGdl, fundState.spotGdlPrice);
+        const pendingGdlUsd = normalizeRewardUsdForDisplay(
+          pendingGdlUsdRaw,
+          termConfig?.months ?? 0,
+          termConfig?.gdlBonusBps ?? 0,
+          fundState.gdlBonusMultiplierBps,
+        );
         if (!purchase.maturedClaimed) {
           acc.principal += purchase.usgdPrincipalGross;
         }
@@ -427,7 +422,7 @@ export default function FundPage() {
         acc.pendingGdl += purchase.pendingGdl;
         acc.pendingGdlUsd += pendingGdlUsd;
         acc.maturedWithGdlValue += purchase.pendingMatured.principal + purchase.pendingMatured.yieldAmount + pendingGdlUsd;
-        acc.adjustedGdlBonusCapUsd += adjustRewardUsdByBonusConfig(
+        acc.adjustedGdlBonusCapUsd += normalizeRewardUsdForDisplay(
           purchase.gdlBonusCapUsdE18,
           termConfig?.months ?? 0,
           termConfig?.gdlBonusBps ?? 0,
@@ -850,22 +845,29 @@ export default function FundPage() {
                 termConfig?.gdlBonusBps ?? 0,
                 fundState.gdlBonusMultiplierBps ?? DEFAULT_GDL_BONUS_MULTIPLIER_BPS,
               );
-              const adjustedGdlBonusCapUsd = adjustRewardUsdByBonusConfig(
+              const adjustedGdlBonusCapUsd = normalizeRewardUsdForDisplay(
                 purchase.gdlBonusCapUsdE18,
                 termConfig?.months ?? 0,
                 termConfig?.gdlBonusBps ?? 0,
                 fundState.gdlBonusMultiplierBps,
               );
-              const adjustedClaimedGdlValueUsd = adjustRewardUsdByBonusConfig(
+              const adjustedClaimedGdlValueUsd = normalizeRewardUsdForDisplay(
                 purchase.claimedGdlValueUsdE18,
                 termConfig?.months ?? 0,
                 termConfig?.gdlBonusBps ?? 0,
                 fundState.gdlBonusMultiplierBps,
               );
-              const pendingGdlValueUsd = convertGdlToUsd(purchase.pendingGdl, fundState.spotGdlPrice);
+              const pendingGdlValueUsd = normalizeRewardUsdForDisplay(
+                convertGdlToUsd(purchase.pendingGdl, fundState.spotGdlPrice),
+                termConfig?.months ?? 0,
+                termConfig?.gdlBonusBps ?? 0,
+                fundState.gdlBonusMultiplierBps,
+              );
               const claimableTotalWithGdl =
                 purchase.pendingMatured.principal + purchase.pendingMatured.yieldAmount + pendingGdlValueUsd;
-              const claimedPrincipalAndYield = purchase.maturedClaimed ? estimateMaturedPayout(purchase, termConfig) : 0n;
+              const claimedPrincipal = purchase.maturedClaimed ? purchase.pendingMatured.principal : 0n;
+              const claimedYield = purchase.maturedClaimed ? purchase.pendingMatured.yieldAmount : 0n;
+              const claimedPrincipalAndYield = claimedPrincipal + claimedYield;
               const maturedReady =
                 !purchase.maturedClaimed && (purchase.pendingMatured.principal > 0n || purchase.pendingMatured.yieldAmount > 0n);
               const gdlReady = purchase.pendingGdl > 0n;
@@ -919,10 +921,20 @@ export default function FundPage() {
                           {pageT("fields.maturityTime")}: <span className="font-semibold text-slate-200">{formatTimestamp(purchase.endAt)}</span>
                         </p>
                         {purchase.maturedClaimed ? (
-                          <p>
-                            {pageT("fields.claimedPrincipalAndYield")}:{" "}
-                            <span className="font-semibold text-emerald-300">{formatTokenAmount(claimedPrincipalAndYield)} USGD</span>
-                          </p>
+                          <>
+                            <p>
+                              {pageT("fields.claimedPrincipal")}:{" "}
+                              <span className="font-semibold text-[#f0cd54]">{formatTokenAmount(claimedPrincipal)} USGD</span>
+                            </p>
+                            <p>
+                              {pageT("fields.claimedYield")}:{" "}
+                              <span className="font-semibold text-emerald-300">{formatTokenAmount(claimedYield)} USGD</span>
+                            </p>
+                            <p>
+                              {pageT("fields.claimedPrincipalAndYield")}:{" "}
+                              <span className="font-semibold text-emerald-300">{formatTokenAmount(claimedPrincipalAndYield)} USGD</span>
+                            </p>
+                          </>
                         ) : (
                           <>
                             <p>
