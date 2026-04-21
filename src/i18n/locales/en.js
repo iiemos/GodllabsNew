@@ -425,6 +425,7 @@ const en = {
         addLiquidityFailed: "Add liquidity failed",
         removeLiquidityFailed: "Remove liquidity failed",
         insufficientLpBalance: "Insufficient LP balance. Available {{balance}} {{symbol}}",
+        insufficientStakedAmount: "Insufficient staked amount. Available {{amount}} {{symbol}}",
       },
       notices: {
         approvingPool: "Approving {{pair}}",
@@ -457,6 +458,7 @@ const en = {
         availableLp: "Available LP",
         stakedLp: "Staked LP",
         amountInput: "Amount (for deposit/withdraw)",
+        emergencyWithdrawHint: "Regular withdraw keeps rewards claimable; emergency withdraw only returns LP and forfeits unclaimed rewards for that round.",
       },
       actions: {
         refresh: "Refresh",
@@ -558,8 +560,8 @@ const en = {
         purchaseSuccess: "Purchase successful",
         subscribeSuccessWithId: "Subscription successful, ID #{{id}}",
         subscribeSuccess: "Subscription successful",
-        gdlClaimSuccess: "GDL claim successful #{{id}}",
-        maturedClaimSuccess: "Matured claim successful #{{id}}",
+        gdlClaimSuccess: "GDL claim successful",
+        maturedClaimSuccess: "Matured claim successful",
       },
       warnings: {
         networkMismatch: "Detected wallet network is not the target BSC network. Please switch before submitting transactions.",
@@ -578,6 +580,7 @@ const en = {
         maturityTime: "Maturity Time",
         claimablePrincipal: "Claimable Principal",
         claimableYield: "Claimable Yield",
+        claimedPrincipalAndYield: "Claimed Principal + Yield",
         claimableGdlValue: "Claimable GDL Bonus Value",
         claimableTotalWithGdl: "Claimable Total Value (with GDL Bonus)",
         claimableGdl: "Claimable GDL",

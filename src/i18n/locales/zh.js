@@ -422,6 +422,7 @@ const zh = {
         addLiquidityFailed: "添加流动性失败",
         removeLiquidityFailed: "移除流动性失败",
         insufficientLpBalance: "LP 余额不足，可用 {{balance}} {{symbol}}",
+        insufficientStakedAmount: "已质押数量不足，可提取 {{amount}} {{symbol}}",
       },
       notices: {
         approvingPool: "正在授权 {{pair}}",
@@ -454,6 +455,7 @@ const zh = {
         availableLp: "可用 LP",
         stakedLp: "已质押",
         amountInput: "数量（用于质押/提取）",
+        emergencyWithdrawHint: "普通提取会保留并结算奖励；紧急提取仅取回 LP，本轮未领奖励会放弃。",
       },
       actions: {
         refresh: "刷新",
@@ -554,8 +556,8 @@ const zh = {
         purchaseSuccess: "认购成功",
         subscribeSuccessWithId: "认购成功，订阅编号 #{{id}}",
         subscribeSuccess: "认购成功",
-        gdlClaimSuccess: "GDL 奖励领取成功 #{{id}}",
-        maturedClaimSuccess: "到期收益领取成功 #{{id}}",
+        gdlClaimSuccess: "GDL 奖励领取成功",
+        maturedClaimSuccess: "到期收益领取成功",
       },
       warnings: {
         networkMismatch: "检测到当前钱包网络非目标 BSC 网络，请切换后再执行交易。",
@@ -574,6 +576,7 @@ const zh = {
         maturityTime: "到期时间",
         claimablePrincipal: "可领本金",
         claimableYield: "可领收益",
+        claimedPrincipalAndYield: "已领取本金+收益",
         claimableGdlValue: "可领 GDL 奖励价值",
         claimableTotalWithGdl: "可领总价值（含 GDL 奖励）",
         claimableGdl: "可领 GDL",

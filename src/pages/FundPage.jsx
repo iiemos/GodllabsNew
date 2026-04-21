@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
+import { formatUnits } from "ethers";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useNotification } from "../components/Notification";
@@ -48,6 +49,28 @@ function adjustRewardUsdByBonusConfig(usdValue, termMonths, rawGdlBonusBps, gdlB
 function convertGdlToUsd(gdlAmount, spotGdlPrice) {
   if (gdlAmount <= 0n || spotGdlPrice <= 0n) return 0n;
   return (gdlAmount * spotGdlPrice) / ONE_E18;
+}
+
+function toInputAmount(value, decimals = 18) {
+  const raw = formatUnits(value ?? 0n, decimals);
+  if (!raw.includes(".")) return raw;
+  return raw.replace(/\.?0+$/, "");
+}
+
+function estimateMaturedPayout(purchase, termConfig) {
+  if (!purchase) return 0n;
+
+  const principalOut = purchase.usgdPrincipalGross > purchase.upfrontFeeUsgd ? purchase.usgdPrincipalGross - purchase.upfrontFeeUsgd : 0n;
+  if (!termConfig) return principalOut + (purchase.settlementAdjustmentUsgd ?? 0n);
+
+  const duration = termConfig.duration ?? 0n;
+  const yieldDuration = termConfig.yieldDuration ?? duration;
+  const termMonths = Number(termConfig.months ?? 0);
+  const apyBps = toPositiveInt(termConfig.apyBps ?? 0);
+  const effectiveYieldDuration = yieldDuration > 0n ? yieldDuration : duration;
+  const durationDays = effectiveYieldDuration > 0n ? effectiveYieldDuration / 86400n : termMonths === 3 ? 90n : termMonths === 6 ? 180n : 365n;
+  const yieldTotal = (purchase.usgdPrincipalGross * BigInt(apyBps) * durationDays) / (365n * 10000n);
+  return principalOut + yieldTotal + (purchase.settlementAdjustmentUsgd ?? 0n);
 }
 
 function estimatePurchase(godlAmount, spotGodlPrice, termDuration, yieldDuration, termMonths, apyBps, gdlBonusBps, spotGdlPrice) {
@@ -350,6 +373,24 @@ export default function FundPage() {
     }
   }, [amountInput]);
 
+  const handleAdjustPurchaseAmount = useCallback((direction) => {
+    const step = parseTokenAmount("0.1");
+    setAmountInput((prev) => {
+      let current = 0n;
+      try {
+        current = parseTokenAmount(prev || "0");
+      } catch {
+        current = 0n;
+      }
+      const next = direction === "up" ? current + step : current > step ? current - step : 0n;
+      return toInputAmount(next, 18);
+    });
+  }, []);
+
+  const handleSetPurchaseMax = useCallback(() => {
+    setAmountInput(toInputAmount(fundState.godlBalance, 18));
+  }, [fundState.godlBalance]);
+
   const estimate = useMemo(
     () =>
       estimatePurchase(
@@ -379,7 +420,9 @@ export default function FundPage() {
       (acc, purchase) => {
         const termConfig = fundState.terms[purchase.termType];
         const pendingGdlUsd = convertGdlToUsd(purchase.pendingGdl, fundState.spotGdlPrice);
-        acc.principal += purchase.usgdPrincipalGross;
+        if (!purchase.maturedClaimed) {
+          acc.principal += purchase.usgdPrincipalGross;
+        }
         acc.maturedUsgd += purchase.pendingMatured.principal + purchase.pendingMatured.yieldAmount;
         acc.pendingGdl += purchase.pendingGdl;
         acc.pendingGdlUsd += pendingGdlUsd;
@@ -537,7 +580,7 @@ export default function FundPage() {
       const contracts = createCoreContracts(signerContext.signer);
       const tx = await contracts.gold.claimMatured(purchaseId);
       await tx.wait();
-      notify({ type: "success", message: pageT("notices.maturedClaimSuccess", { id: purchaseId.toString() }) });
+      notify({ type: "success", message: pageT("notices.maturedClaimSuccess") });
       setRefreshNonce((prev) => prev + 1);
     } catch (error) {
       notify({ type: "error", message: toErrorMessage(error, pageT("errors.maturedClaimFailed")) });
@@ -562,7 +605,7 @@ export default function FundPage() {
       const contracts = createCoreContracts(signerContext.signer);
       const tx = await contracts.gold.claimGdl(purchaseId);
       await tx.wait();
-      notify({ type: "success", message: pageT("notices.gdlClaimSuccess", { id: purchaseId.toString() }) });
+      notify({ type: "success", message: pageT("notices.gdlClaimSuccess") });
       setRefreshNonce((prev) => prev + 1);
     } catch (error) {
       notify({ type: "error", message: toErrorMessage(error, pageT("errors.gdlClaimFailed")) });
@@ -639,7 +682,32 @@ export default function FundPage() {
 
           <div className="mt-4 grid gap-3 md:grid-cols-[1fr_180px]">
             <label className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-              <p className="text-xs text-slate-500">{pageT("fields.godlAmount")}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs text-slate-500">{pageT("fields.godlAmount")}</p>
+                <div className="inline-flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleAdjustPurchaseAmount("down")}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-slate-200 transition hover:border-white/30 hover:text-white"
+                  >
+                    <Icon icon="mdi:minus" width="14" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAdjustPurchaseAmount("up")}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-white/15 bg-white/5 text-slate-200 transition hover:border-white/30 hover:text-white"
+                  >
+                    <Icon icon="mdi:plus" width="14" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSetPurchaseMax}
+                    className="rounded-md border border-[#fcd535]/30 bg-[#fcd535]/10 px-2 py-0.5 text-[11px] font-semibold text-[#f0cd54] transition hover:bg-[#fcd535]/18"
+                  >
+                    MAX
+                  </button>
+                </div>
+              </div>
               <input
                 type="number"
                 min="0"
@@ -647,7 +715,7 @@ export default function FundPage() {
                 value={amountInput}
                 onChange={(event) => setAmountInput(event.target.value)}
                 placeholder="0.0"
-                className="mt-1 h-8 w-full bg-transparent text-lg font-semibold text-white outline-none placeholder:text-slate-500"
+                className="no-number-spin mt-1 h-8 w-full bg-transparent text-lg font-semibold text-white outline-none placeholder:text-slate-500"
               />
             </label>
 
@@ -797,6 +865,7 @@ export default function FundPage() {
               const pendingGdlValueUsd = convertGdlToUsd(purchase.pendingGdl, fundState.spotGdlPrice);
               const claimableTotalWithGdl =
                 purchase.pendingMatured.principal + purchase.pendingMatured.yieldAmount + pendingGdlValueUsd;
+              const claimedPrincipalAndYield = purchase.maturedClaimed ? estimateMaturedPayout(purchase, termConfig) : 0n;
               const maturedReady =
                 !purchase.maturedClaimed && (purchase.pendingMatured.principal > 0n || purchase.pendingMatured.yieldAmount > 0n);
               const gdlReady = purchase.pendingGdl > 0n;
@@ -849,14 +918,23 @@ export default function FundPage() {
                         <p>
                           {pageT("fields.maturityTime")}: <span className="font-semibold text-slate-200">{formatTimestamp(purchase.endAt)}</span>
                         </p>
-                        <p>
-                          {pageT("fields.claimablePrincipal")}:{" "}
-                          <span className="font-semibold text-[#f0cd54]">{formatTokenAmount(purchase.pendingMatured.principal)} USGD</span>
-                        </p>
-                        <p>
-                          {pageT("fields.claimableYield")}:{" "}
-                          <span className="font-semibold text-emerald-300">{formatTokenAmount(purchase.pendingMatured.yieldAmount)} USGD</span>
-                        </p>
+                        {purchase.maturedClaimed ? (
+                          <p>
+                            {pageT("fields.claimedPrincipalAndYield")}:{" "}
+                            <span className="font-semibold text-emerald-300">{formatTokenAmount(claimedPrincipalAndYield)} USGD</span>
+                          </p>
+                        ) : (
+                          <>
+                            <p>
+                              {pageT("fields.claimablePrincipal")}:{" "}
+                              <span className="font-semibold text-[#f0cd54]">{formatTokenAmount(purchase.pendingMatured.principal)} USGD</span>
+                            </p>
+                            <p>
+                              {pageT("fields.claimableYield")}:{" "}
+                              <span className="font-semibold text-emerald-300">{formatTokenAmount(purchase.pendingMatured.yieldAmount)} USGD</span>
+                            </p>
+                          </>
+                        )}
                         <p>
                           {pageT("fields.claimableGdlValue")}:{" "}
                           <span className="font-semibold text-[#f0cd54]">{formatTokenAmount(pendingGdlValueUsd)} USGD</span>

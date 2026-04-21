@@ -410,6 +410,26 @@ export default function FarmsPage() {
           notify({ type: "error", message: pageT("errors.invalidAmount") });
           return;
         }
+        if (action === "deposit" && amount > pool.walletBalance) {
+          notify({
+            type: "error",
+            message: pageT("errors.insufficientLpBalance", {
+              balance: formatTokenAmount(pool.walletBalance, pool.lpDecimals, 6),
+              symbol: pool.lpSymbol,
+            }),
+          });
+          return;
+        }
+        if (action === "withdraw" && amount > pool.stakedAmount) {
+          notify({
+            type: "error",
+            message: pageT("errors.insufficientStakedAmount", {
+              amount: formatTokenAmount(pool.stakedAmount, pool.lpDecimals, 6),
+              symbol: pool.lpSymbol,
+            }),
+          });
+          return;
+        }
       }
 
       const signerContext = await ensureSigner();
@@ -1098,7 +1118,7 @@ export default function FarmsPage() {
                         value={inputValue}
                         onChange={(event) => handleAmountChange(pool.pid, event.target.value)}
                         placeholder="0.0"
-                        className="mt-1 h-8 w-full bg-transparent text-lg font-semibold text-white outline-none placeholder:text-slate-500"
+                        className="no-number-spin mt-1 h-8 w-full bg-transparent text-lg font-semibold text-white outline-none placeholder:text-slate-500"
                       />
                     </div>
 
@@ -1173,6 +1193,7 @@ export default function FarmsPage() {
                         {pageT("actions.removeLiquidity")}
                       </button>
                     </div>
+                    <p className="mt-3 text-xs text-slate-500">{pageT("fields.emergencyWithdrawHint")}</p>
                   </div>
                 </article>
               );
@@ -1239,7 +1260,7 @@ export default function FarmsPage() {
                           value={liquidityState.lpAmount}
                           onChange={(event) => handleLpAmountChange(event.target.value)}
                           placeholder="0.0"
-                          className="mt-2 h-9 w-full bg-transparent text-lg font-semibold text-white outline-none placeholder:text-slate-500"
+                          className="no-number-spin mt-2 h-9 w-full bg-transparent text-lg font-semibold text-white outline-none placeholder:text-slate-500"
                         />
                         <p className="mt-1 text-xs text-slate-500">
                           {pageT("liquidity.availableBalance")}:{" "}
@@ -1282,7 +1303,7 @@ export default function FarmsPage() {
                           value={liquidityState.amountA}
                           onChange={(event) => handleLiquidityAmountAChange(event.target.value)}
                           placeholder="0.0"
-                          className="mt-2 h-9 w-full bg-transparent text-lg font-semibold text-white outline-none placeholder:text-slate-500"
+                          className="no-number-spin mt-2 h-9 w-full bg-transparent text-lg font-semibold text-white outline-none placeholder:text-slate-500"
                         />
                         <p className="mt-1 text-xs text-slate-500">
                           {pageT("liquidity.availableBalance")}: {formatTokenAmount(liquidityState.balanceA, liquidityState.tokenADecimals, 6)}{" "}
@@ -1312,7 +1333,7 @@ export default function FarmsPage() {
                           value={liquidityState.amountB}
                           onChange={(event) => handleLiquidityAmountBChange(event.target.value)}
                           placeholder="0.0"
-                          className="mt-2 h-9 w-full bg-transparent text-lg font-semibold text-white outline-none placeholder:text-slate-500"
+                          className="no-number-spin mt-2 h-9 w-full bg-transparent text-lg font-semibold text-white outline-none placeholder:text-slate-500"
                         />
                         <p className="mt-1 text-xs text-slate-500">
                           {pageT("liquidity.availableBalance")}: {formatTokenAmount(liquidityState.balanceB, liquidityState.tokenBDecimals, 6)}{" "}

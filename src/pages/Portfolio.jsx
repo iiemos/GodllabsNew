@@ -85,7 +85,9 @@ export default function Portfolio() {
           .sort((a, b) => Number(b.id - a.id));
       }
 
-      const totalFundShares = ownedPurchases.reduce((sum, row) => sum + (row.detail.usgdPrincipalGross ?? 0n), 0n);
+      const totalFundShares = ownedPurchases
+        .filter((row) => !row.detail.maturedClaimed)
+        .reduce((sum, row) => sum + (row.detail.usgdPrincipalGross ?? 0n), 0n);
 
       const latestRecords = ownedPurchases.slice(0, 8).map((row) => ({
         time: formatTimestamp(row.detail.startAt),
