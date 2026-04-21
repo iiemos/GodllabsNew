@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Icon } from "@iconify/react";
-import { Contract, MaxUint256, formatUnits, isAddress } from "ethers";
+import { MaxUint256, formatUnits, isAddress } from "ethers";
 import { useTranslation } from "react-i18next";
 import { useNotification } from "../components/Notification";
 import { useWallet } from "../contexts/WalletContext";
@@ -24,11 +24,6 @@ const tokenAddressByKey = {
 };
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-const LP_ACCESS_ABI = [
-  "function whitelistMode() view returns (bool)",
-  "function whitelisted(address) view returns (bool)",
-  "function blacklisted(address) view returns (bool)",
-];
 const LP_CUSTOM_ERROR_SELECTOR_MAP = Object.freeze({
   "0xc34f3f7f": "emissionCapReached",
   "0x5945ea56": "insufficientAmount",
@@ -110,48 +105,13 @@ function extractRevertData(error) {
   );
 }
 
-function createLpAccessContract(runner) {
-  return new Contract(ADDRESSES.lpProxy, LP_ACCESS_ABI, runner);
-}
-
-async function readLpAccessState(runner, address) {
-  const accessContract = createLpAccessContract(runner);
-  const whitelistMode = await accessContract.whitelistMode().catch(() => false);
-
-  if (!address) {
-    return {
-      whitelistMode: Boolean(whitelistMode),
-      whitelisted: true,
-      blacklisted: false,
-    };
-  }
-
-  const [blacklisted, whitelisted] = await Promise.all([
-    accessContract.blacklisted(address).catch(() => false),
-    whitelistMode ? accessContract.whitelisted(address).catch(() => true) : Promise.resolve(true),
-  ]);
-
-  return {
-    whitelistMode: Boolean(whitelistMode),
-    whitelisted: Boolean(whitelisted),
-    blacklisted: Boolean(blacklisted),
-  };
-}
-
-function toLpActionErrorMessage(error, pageT, pair, accessState = {}) {
+function toLpActionErrorMessage(error, pageT, pair) {
   const revertData = extractRevertData(error);
   if (typeof revertData === "string" && revertData.startsWith("0x") && revertData.length >= 10) {
     const selector = revertData.slice(0, 10).toLowerCase();
     const mappedKey = LP_CUSTOM_ERROR_SELECTOR_MAP[selector];
     if (mappedKey) {
       return pageT(`errors.${mappedKey}`);
-    }
-  }
-
-  const shortMessage = String(error?.shortMessage || error?.message || "").toLowerCase();
-  if (shortMessage.includes("require(false)") || shortMessage.includes("no data present")) {
-    if (accessState.whitelistMode && !accessState.whitelisted) {
-      return pageT("errors.notWhitelisted");
     }
   }
   return toErrorMessage(error, pageT("errors.poolActionFailed", { pair }));
@@ -221,9 +181,6 @@ export default function FarmsPage() {
 
   const [farmState, setFarmState] = useState({
     paused: false,
-    whitelistMode: false,
-    whitelisted: true,
-    blacklisted: false,
     startTimestamp: 0n,
     emittedTotal: 0n,
     currentDailyEmission: 0n,
@@ -248,8 +205,6 @@ export default function FarmsPage() {
       const startTs = Number(startTimestamp);
       const dayIndex = nowTs > startTs ? Math.floor((nowTs - startTs) / 86400) : 0;
       const currentDailyEmission = await contracts.lp.dailyEmission(dayIndex);
-
-      const accessState = await readLpAccessState(readProvider, address);
 
       const pools = await Promise.all(
         LP_POOLS.map(async (meta) => {
@@ -335,9 +290,6 @@ export default function FarmsPage() {
 
       setFarmState({
         paused,
-        whitelistMode: accessState.whitelistMode,
-        whitelisted: accessState.whitelisted,
-        blacklisted: accessState.blacklisted,
         startTimestamp,
         emittedTotal,
         currentDailyEmission,
@@ -416,19 +368,15 @@ export default function FarmsPage() {
     if (!address) return false;
     if (!isExpectedChain(chainId)) return false;
     if (farmState.paused) return false;
-    if (farmState.whitelistMode && !farmState.whitelisted) return false;
-    if (farmState.blacklisted) return false;
     return true;
-  }, [address, chainId, farmState.blacklisted, farmState.paused, farmState.whitelistMode, farmState.whitelisted]);
+  }, [address, chainId, farmState.paused]);
 
   const writeBlockReason = useMemo(() => {
     if (!address) return pageT("errors.connectWalletFirst");
     if (!isExpectedChain(chainId)) return pageT("errors.switchNetwork", { chainId: TBSC_CHAIN_ID });
     if (farmState.paused) return pageT("errors.paused");
-    if (farmState.whitelistMode && !farmState.whitelisted) return pageT("errors.notWhitelisted");
-    if (farmState.blacklisted) return pageT("errors.blacklisted");
     return "";
-  }, [address, chainId, farmState.blacklisted, farmState.paused, farmState.whitelistMode, farmState.whitelisted, pageT]);
+  }, [address, chainId, farmState.paused, pageT]);
 
   const ensureSigner = useCallback(async () => {
     let currentAddress = address;
@@ -553,15 +501,6 @@ export default function FarmsPage() {
       }
 
       const contracts = createCoreContracts(signerContext.signer);
-      const liveAccessState = await readLpAccessState(signerContext.signer, signerContext.currentAddress);
-      if (liveAccessState.blacklisted) {
-        notify({ type: "error", message: pageT("errors.blacklisted") });
-        return;
-      }
-      if (liveAccessState.whitelistMode && !liveAccessState.whitelisted) {
-        notify({ type: "error", message: pageT("errors.notWhitelisted") });
-        return;
-      }
       const latestPoolEnabled = await contracts.lp.poolEnabled(pool.pid).catch(() => pool.poolEnabled);
       if (!latestPoolEnabled) {
         notify({ type: "error", message: pageT("errors.poolDisabled") });
@@ -608,13 +547,7 @@ export default function FarmsPage() {
         setAmountInputs((prev) => ({ ...prev, [pool.pid]: "" }));
         setRefreshNonce((prev) => prev + 1);
       } catch (error) {
-        notify({
-          type: "error",
-          message: toLpActionErrorMessage(error, pageT, pool.pair, {
-            whitelistMode: farmState.whitelistMode,
-            whitelisted: farmState.whitelisted,
-          }),
-        });
+        notify({ type: "error", message: toLpActionErrorMessage(error, pageT, pool.pair) });
       } finally {
         setActionState({ type: "", pid: -1 });
       }
@@ -624,8 +557,6 @@ export default function FarmsPage() {
       canWrite,
       ensureSigner,
       farmState.startTimestamp,
-      farmState.whitelistMode,
-      farmState.whitelisted,
       notify,
       pageT,
       writeBlockReason,
