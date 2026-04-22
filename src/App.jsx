@@ -30,6 +30,25 @@ function HashScrollHandler() {
 }
 
 export default function App() {
+  const location = useLocation();
+
+  useEffect(() => {
+    const baseTitle = "GODL Labs";
+    const pageTitleByPath = {
+      "/": "首页",
+      "/defi": "DeFi 挖矿",
+      "/fund": "基金认购",
+      "/governance": "治理",
+      "/docs": "文档",
+      "/portfolio": "资产总览",
+      "/swap": "兑换中心",
+      "/contact-us": "联系我们",
+    };
+
+    const pageTitle = pageTitleByPath[location.pathname];
+    document.title = pageTitle ? `${pageTitle} | ${baseTitle}` : baseTitle;
+  }, [location.pathname]);
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050608] text-slate-100">
       <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_50%_8%,rgba(252,213,53,0.14),rgba(252,213,53,0)_36%),radial-gradient(circle_at_12%_30%,rgba(252,213,53,0.08),rgba(252,213,53,0)_32%),radial-gradient(circle_at_88%_68%,rgba(252,213,53,0.08),rgba(252,213,53,0)_28%)]" />

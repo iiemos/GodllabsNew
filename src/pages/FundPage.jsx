@@ -109,14 +109,58 @@ function normalizePendingGdlResult(pendingGdl) {
   return pendingGdl?.[0] ?? pendingGdl?.gdlOut ?? 0n;
 }
 
+function toSignedBigInt(value) {
+  if (typeof value === "bigint") return value;
+  if (typeof value === "number") return BigInt(Math.trunc(value));
+  if (typeof value === "string") {
+    try {
+      return BigInt(value);
+    } catch {
+      return 0n;
+    }
+  }
+  return 0n;
+}
+
+function resolveFallbackMaturedBreakdown(purchase, termConfig) {
+  const grossPrincipal = purchase.usgdPrincipalGross ?? 0n;
+  const upfrontFee = purchase.upfrontFeeUsgd ?? 0n;
+  const principalAfterFee = grossPrincipal > upfrontFee ? grossPrincipal - upfrontFee : 0n;
+  const effectiveYieldDuration = termConfig?.yieldDuration ?? termConfig?.duration ?? 0n;
+  const termMonths = Number(termConfig?.months ?? 0);
+  const durationDays =
+    effectiveYieldDuration > 0n ? effectiveYieldDuration / 86400n : termMonths === 3 ? 90n : termMonths === 6 ? 180n : 365n;
+  const apyBps = BigInt(Number(termConfig?.apyBps ?? 0));
+  const baseYield = (grossPrincipal * apyBps * durationDays) / (365n * 10000n);
+  const adjustment = toSignedBigInt(purchase.settlementAdjustmentUsgd);
+
+  let principal = principalAfterFee;
+  let yieldAmount = baseYield + adjustment;
+  if (yieldAmount < 0n) {
+    const deficit = -yieldAmount;
+    yieldAmount = 0n;
+    principal = principal > deficit ? principal - deficit : 0n;
+  }
+
+  return { principal, yieldAmount };
+}
+
 function resolveDisplayedPayoutPrincipal(purchase) {
   const pendingPrincipal = purchase.pendingMatured?.principal ?? 0n;
   if (pendingPrincipal > 0n) return pendingPrincipal;
   return purchase.usgdPrincipalGross ?? 0n;
 }
 
-function resolveDisplayedPayoutYield(purchase) {
-  return purchase.pendingMatured?.yieldAmount ?? 0n;
+function resolveDisplayedMaturedBreakdown(purchase, termConfig) {
+  const pendingPrincipal = purchase.pendingMatured?.principal ?? 0n;
+  const pendingYield = purchase.pendingMatured?.yieldAmount ?? 0n;
+  if (pendingPrincipal > 0n || pendingYield > 0n) {
+    return { principal: pendingPrincipal, yieldAmount: pendingYield };
+  }
+  if (!purchase.maturedClaimed) {
+    return { principal: pendingPrincipal, yieldAmount: pendingYield };
+  }
+  return resolveFallbackMaturedBreakdown(purchase, termConfig);
 }
 
 export default function FundPage() {
@@ -418,10 +462,9 @@ export default function FundPage() {
     return fundState.purchases.reduce(
       (acc, purchase) => {
         const termConfig = fundState.terms[purchase.termType];
-        const settledPrincipal = purchase.maturedClaimed
-          ? resolveDisplayedPayoutPrincipal(purchase)
-          : purchase.pendingMatured.principal;
-        const settledYield = resolveDisplayedPayoutYield(purchase);
+        const settled = resolveDisplayedMaturedBreakdown(purchase, termConfig);
+        const settledPrincipal = settled.principal;
+        const settledYield = settled.yieldAmount;
         const pendingGdlUsdRaw = convertGdlToUsd(purchase.pendingGdl, fundState.spotGdlPrice);
         const pendingGdlUsd = normalizeRewardUsdForDisplay(
           pendingGdlUsdRaw,
@@ -877,8 +920,10 @@ export default function FundPage() {
                 termConfig?.gdlBonusBps ?? 0,
                 fundState.gdlBonusMultiplierBps,
               );
-              const displayedPayoutPrincipal = resolveDisplayedPayoutPrincipal(purchase);
-              const displayedPayoutYield = resolveDisplayedPayoutYield(purchase);
+              const displayedMatured = resolveDisplayedMaturedBreakdown(purchase, termConfig);
+              const displayedPayoutPrincipal = displayedMatured.principal;
+              const displayedPayoutYield = displayedMatured.yieldAmount;
+              const subscribedPrincipal = resolveDisplayedPayoutPrincipal(purchase);
               const claimableTotalWithGdl =
                 (purchase.maturedClaimed
                   ? displayedPayoutPrincipal + displayedPayoutYield
@@ -929,7 +974,7 @@ export default function FundPage() {
                         </p>
                         <p>
                           {pageT("fields.subscribedPrincipal")}:{" "}
-                          <span className="font-semibold text-white">{formatTokenAmount(displayedPayoutPrincipal)} USGD</span>
+                          <span className="font-semibold text-white">{formatTokenAmount(subscribedPrincipal)} USGD</span>
                         </p>
                         <p>
                           {pageT("fields.upfrontFee")}:{" "}
