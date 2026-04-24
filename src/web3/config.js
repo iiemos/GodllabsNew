@@ -23,7 +23,7 @@ export const BSC_SCAN_BASE_URL = TBSC_CHAIN_ID === 56 ? "https://bscscan.com" : 
 
 export const ADDRESSES = Object.freeze({
   goldProxy: fromEnv("GOLD_PROXY_ADDRESS", fallbackAddresses.goldProxy),
-  lpProxy: fromEnv("LP_PROXY_ADDRESS", fallbackAddresses.lpProxy),
+  lpProxy: fallbackAddresses.lpProxy,
   usgd: fromEnv("USGD_TOKEN_ADDRESS", fallbackAddresses.usgd),
   godl: fromEnv("GODL_TOKEN_ADDRESS", fallbackAddresses.godl),
   gdl: fromEnv("GDL_TOKEN_ADDRESS", fallbackAddresses.gdl),
