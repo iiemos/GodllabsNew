@@ -88,6 +88,15 @@ function createInitialLiquidityState() {
   };
 }
 
+function createInitialDecompressState() {
+  return {
+    open: false,
+    pid: -1,
+    amountInput: "",
+    submitting: false,
+  };
+}
+
 function toInputAmount(value, decimals) {
   const raw = formatUnits(value ?? 0n, decimals);
   if (!raw.includes(".")) return raw;
@@ -176,6 +185,7 @@ export default function FarmsPage() {
   const [refreshNonce, setRefreshNonce] = useState(0);
   const [amountInputs, setAmountInputs] = useState({});
   const [actionState, setActionState] = useState({ type: "", pid: -1 });
+  const [decompressState, setDecompressState] = useState(createInitialDecompressState);
   const [liquidityState, setLiquidityState] = useState(createInitialLiquidityState);
   const pendingRefreshRef = useRef(false);
 
@@ -435,11 +445,41 @@ export default function FarmsPage() {
     }));
   }, []);
 
+  const currentDecompressPool = useMemo(
+    () => farmState.pools.find((pool) => pool.pid === decompressState.pid) ?? null,
+    [decompressState.pid, farmState.pools],
+  );
+
+  const closeDecompressModal = useCallback(() => {
+    setDecompressState(createInitialDecompressState());
+  }, []);
+
+  const openDecompressModal = useCallback((pool) => {
+    setDecompressState({
+      open: true,
+      pid: pool.pid,
+      amountInput: "",
+      submitting: false,
+    });
+  }, []);
+
+  const handleDecompressAmountChange = useCallback((value) => {
+    setDecompressState((prev) => ({ ...prev, amountInput: value }));
+  }, []);
+
+  const handleSetDecompressMax = useCallback(() => {
+    if (!currentDecompressPool) return;
+    setDecompressState((prev) => ({
+      ...prev,
+      amountInput: toInputAmount(currentDecompressPool.stakedAmount, currentDecompressPool.lpDecimals),
+    }));
+  }, [currentDecompressPool]);
+
   const executePoolAction = useCallback(
     async (pool, action) => {
-      const rawInput = amountInputs[pool.pid];
       let amount = 0n;
-      if (action !== "claim" && action !== "emergencyWithdraw") {
+      if (action === "deposit") {
+        const rawInput = amountInputs[pool.pid];
         try {
           amount = parseTokenAmount(rawInput, pool.lpDecimals);
         } catch {
@@ -455,16 +495,6 @@ export default function FarmsPage() {
             type: "error",
             message: pageT("errors.insufficientLpBalance", {
               balance: formatTokenAmount(pool.walletBalance, pool.lpDecimals, 6),
-              symbol: pool.lpSymbol,
-            }),
-          });
-          return;
-        }
-        if (action === "withdraw" && amount > pool.stakedAmount) {
-          notify({
-            type: "error",
-            message: pageT("errors.insufficientStakedAmount", {
-              amount: formatTokenAmount(pool.stakedAmount, pool.lpDecimals, 6),
               symbol: pool.lpSymbol,
             }),
           });
@@ -522,10 +552,6 @@ export default function FarmsPage() {
           const tx = await contracts.lp.deposit(pool.pid, amount);
           await tx.wait();
           notify({ type: "success", message: pageT("notices.depositSuccess", { pair: pool.pair }) });
-        } else if (action === "withdraw") {
-          const tx = await contracts.lp.withdraw(pool.pid, amount);
-          await tx.wait();
-          notify({ type: "success", message: pageT("notices.withdrawSuccess", { pair: pool.pair }) });
         } else if (action === "claim") {
           if (pool.pending <= 0n) {
             notify({ type: "info", message: pageT("notices.noClaimableReward") });
@@ -534,17 +560,11 @@ export default function FarmsPage() {
           const tx = await contracts.lp.claim(pool.pid);
           await tx.wait();
           notify({ type: "success", message: pageT("notices.claimSuccess", { pair: pool.pair }) });
-        } else if (action === "emergencyWithdraw") {
-          if (pool.stakedAmount <= 0n) {
-            notify({ type: "info", message: pageT("notices.noStakedAmount") });
-            return;
-          }
-          const tx = await contracts.lp.emergencyWithdraw(pool.pid);
-          await tx.wait();
-          notify({ type: "success", message: pageT("notices.emergencyWithdrawSuccess", { pair: pool.pair }) });
         }
 
-        setAmountInputs((prev) => ({ ...prev, [pool.pid]: "" }));
+        if (action === "deposit") {
+          setAmountInputs((prev) => ({ ...prev, [pool.pid]: "" }));
+        }
         setRefreshNonce((prev) => prev + 1);
       } catch (error) {
         notify({ type: "error", message: toLpActionErrorMessage(error, pageT, pool.pair) });
@@ -562,6 +582,108 @@ export default function FarmsPage() {
       writeBlockReason,
     ],
   );
+
+  const handleConfirmDecompress = useCallback(async () => {
+    if (decompressState.submitting || !currentDecompressPool) return;
+
+    let amount = 0n;
+    try {
+      amount = parseTokenAmount(decompressState.amountInput, currentDecompressPool.lpDecimals);
+    } catch {
+      notify({ type: "error", message: pageT("errors.invalidAmount") });
+      return;
+    }
+
+    if (amount <= 0n) {
+      notify({ type: "error", message: pageT("errors.invalidAmount") });
+      return;
+    }
+
+    if (amount > currentDecompressPool.stakedAmount) {
+      notify({
+        type: "error",
+        message: pageT("errors.insufficientStakedAmount", {
+          amount: formatTokenAmount(currentDecompressPool.stakedAmount, currentDecompressPool.lpDecimals, 6),
+          symbol: currentDecompressPool.lpSymbol,
+        }),
+      });
+      return;
+    }
+
+    const signerContext = await ensureSigner();
+    if (!signerContext) return;
+
+    if (!canWrite) {
+      notify({ type: "error", message: writeBlockReason || pageT("errors.actionNotAllowed") });
+      return;
+    }
+    if (currentDecompressPool.lpTokenMisconfigured) {
+      notify({
+        type: "error",
+        message: pageT("errors.poolLpTokenMisconfigured", {
+          address: currentDecompressPool.onChainLpTokenAddress || ZERO_ADDRESS,
+        }),
+      });
+      return;
+    }
+    if (!currentDecompressPool.poolEnabled) {
+      notify({ type: "error", message: pageT("errors.poolDisabled") });
+      return;
+    }
+    if (farmState.startTimestamp > 0n) {
+      const nowTs = BigInt(Math.floor(Date.now() / 1000));
+      if (nowTs < farmState.startTimestamp) {
+        notify({ type: "error", message: pageT("errors.notStarted") });
+        return;
+      }
+    }
+
+    const contracts = createCoreContracts(signerContext.signer);
+    const latestPoolEnabled = await contracts.lp.poolEnabled(currentDecompressPool.pid).catch(() => currentDecompressPool.poolEnabled);
+    if (!latestPoolEnabled) {
+      notify({ type: "error", message: pageT("errors.poolDisabled") });
+      return;
+    }
+
+    setDecompressState((prev) => ({ ...prev, submitting: true }));
+    setActionState({ type: "decompress", pid: currentDecompressPool.pid });
+    try {
+      const tx = await contracts.lp.withdraw(currentDecompressPool.pid, amount);
+      await tx.wait();
+      notify({ type: "success", message: pageT("notices.decompressSuccess", { pair: currentDecompressPool.pair }) });
+      closeDecompressModal();
+      setRefreshNonce((prev) => prev + 1);
+    } catch (error) {
+      notify({ type: "error", message: toLpActionErrorMessage(error, pageT, currentDecompressPool.pair) });
+    } finally {
+      setActionState({ type: "", pid: -1 });
+      setDecompressState((prev) => (prev.open ? { ...prev, submitting: false } : prev));
+    }
+  }, [
+    canWrite,
+    closeDecompressModal,
+    currentDecompressPool,
+    decompressState.amountInput,
+    decompressState.submitting,
+    ensureSigner,
+    farmState.startTimestamp,
+    notify,
+    pageT,
+    writeBlockReason,
+  ]);
+
+  useEffect(() => {
+    if (!decompressState.open) return undefined;
+
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        closeDecompressModal();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [closeDecompressModal, decompressState.open]);
 
   const closeLiquidityModal = useCallback(() => {
     setLiquidityState(createInitialLiquidityState());
@@ -1200,7 +1322,7 @@ export default function FarmsPage() {
                       !pool.poolEnabled && <p className="mt-3 text-xs text-amber-300">{pageT("errors.poolDisabled")}</p>
                     )}
 
-                    <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+                    <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
                       <button
                         type="button"
                         onClick={() => executePoolAction(pool, "deposit")}
@@ -1216,15 +1338,15 @@ export default function FarmsPage() {
 
                       <button
                         type="button"
-                        onClick={() => executePoolAction(pool, "withdraw")}
-                        disabled={actionType === "withdraw" || !inputValue || !canWrite || !pool.poolEnabled}
+                        onClick={() => openDecompressModal(pool)}
+                        disabled={actionType === "decompress" || pool.stakedAmount <= 0n || !canWrite || !pool.poolEnabled}
                         className={`h-12 rounded-2xl text-sm font-semibold transition ${
-                          actionType === "withdraw" || !inputValue || !canWrite || !pool.poolEnabled
+                          actionType === "decompress" || pool.stakedAmount <= 0n || !canWrite || !pool.poolEnabled
                             ? "cursor-not-allowed border border-white/10 bg-white/8 text-slate-500"
                             : "border border-[#fcd535]/35 bg-[#fcd535]/10 text-[#f0cd54] hover:bg-[#fcd535]/15"
                         }`}
                       >
-                        {actionType === "withdraw" ? pageT("actions.processing") : pageT("actions.withdraw")}
+                        {actionType === "decompress" ? pageT("actions.processing") : pageT("actions.decompress")}
                       </button>
 
                       <button
@@ -1238,19 +1360,6 @@ export default function FarmsPage() {
                         }`}
                       >
                         {actionType === "claim" ? pageT("actions.processing") : pageT("actions.claim", { amount: pendingLabel })}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => executePoolAction(pool, "emergencyWithdraw")}
-                        disabled={actionType === "emergencyWithdraw" || pool.stakedAmount <= 0n || !canWrite || !pool.poolEnabled}
-                        className={`h-12 rounded-2xl text-sm font-semibold transition ${
-                          actionType === "emergencyWithdraw" || pool.stakedAmount <= 0n || !canWrite || !pool.poolEnabled
-                            ? "cursor-not-allowed border border-white/10 bg-white/8 text-slate-500"
-                            : "border border-rose-400/35 bg-rose-400/12 text-rose-300 hover:bg-rose-400/18"
-                        }`}
-                      >
-                        {actionType === "emergencyWithdraw" ? pageT("actions.processing") : pageT("actions.emergencyWithdraw")}
                       </button>
 
                       <button
@@ -1269,7 +1378,7 @@ export default function FarmsPage() {
                         {pageT("actions.removeLiquidity")}
                       </button>
                     </div>
-                    <p className="mt-3 text-xs text-slate-500">{pageT("fields.emergencyWithdrawHint")}</p>
+                    <p className="mt-3 text-xs text-slate-500">{pageT("fields.decompressHint")}</p>
                   </div>
                 </article>
               );
@@ -1277,6 +1386,109 @@ export default function FarmsPage() {
           </div>
         )}
       </div>
+
+      {decompressState.open && currentDecompressPool && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 md:p-6">
+          <button
+            type="button"
+            aria-label={pageT("actions.close")}
+            onClick={closeDecompressModal}
+            className="absolute inset-0 bg-black/70 backdrop-blur-[2px]"
+          />
+
+          <div className="governance-panel relative z-10 w-full max-w-md overflow-hidden rounded-[28px]">
+            <div className="pointer-events-none absolute -left-14 -top-14 h-44 w-44 rounded-full bg-[radial-gradient(circle,rgba(252,213,53,0.2)_0%,rgba(252,213,53,0)_72%)] blur-2xl" />
+            <div className="relative p-5 md:p-6">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.16em] text-slate-500">{pageT("decompress.subtitle")}</p>
+                  <h2 className="mt-1 text-2xl font-semibold text-[#f0cd54]">{pageT("decompress.title")}</h2>
+                  <p className="mt-1 text-sm text-slate-300">{currentDecompressPool.pair}</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={closeDecompressModal}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-200 transition hover:border-white/25 hover:text-white"
+                >
+                  <Icon icon="mdi:close" width="18" />
+                </button>
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-slate-400">
+                <p>
+                  {pageT("decompress.currentStaked")}:{" "}
+                  <span className="font-semibold text-slate-200">
+                    {formatTokenAmount(currentDecompressPool.stakedAmount, currentDecompressPool.lpDecimals)} {currentDecompressPool.lpSymbol}
+                  </span>
+                </p>
+              </div>
+
+              <label className="mt-4 block rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-slate-500">{pageT("decompress.amountInput")}</p>
+                  <button
+                    type="button"
+                    onClick={handleSetDecompressMax}
+                    className="rounded-md border border-[#fcd535]/30 bg-[#fcd535]/10 px-2 py-0.5 text-[11px] font-semibold text-[#f0cd54] transition hover:bg-[#fcd535]/18"
+                  >
+                    MAX
+                  </button>
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  value={decompressState.amountInput}
+                  onChange={(event) => handleDecompressAmountChange(event.target.value)}
+                  placeholder="0.0"
+                  className="no-number-spin mt-1 h-8 w-full bg-transparent text-lg font-semibold text-white outline-none placeholder:text-slate-500"
+                />
+              </label>
+
+              <p className="mt-2 text-xs text-slate-500">{pageT("decompress.maxHint")}</p>
+
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={closeDecompressModal}
+                  disabled={decompressState.submitting}
+                  className={`h-12 rounded-2xl text-sm font-semibold transition ${
+                    decompressState.submitting
+                      ? "cursor-not-allowed border border-white/10 bg-white/8 text-slate-500"
+                      : "morgan-btn-secondary text-slate-300"
+                  }`}
+                >
+                  {pageT("actions.cancel")}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleConfirmDecompress}
+                  disabled={
+                    decompressState.submitting ||
+                    !decompressState.amountInput ||
+                    !canWrite ||
+                    !currentDecompressPool.poolEnabled ||
+                    currentDecompressPool.stakedAmount <= 0n
+                  }
+                  className={`h-12 rounded-2xl text-sm font-semibold transition ${
+                    decompressState.submitting ||
+                    !decompressState.amountInput ||
+                    !canWrite ||
+                    !currentDecompressPool.poolEnabled ||
+                    currentDecompressPool.stakedAmount <= 0n
+                      ? "cursor-not-allowed border border-white/10 bg-white/8 text-slate-500"
+                      : "border border-[#fcd535]/35 bg-[#fcd535]/10 text-[#f0cd54] hover:bg-[#fcd535]/15"
+                  }`}
+                >
+                  {decompressState.submitting ? pageT("actions.processing") : pageT("actions.confirmDecompress")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {liquidityState.open && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 md:p-6">

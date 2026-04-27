@@ -14,9 +14,9 @@ const ONE_E18 = 10n ** 18n;
 const ZERO_PENDING_MATURED = { principal: 0n, yieldAmount: 0n };
 const DEFAULT_GDL_BONUS_MULTIPLIER_BPS = 10000;
 const FIXED_GDL_BONUS_BPS_BY_MONTH = Object.freeze({
-  3: 4000,
+  3: 3000,
   6: 6000,
-  12: 8000,
+  12: 12000,
 });
 
 function toPositiveInt(value) {
@@ -104,18 +104,29 @@ function normalizePendingMaturedResult(pendingMatured) {
   };
 }
 
+function normalizeClaimedMaturedResult(claimedMatured) {
+  return {
+    principal: claimedMatured?.[0] ?? claimedMatured?.usgdPrincipalOut ?? 0n,
+    yieldAmount: claimedMatured?.[1] ?? claimedMatured?.usgdYield ?? 0n,
+  };
+}
+
 function normalizePendingGdlResult(pendingGdl) {
   if (typeof pendingGdl === "bigint") return pendingGdl;
   return pendingGdl?.[0] ?? pendingGdl?.gdlOut ?? 0n;
 }
 
 function resolveDisplayedPayoutPrincipal(purchase) {
+  const claimedPrincipal = purchase.claimedMatured?.principal ?? 0n;
+  if (claimedPrincipal > 0n) return claimedPrincipal;
   const pendingPrincipal = purchase.pendingMatured?.principal ?? 0n;
   if (pendingPrincipal > 0n) return pendingPrincipal;
   return purchase.usgdPrincipalGross ?? 0n;
 }
 
 function resolveDisplayedPayoutYield(purchase) {
+  const claimedYield = purchase.claimedMatured?.yieldAmount ?? 0n;
+  if (claimedYield > 0n) return claimedYield;
   return purchase.pendingMatured?.yieldAmount ?? 0n;
 }
 
@@ -220,6 +231,21 @@ export default function FundPage() {
           );
 
           const pendingMap = new Map(pendingRecords.map((item) => [item.id.toString(), item]));
+          const claimedMaturedRecords = await Promise.all(
+            ownedPurchases
+              .filter(({ detail }) => detail.maturedClaimed)
+              .map(async ({ id }) => {
+                try {
+                  const logs = await contracts.gold.queryFilter(contracts.gold.filters.MaturedClaimed(id));
+                  const latestLog = logs[logs.length - 1];
+                  const claimedMatured = normalizeClaimedMaturedResult(latestLog?.args);
+                  return [id.toString(), claimedMatured];
+                } catch {
+                  return [id.toString(), ZERO_PENDING_MATURED];
+                }
+              }),
+          );
+          const claimedMaturedMap = new Map(claimedMaturedRecords);
 
           purchases = ownedPurchases
             .map(({ id, detail }) => {
@@ -237,6 +263,7 @@ export default function FundPage() {
                 maturedClaimed: detail.maturedClaimed,
                 settlementAdjustmentUsgd: detail.settlementAdjustmentUsgd,
                 claimedGdlValueUsdE18: detail.claimedGdlValueUsdE18,
+                claimedMatured: claimedMaturedMap.get(id.toString()) ?? ZERO_PENDING_MATURED,
                 pendingMatured: pending?.pendingMatured ?? ZERO_PENDING_MATURED,
                 pendingGdl: pending?.pendingGdl ?? 0n,
               };
