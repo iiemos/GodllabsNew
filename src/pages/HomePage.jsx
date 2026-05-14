@@ -36,6 +36,108 @@ function CardBaseBackground() {
   );
 }
 
+function HeroDashboardPreview({ t }) {
+  const balances = [
+    { key: "usgd", value: "128,420.00", iconSrc: "/static/usgd.svg" },
+    { key: "godl", value: "105,000", iconSrc: "/static/gold.svg" },
+    { key: "gdl", value: "32,680.45", icon: "mynaui:letter-g-waves-solid" },
+    { key: "fundShares", value: "58,900.00", icon: "solar:pie-chart-2-bold" },
+  ];
+  const records = [
+    { type: "fundSubscribe", token: "GODL", amount: "-12.50", status: "active" },
+    { type: "rewardClaim", token: "GDL", amount: "+486.20", status: "completed" },
+    { type: "swap", token: "USGD", amount: "+8,240.00", status: "completed" },
+  ];
+
+  return (
+    <div className="relative h-full w-full overflow-hidden bg-[#07090d] p-4 text-left text-slate-100 md:p-5">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_12%,rgba(252,213,53,0.18),transparent_36%),linear-gradient(135deg,rgba(255,255,255,0.06),transparent_34%)]" />
+
+      <div className="relative flex items-center justify-between gap-4 border-b border-white/10 pb-4">
+        <div className="flex items-center gap-3">
+          <img src="/static/logo.png" alt="GODL logo" className="h-9 w-9 object-contain" />
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f0cd54]">GODL LABS</p>
+            <p className="text-lg font-semibold text-white">{t("portfolio.title")}</p>
+          </div>
+        </div>
+        <div className="hidden items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-300 sm:flex">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+          {t("home.heroPreview.chainLive")}
+        </div>
+      </div>
+
+      <div className="relative mt-4 grid gap-4 lg:grid-cols-[1.35fr_0.85fr]">
+        <div>
+          <div className="grid grid-cols-2 gap-3">
+            {balances.map((item) => (
+              <div key={item.key} className="rounded-2xl border border-white/10 bg-white/[0.045] p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs text-slate-400">{t(`portfolio.balances.${item.key}`)}</p>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black/25 text-[#fcd535]">
+                    {item.iconSrc ? (
+                      <img src={item.iconSrc} alt="" className="h-6 w-6 object-contain" />
+                    ) : (
+                      <Icon icon={item.icon} width="22" />
+                    )}
+                  </span>
+                </div>
+                <p className="mt-3 text-xl font-semibold text-white md:text-2xl">{item.value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-white">{t("portfolio.recordsTitle")}</p>
+              <p className="text-xs text-slate-500">{t("portfolio.recentCount", { count: records.length })}</p>
+            </div>
+            <div className="mt-3 space-y-2">
+              {records.map((record) => (
+                <div key={`${record.type}-${record.token}`} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 rounded-xl bg-white/[0.04] px-3 py-2 text-xs">
+                  <span className="text-slate-300">{t(`portfolio.recordTypes.${record.type}`)}</span>
+                  <span className="text-slate-400">{record.token}</span>
+                  <span className={record.amount.startsWith("+") ? "font-semibold text-emerald-300" : "font-semibold text-[#f0cd54]"}>
+                    {record.amount}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="rounded-2xl border border-[#fcd535]/20 bg-[#fcd535]/10 p-4">
+            <div className="flex items-center gap-2 text-[#f0cd54]">
+              <Icon icon="mdi:shield-check-outline" width="18" />
+              <p className="text-sm font-semibold">{t("home.assetProof.badge")}</p>
+            </div>
+            <p className="mt-3 text-2xl font-semibold text-white">TZ-MIN-2026-***</p>
+            <p className="mt-2 text-xs leading-5 text-slate-300">{t("home.assetProof.scanNote")}</p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-slate-500">{t("home.heroPreview.reserveMapping")}</p>
+            <div className="mt-4 space-y-3">
+              {["GODL", "USGD", "GDL"].map((symbol, index) => (
+                <div key={symbol}>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-300">{symbol}</span>
+                    <span className="text-[#f0cd54]">{[78, 64, 42][index]}%</span>
+                  </div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                    <span className="block h-full rounded-full bg-[#fcd535]" style={{ width: `${[78, 64, 42][index]}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const { t } = useTranslation();
   const heroCanvasRef = useRef(null);
@@ -52,8 +154,10 @@ export default function HomePage() {
   const institutionalPillars = t("home.institutionalPillars", { returnObjects: true });
   const tokenRows = t("home.tokenRows", { returnObjects: true });
   const helpCards = t("home.helpCards", { returnObjects: true });
+  const assetProofItems = t("home.assetProof.items", { returnObjects: true });
   const comparisonRows = t("home.comparisonRows", { returnObjects: true });
   const projectCards = t("home.projectCards", { returnObjects: true });
+  const teamMembers = t("home.team.members", { returnObjects: true });
   const planCards = t("home.plans.planCards", { returnObjects: true });
 
   useEffect(() => {
@@ -293,7 +397,7 @@ export default function HomePage() {
                 transformOrigin: "center top",
               }}
             >
-              <img src="/static/bytemplate.png" alt={t("home.hero.previewAlt")} className="block h-full w-full object-cover object-top" />
+              <HeroDashboardPreview t={t} />
               <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/70 to-transparent backdrop-blur-[2px] md:h-24" />
             </div>
           </div>
@@ -317,7 +421,7 @@ export default function HomePage() {
         <SectionHeading
           title={
             <>
-              {t("home.sectionHeadings.plansBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.plansHighlight")}</span>
+              {t("home.sectionHeadings.plansBase")} <span className="text-[#fcd535]">{t("home.sectionHeadings.plansHighlight")}</span>
             </>
           }
           subtitle={t("home.sectionHeadings.plansSubtitle")}
@@ -381,7 +485,7 @@ export default function HomePage() {
         <SectionHeading
           title={
             <>
-              {t("home.sectionHeadings.overviewBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.overviewHighlight")}</span>
+              {t("home.sectionHeadings.overviewBase")} <span className="text-[#fcd535]">{t("home.sectionHeadings.overviewHighlight")}</span>
             </>
           }
           subtitle={t("home.sectionHeadings.overviewSubtitle")}
@@ -417,7 +521,7 @@ export default function HomePage() {
         <SectionHeading
           title={
             <>
-              {t("home.sectionHeadings.tokenomicsBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.tokenomicsHighlight")}</span>
+              {t("home.sectionHeadings.tokenomicsBase")} <span className="text-[#fcd535]">{t("home.sectionHeadings.tokenomicsHighlight")}</span>
             </>
           }
           subtitle={t("home.sectionHeadings.tokenomicsSubtitle")}
@@ -451,7 +555,7 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-[1.1fr_1fr] md:items-center">
           <div>
             <h3 className="text-4xl font-semibold leading-tight text-white md:text-5xl">
-              <span className="font-serif italic text-[#fcd535]">{t("home.blocks.featureTitleBase")}</span>{t("home.blocks.featureTitleHighlight")}
+              <span className="text-[#fcd535]">{t("home.blocks.featureTitleBase")}</span>{t("home.blocks.featureTitleHighlight")}
             </h3>
             <p className="mt-5 max-w-xl text-sm leading-7 text-slate-400 md:text-base">
               {t("home.blocks.featureDescription")}
@@ -483,7 +587,7 @@ export default function HomePage() {
         <SectionHeading
           title={
             <>
-              {t("home.sectionHeadings.matrixBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.matrixHighlight")}</span>
+              {t("home.sectionHeadings.matrixBase")} <span className="text-[#fcd535]">{t("home.sectionHeadings.matrixHighlight")}</span>
             </>
           }
           subtitle={t("home.sectionHeadings.matrixSubtitle")}
@@ -575,7 +679,7 @@ export default function HomePage() {
       <section id="why-aligno" className="px-4 pb-32 md:pb-40">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-4xl font-semibold text-white md:text-5xl">
-            {t("home.sectionHeadings.whyBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.whyHighlight")}</span>？
+            {t("home.sectionHeadings.whyBase")} <span className="text-[#fcd535]">{t("home.sectionHeadings.whyHighlight")}</span>？
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-slate-400 md:text-base">
             {t("home.sectionHeadings.whySubtitle")}
@@ -611,7 +715,7 @@ export default function HomePage() {
       <section id="security" className="px-4 pb-32 md:pb-40">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-4xl font-semibold text-white md:text-5xl">
-            {t("home.sectionHeadings.securityBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.securityHighlight")}</span>
+            {t("home.sectionHeadings.securityBase")} <span className="text-[#fcd535]">{t("home.sectionHeadings.securityHighlight")}</span>
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-slate-400 md:text-base">
             {t("home.sectionHeadings.securitySubtitle")}
@@ -631,12 +735,58 @@ export default function HomePage() {
                 <Icon icon={card.icon} width="22" />
               </div>
               <h4 className="relative mt-6 text-[31px] font-medium leading-tight text-white">
-                <span className="mr-2 font-serif italic text-[#fcd535]">{card.leading}</span>
+                <span className="mr-2 text-[#fcd535]">{card.leading}</span>
                 {card.title}
               </h4>
               <p className="relative mx-auto mt-4 max-w-[360px] text-sm leading-6 text-slate-400">{card.description}</p>
             </article>
           ))}
+        </div>
+
+        <div className="glass-card mx-auto mt-5 max-w-6xl overflow-hidden rounded-[24px]">
+          <div className="grid gap-0 lg:grid-cols-[0.95fr_1.05fr]">
+            <div className="border-b border-white/10 p-6 md:p-8 lg:border-b-0 lg:border-r">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#f0cd54]">{t("home.assetProof.badge")}</p>
+              <h3 className="mt-3 text-3xl font-semibold text-white">{t("home.assetProof.title")}</h3>
+              <p className="mt-4 text-sm leading-6 text-slate-400">{t("home.assetProof.description")}</p>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {assetProofItems.map((item) => (
+                  <div key={item.label} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                    <p className="text-xs text-slate-500">{item.label}</p>
+                    <p className="mt-2 text-sm font-semibold leading-6 text-slate-100">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative min-h-[360px] p-6 md:p-8">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_24%,rgba(252,213,53,0.18),rgba(252,213,53,0)_42%)]" />
+              <div className="relative mx-auto flex max-w-md flex-col gap-4 rounded-2xl border border-[#fcd535]/20 bg-[#0b0c0d]/80 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">GODL LABS</p>
+                    <p className="mt-1 text-lg font-semibold text-white">{t("home.assetProof.scanTitle")}</p>
+                  </div>
+                  <Icon icon="mdi:file-certificate-outline" width="34" className="text-[#fcd535]" />
+                </div>
+                <div className="space-y-3">
+                  <div className="h-3 w-3/4 rounded-full bg-white/20" />
+                  <div className="h-3 w-5/6 rounded-full bg-white/12" />
+                  <div className="h-3 w-2/3 rounded-full bg-white/12" />
+                  <div className="mt-5 grid grid-cols-3 gap-2">
+                    {Array.from({ length: 9 }).map((_, index) => (
+                      <span key={index} className="h-8 rounded-md bg-white/[0.07]" />
+                    ))}
+                  </div>
+                  <div className="rounded-xl border border-dashed border-[#fcd535]/30 bg-[#fcd535]/10 px-4 py-3 text-sm font-semibold text-[#f0cd54]">
+                    {t("home.assetProof.licenseNo")}
+                  </div>
+                </div>
+                <p className="text-xs leading-5 text-slate-500">{t("home.assetProof.scanNote")}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -644,13 +794,13 @@ export default function HomePage() {
         <SectionHeading
           title={
             <>
-              {t("home.sectionHeadings.partnerBase")} <span className="font-serif italic text-[#fcd535]">{t("home.sectionHeadings.partnerHighlight")}</span>
+              {t("home.sectionHeadings.partnerBase")} <span className="text-[#fcd535]">{t("home.sectionHeadings.partnerHighlight")}</span>
             </>
           }
           subtitle={t("home.sectionHeadings.partnerSubtitle")}
         />
 
-        <div className="mx-auto mt-12 grid max-w-6xl gap-4 md:grid-cols-3">
+        <div className="mx-auto mt-12 grid max-w-6xl gap-4 md:grid-cols-2 lg:grid-cols-4">
           {projectCards.map((card) => (
             <article key={card.title} className="glass-card rounded-3xl p-6">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 text-[#fcd535]">
@@ -658,6 +808,32 @@ export default function HomePage() {
               </div>
               <h4 className="mt-5 text-xl font-semibold text-white">{card.title}</h4>
               <p className="mt-2 text-sm leading-6 text-slate-400">{card.desc}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="px-4 pb-32 md:pb-40" id="team">
+        <SectionHeading
+          title={
+            <>
+              {t("home.sectionHeadings.teamBase")} <span className="text-[#fcd535]">{t("home.sectionHeadings.teamHighlight")}</span>
+            </>
+          }
+          subtitle={t("home.sectionHeadings.teamSubtitle")}
+        />
+
+        <div className="mx-auto mt-12 grid max-w-6xl gap-5 lg:grid-cols-2">
+          {teamMembers.map((member) => (
+            <article key={member.name} className="glass-card overflow-hidden rounded-[24px] lg:grid lg:grid-cols-[220px_1fr]">
+              <div className="min-h-[280px] bg-black/25 lg:min-h-full">
+                <img src={member.image} alt={member.name} className="h-full min-h-[280px] w-full object-cover object-center" />
+              </div>
+              <div className="p-6">
+                <p className="text-2xl font-semibold text-white">{member.name}</p>
+                <p className="mt-1 text-sm font-semibold text-[#f0cd54]">{member.role}</p>
+                <p className="mt-4 text-sm leading-6 text-slate-400">{member.bio}</p>
+              </div>
             </article>
           ))}
         </div>

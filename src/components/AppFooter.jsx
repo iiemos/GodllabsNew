@@ -17,13 +17,13 @@ const infoLinks = [
   { key: "portfolio", href: "/portfolio" },
   { key: "swap", href: "/swap" },
   { key: "contact", href: "/contact-us" },
-  { key: "start", href: "/fund" },
 ];
 
 const socials = [
-  { icon: "mdi:instagram", href: "https://instagram.com" },
-  { icon: "mdi:facebook", href: "https://facebook.com" },
-  { icon: "mdi:youtube", href: "https://youtube.com" },
+  { name: "X", icon: "mdi:twitter", href: "https://x.com/GODLLABS" },
+  { name: "YouTube", icon: "mdi:youtube", href: "https://www.youtube.com/@GODLLBAS" },
+  { name: "LinkedIn", icon: "mdi:linkedin", href: "https://www.linkedin.com/company/godl-labs/?viewAsMember=true" },
+  { name: "Telegram", icon: "mdi:telegram", href: "https://t.me/GODL_LABS" },
 ];
 
 export default function AppFooter() {
@@ -34,7 +34,7 @@ export default function AppFooter() {
   return (
     <footer className="border-t border-white/10 bg-black/40">
       <div className="mx-auto w-full max-w-6xl px-4 py-14">
-        <div className="grid gap-9 md:grid-cols-[1.1fr_1fr_1fr_1.8fr]">
+        <div className="grid gap-9 md:grid-cols-[1.2fr_1fr_1.2fr]">
           <div className="space-y-4">
             <div className="inline-flex h-12 w-12 items-center justify-center p-1.5">
               <img src="/static/logo.png" alt="GODL logo" className="h-full w-full object-contain" />
@@ -45,8 +45,16 @@ export default function AppFooter() {
               <p className="text-sm text-slate-400">{t("footer.followUs")}</p>
               <div className="flex items-center gap-3 text-slate-400">
                 {socials.map((item) => (
-                  <a key={item.icon} href={item.href} target="_blank" rel="noreferrer" className="transition hover:text-white">
-                    <Icon icon={item.icon} width="16" />
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={item.name}
+                    title={item.name}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 transition hover:border-[#fcd535]/50 hover:text-white"
+                  >
+                    <Icon icon={item.icon} width="17" />
                   </a>
                 ))}
               </div>
@@ -77,24 +85,6 @@ export default function AppFooter() {
                 </li>
               ))}
             </ul>
-          </div>
-
-          <div>
-            <p className="text-lg font-medium text-white">{t("footer.contactTitle")}</p>
-            <p className="mt-4 max-w-md text-sm leading-6 text-slate-400">{t("footer.contactDescription")}</p>
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <input
-                type="email"
-                placeholder={t("footer.emailPlaceholder")}
-                className="h-14 min-h-[56px] flex-1 rounded-full border border-white/5 bg-white/5 px-5 text-base text-slate-200 placeholder:text-slate-500 outline-none transition focus:border-[#fcd535] sm:h-11 sm:min-h-[44px] sm:text-sm"
-              />
-              <button
-                type="button"
-                className="morgan-btn-primary h-14 min-h-[56px] px-6 text-base font-semibold sm:h-11 sm:min-h-[44px] sm:text-sm"
-              >
-                {t("footer.submit")}
-              </button>
-            </div>
           </div>
         </div>
       </div>

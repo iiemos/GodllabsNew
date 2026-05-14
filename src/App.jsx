@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import AppFooter from "./components/AppFooter";
 import AppHeader from "./components/AppHeader";
 import ContactPage from "./pages/ContactPage";
@@ -31,23 +32,25 @@ function HashScrollHandler() {
 
 export default function App() {
   const location = useLocation();
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     const baseTitle = "GODL Labs";
-    const pageTitleByPath = {
-      "/": "首页",
-      "/defi": "DeFi 挖矿",
-      "/fund": "基金认购",
-      "/governance": "治理",
-      "/docs": "文档",
-      "/portfolio": "资产总览",
-      "/swap": "兑换中心",
-      "/contact-us": "联系我们",
+    const pageTitleKeyByPath = {
+      "/": "header.nav.home",
+      "/defi": "header.nav.defi",
+      "/fund": "header.nav.fund",
+      "/governance": "header.nav.governance",
+      "/docs": "header.nav.docs",
+      "/portfolio": "portfolio.title",
+      "/swap": "header.nav.swap",
+      "/contact-us": "contact.title",
     };
 
-    const pageTitle = pageTitleByPath[location.pathname];
+    const pageTitleKey = pageTitleKeyByPath[location.pathname];
+    const pageTitle = pageTitleKey ? t(pageTitleKey) : "";
     document.title = pageTitle ? `${pageTitle} | ${baseTitle}` : baseTitle;
-  }, [location.pathname]);
+  }, [i18n.language, location.pathname, t]);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050608] text-slate-100">

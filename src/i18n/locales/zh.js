@@ -354,6 +354,44 @@ const zh = {
   defi: {
     title: "DeFi 挖矿",
     subtitle: "专注流动性挖矿池管理与收益追踪。",
+    locked: {
+      badge: "待开放",
+      title: "DeFi 挖矿待开放",
+      description: "流动性挖矿页面已保留，池子详情与写入操作将在策略、审计与流动性参数确认后开放。",
+      stats: [
+        { label: "池子数量", value: "3", note: "USGD/USDT、GODL/USGD、GDL/USGD" },
+        { label: "状态", value: "待开放", note: "当前仅展示预览结构" },
+        { label: "奖励资产", value: "GDL", note: "最终释放参数以链上配置为准" },
+      ],
+      pools: [
+        {
+          pid: 0,
+          pair: "USGD-USDT LP",
+          tokens: ["usgd", "usdt"],
+          status: "待开放",
+          metrics: [
+            { label: "矿池权重", value: "--" },
+            { label: "总质押", value: "-- LP" },
+            { label: "日产出估算", value: "-- GDL/day" },
+            { label: "预估年化", value: "--" },
+            { label: "可领奖励", value: "-- GDL" },
+          ],
+        },
+        {
+          pid: 1,
+          pair: "GODL-USGD LP",
+          tokens: ["godl", "usgd"],
+          status: "待开放",
+          metrics: [
+            { label: "矿池权重", value: "--" },
+            { label: "总质押", value: "-- LP" },
+            { label: "日产出估算", value: "-- GDL/day" },
+            { label: "预估年化", value: "--" },
+            { label: "可领奖励", value: "-- GDL" },
+          ],
+        },
+      ],
+    },
     summary: {
       poolCount: "池子数量",
       activeCount: "进行中池子",
@@ -611,11 +649,11 @@ const zh = {
         totalWithGdlBonus: "到期总价值（含 GDL 奖励）",
       },
       summary: {
-        principal: "认购本金（USGD）",
-        pendingGdl: "当前可领 GDL",
+        principal: "个人当前认购本金",
+        pendingGdl: "个人当前可领取GDL",
         weeklyClaimable: "当前可领周收益（USGD）",
         maturedClaimable: "当前可领到期收益",
-        maturedWithGdl: "当前可领总价值（含 GDL 奖励）",
+        maturedWithGdl: "当前可领取",
       },
       actions: {
         goSwapGodl: "去兑换 GODL",
@@ -776,7 +814,7 @@ const zh = {
       {
         symbol: "GODL",
         icon: "mdi:gold",
-        summary: "黄金锚定币，映射黄金基金份额价值，初始发行口径 160,000 枚。",
+        summary: "黄金锚定币，映射黄金基金份额价值，初始发行量为 105,000 枚。",
         detail: "底层对应坦桑尼亚矿业资产价值，参考探明储量 2300 吨与未开发资源 3500 吨的长期潜力。",
       },
       {
@@ -791,7 +829,7 @@ const zh = {
         icon: "mdi:shield-lock-outline",
         leading: "合规",
         title: "审计与托管",
-        description: "底层资产、储备与关键账本信息按规则审计，形成可追溯的链上与链下双重验证。",
+        description: "底层资产、储备、ALTENEEN REFINERY 合作资质与关键账本信息按规则审计，形成链上与链下双重验证。",
       },
       {
         icon: "mdi:radar",
@@ -872,6 +910,11 @@ const zh = {
         icon: "mdi:bank-check",
       },
       {
+        title: "ALTENEEN REFINERY",
+        desc: "精炼厂合作资质作为黄金代币资产链路的实体背书，补强资产确权、精炼与交割可信度。",
+        icon: "mdi:factory",
+      },
+      {
         title: "资产托底",
         desc: "以坦桑尼亚黄金矿业资产为核心支撑，强化代币价值映射与可信度。",
         icon: "mdi:pickaxe",
@@ -882,6 +925,66 @@ const zh = {
         icon: "mdi:earth",
       },
     ],
+    assetProof: {
+      badge: "资产证明",
+      title: "底层资产证明",
+      description: "集中公示矿业许可、脱敏证件扫描件、矿区位置和储备资产核验口径，便于投资者快速核对资产链路。",
+      licenseNo: "许可证编号：TZ-MIN-2026-***-GODL",
+      scanTitle: "脱敏证件扫描件",
+      scanNote: "敏感字段已脱敏，正式文件以审计披露与合规资料为准。",
+      items: [
+        {
+          label: "许可证编号",
+          value: "TZ-MIN-2026-***-GODL（脱敏展示）",
+        },
+        {
+          label: "矿区地理位置",
+          value: "坦桑尼亚合规矿权区域，坐标与边界随审计资料披露。",
+        },
+        {
+          label: "证件扫描件",
+          value: "营业、矿权与合作文件保留脱敏扫描件入口。",
+        },
+        {
+          label: "储备资产核验",
+          value: "矿权、储量、精炼与托管资料分层核验，并纳入链上披露节奏。",
+        },
+      ],
+    },
+    team: {
+      members: [
+        {
+          name: "Lucie Colomb",
+          role: "首席执行官",
+          image: "/team/lucie-colomb.png",
+          bio: "Lucie 是增长与执行策略负责人，拥有十年以上金融、Web3 与新兴科技经验。她曾服务 Web3、奢侈品、金融科技、AI 与美国政治客户，后在 AI 与区块链前沿担任高管角色，参与代币策略、合作拓展、社区增长与市场落地。",
+        },
+        {
+          name: "Sidharth Sogani",
+          role: "首席战略官",
+          image: "/team/sidharth-sogani.png",
+          bio: "Sidharth 是 CREBACO Global 创始人兼 CEO，专注区块链与加密资产研究、咨询、情报与评级。自 2017 年以来，他参与 157+ 个项目咨询，覆盖法律、技术、金融与尽调维度，并在 GCC 区域数字资产基金管理与多国政策监管框架中拥有丰富经验。",
+        },
+        {
+          name: "Vaibhav Gupta",
+          role: "首席营销官",
+          image: "/team/vaibhav-gupta.png",
+          bio: "个人简介待补充。",
+        },
+        {
+          name: "Brian Ho",
+          role: "首席财务官",
+          image: "/team/brian-ho.png",
+          bio: "Brian 拥有十年以上银行、财富管理与企业财务经验，曾在汇丰香港担任部门经理，并在能源、大宗商品与地产领域担任 CFO 及董事会顾问。他擅长预算管理、成本收益分析、财务预测、资本募集与跨境资金结构搭建。",
+        },
+        {
+          name: "Sean Demosthenous",
+          role: "战略顾问",
+          image: "/team/sean.png",
+          bio: "Sean 的职业生涯始于 Lloyd's of London，曾执行超过 70 亿美元信用违约互换，并在全球能源大宗商品市场开展跨境经纪业务。他现为 Rythm Capital 合伙人，参与超过 1 亿美元资本募集与跨三大洲交易流，并担任 GODL 顾问。",
+        },
+      ],
+    },
     plans: {
       planCards: [
         {
@@ -890,7 +993,7 @@ const zh = {
           description: "短周期配置，兼顾流动性与稳健收益。",
           items: [
             "锁仓期限：3个月（按链上配置）",
-            "GDL 激励系数：0.3x",
+            "GDL 激励系数：以基金页链上实时读取为准",
             "支持每7天领取周收益",
             "到期可领取本金 + 剩余收益 + GDL",
           ],
@@ -901,7 +1004,7 @@ const zh = {
           description: "中周期配置，收益与周期平衡更优。",
           items: [
             "锁仓期限：6个月（按链上配置）",
-            "GDL 激励系数：0.6x",
+            "GDL 激励系数：以基金页链上实时读取为准",
             "支持每7天领取周收益",
             "到期可领取本金 + 剩余收益 + GDL",
           ],
@@ -914,7 +1017,7 @@ const zh = {
           description: "长期配置方案，收益率与激励系数更高。",
           items: [
             "锁仓期限：12个月（按链上配置）",
-            "GDL 激励系数：1.2x",
+            "GDL 激励系数：以基金页链上实时读取为准",
             "支持每7天领取周收益",
             "到期可领取本金 + 剩余收益 + GDL",
           ],
@@ -954,8 +1057,12 @@ const zh = {
       farmsLink: "基金页面",
       portfolioLink: "资产仪表盘",
       contactLink: "联系我们",
-      previewAlt: "By Template 仪表盘",
+      previewAlt: "GODL 资产仪表盘预览",
       trustNetwork: "监管与审计协同网络",
+    },
+    heroPreview: {
+      chainLive: "BSC 实时",
+      reserveMapping: "储备映射",
     },
     sectionHeadings: {
       overviewBase: "协议核心",
@@ -979,6 +1086,9 @@ const zh = {
       partnerBase: "战略合作与",
       partnerHighlight: "生态协同",
       partnerSubtitle: "围绕监管、资产与流通三条主线推进合作，持续扩展跨境资管网络。",
+      teamBase: "核心团队与",
+      teamHighlight: "顾问网络",
+      teamSubtitle: "展示项目执行、战略、财务、市场与机构顾问资源，增强官网可信度。",
       plansBase: "黄金基金",
       plansHighlight: "认购方案",
       plansSubtitle: "展示 3/6/12 个月锁定周期与收益配置，具体参数以链上 termConfigs 为准。",

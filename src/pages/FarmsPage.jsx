@@ -24,6 +24,7 @@ const tokenAddressByKey = {
 };
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const DEFI_LOCKED = true;
 const LP_CUSTOM_ERROR_SELECTOR_MAP = Object.freeze({
   "0xc34f3f7f": "emissionCapReached",
   "0x5945ea56": "insufficientAmount",
@@ -178,6 +179,8 @@ export default function FarmsPage() {
   const { notify } = useNotification();
   const { address, chainId, connect, getSigner } = useWallet();
   const pageT = useCallback((key, options) => t(`defi.page.${key}`, options), [t]);
+  const lockedStats = t("defi.locked.stats", { returnObjects: true });
+  const lockedPools = t("defi.locked.pools", { returnObjects: true });
 
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("active");
@@ -198,6 +201,11 @@ export default function FarmsPage() {
   });
 
   const loadFarmData = useCallback(async () => {
+    if (DEFI_LOCKED) {
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     const readProvider = getReadProvider();
     const contracts = createCoreContracts(readProvider);
@@ -319,6 +327,7 @@ export default function FarmsPage() {
   const poolPids = useMemo(() => farmState.pools.map((pool) => pool.pid), [farmState.pools]);
 
   const refreshPendingRewards = useCallback(async () => {
+    if (DEFI_LOCKED) return;
     if (!address || poolPids.length === 0) return;
 
     const readProvider = getReadProvider();
@@ -1119,6 +1128,75 @@ export default function FarmsPage() {
     liquidityState.tokenBSymbol,
     pageT,
   ]);
+
+  if (DEFI_LOCKED) {
+    return (
+      <section className="relative overflow-hidden px-4 py-10 md:py-14">
+        <div className="governance-grid pointer-events-none absolute inset-0 opacity-30" />
+        <div className="pointer-events-none absolute inset-x-0 top-[-80px] h-[260px] bg-[radial-gradient(circle_at_top,rgba(252,213,53,0.18),rgba(252,213,53,0)_70%)]" />
+
+        <div className="relative mx-auto max-w-6xl">
+          <h1 className="text-4xl font-semibold tracking-tight text-[#fcd535] md:text-6xl">{t("defi.title")}</h1>
+          <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300">{t("defi.subtitle")}</p>
+
+          <div className="governance-panel relative mt-8 overflow-hidden rounded-[28px] p-5 md:p-6">
+            <div className="pointer-events-none select-none blur-[5px]">
+              <div className="grid gap-4 md:grid-cols-3">
+                {lockedStats.map((item) => (
+                  <article key={item.label} className="governance-panel-soft rounded-3xl p-5 opacity-55">
+                    <p className="text-sm text-slate-500">{item.label}</p>
+                    <p className="mt-2 text-3xl font-semibold text-white">{item.value}</p>
+                    <p className="mt-2 text-xs text-slate-500">{item.note}</p>
+                  </article>
+                ))}
+              </div>
+
+              <div className="mt-6 space-y-4">
+                {lockedPools.map((pool) => (
+                  <article key={pool.pair} className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 opacity-55 md:p-6">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="flex items-center gap-3">
+                        <TokenStack tokens={pool.tokens} />
+                        <div>
+                          <p className="text-xl font-semibold text-[#f0cd54]">{pool.pair}</p>
+                          <p className="mt-1 text-sm text-slate-400">PID {pool.pid} · {pool.status}</p>
+                        </div>
+                      </div>
+                      <span className="inline-flex h-9 items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 text-xs font-semibold text-emerald-300">
+                        {pool.status}
+                      </span>
+                    </div>
+
+                    <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                      {pool.metrics.map((metric) => (
+                        <div key={metric.label} className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3">
+                          <p className="text-xs text-slate-500">{metric.label}</p>
+                          <p className="mt-1 text-lg font-semibold text-slate-100">{metric.value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            <div className="absolute inset-0 flex items-start justify-center bg-black/48 px-5 pt-6 backdrop-blur-[2px] md:items-center md:pt-0">
+              <div className="relative max-w-lg text-center">
+                <div className="pointer-events-none absolute inset-[-32px] opacity-25 [background-image:linear-gradient(45deg,rgba(255,255,255,0.18)_25%,transparent_25%),linear-gradient(-45deg,rgba(255,255,255,0.18)_25%,transparent_25%),linear-gradient(45deg,transparent_75%,rgba(255,255,255,0.18)_75%),linear-gradient(-45deg,transparent_75%,rgba(255,255,255,0.18)_75%)] [background-position:0_0,0_9px,9px_-9px,-9px_0] [background-size:18px_18px]" />
+                <div className="relative rounded-[24px] border border-[#fcd535]/30 bg-[#050608]/90 px-6 py-7 shadow-[0_24px_70px_rgba(0,0,0,0.42)]">
+                  <span className="inline-flex rounded-full border border-[#fcd535]/35 bg-[#fcd535]/10 px-3 py-1 text-xs font-semibold text-[#f0cd54]">
+                    {t("defi.locked.badge")}
+                  </span>
+                  <h2 className="mt-4 text-3xl font-semibold text-white">{t("defi.locked.title")}</h2>
+                  <p className="mt-3 text-sm leading-6 text-slate-400">{t("defi.locked.description")}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="relative overflow-hidden px-4 py-10 md:py-14">

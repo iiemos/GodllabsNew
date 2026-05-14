@@ -13,11 +13,6 @@ import { formatBps, formatTimestamp, formatTokenAmount, parseTokenAmount, toErro
 const ONE_E18 = 10n ** 18n;
 const ZERO_PENDING_MATURED = { principal: 0n, yieldAmount: 0n };
 const DEFAULT_GDL_BONUS_MULTIPLIER_BPS = 10000;
-const FIXED_GDL_BONUS_BPS_BY_MONTH = Object.freeze({
-  3: 3000,
-  6: 6000,
-  12: 12000,
-});
 
 function toPositiveInt(value) {
   const parsed = Number(value);
@@ -25,11 +20,7 @@ function toPositiveInt(value) {
   return Math.floor(parsed);
 }
 
-function getEffectiveGdlBonusBps(termMonths, rawGdlBonusBps, gdlBonusMultiplierBps = DEFAULT_GDL_BONUS_MULTIPLIER_BPS) {
-  const months = toPositiveInt(termMonths);
-  const fixedBps = FIXED_GDL_BONUS_BPS_BY_MONTH[months];
-  if (typeof fixedBps === "number") return fixedBps;
-
+function getEffectiveGdlBonusBps(_termMonths, rawGdlBonusBps, gdlBonusMultiplierBps = DEFAULT_GDL_BONUS_MULTIPLIER_BPS) {
   const rawBps = toPositiveInt(rawGdlBonusBps);
   const multiplierBps = toPositiveInt(gdlBonusMultiplierBps);
   if (!rawBps || !multiplierBps) return 0;

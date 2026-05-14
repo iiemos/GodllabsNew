@@ -357,6 +357,45 @@ const en = {
   defi: {
     title: "DeFi Mining",
     subtitle: "Liquidity mining pool management and yield tracking.",
+    locked: {
+      badge: "Coming Soon",
+      title: "DeFi Mining Coming Soon",
+      description:
+        "The liquidity mining page is reserved. Pool details and write actions will open after strategy, audit, and liquidity parameters are finalized.",
+      stats: [
+        { label: "Pool Count", value: "3", note: "USGD/USDT, GODL/USGD, and GDL/USGD" },
+        { label: "Status", value: "Coming Soon", note: "Preview structure only" },
+        { label: "Reward Asset", value: "GDL", note: "Final emission settings follow on-chain configuration" },
+      ],
+      pools: [
+        {
+          pid: 0,
+          pair: "USGD-USDT LP",
+          tokens: ["usgd", "usdt"],
+          status: "Coming Soon",
+          metrics: [
+            { label: "Pool Weight", value: "--" },
+            { label: "Total Staked", value: "-- LP" },
+            { label: "Estimated Daily Reward", value: "-- GDL/day" },
+            { label: "Estimated APY", value: "--" },
+            { label: "Claimable Reward", value: "-- GDL" },
+          ],
+        },
+        {
+          pid: 1,
+          pair: "GODL-USGD LP",
+          tokens: ["godl", "usgd"],
+          status: "Coming Soon",
+          metrics: [
+            { label: "Pool Weight", value: "--" },
+            { label: "Total Staked", value: "-- LP" },
+            { label: "Estimated Daily Reward", value: "-- GDL/day" },
+            { label: "Estimated APY", value: "--" },
+            { label: "Claimable Reward", value: "-- GDL" },
+          ],
+        },
+      ],
+    },
     summary: {
       poolCount: "Pool Count",
       activeCount: "Active Pools",
@@ -615,11 +654,11 @@ const en = {
         totalWithGdlBonus: "Total Maturity Value (with GDL Bonus)",
       },
       summary: {
-        principal: "Subscribed Principal (USGD)",
-        pendingGdl: "Current Claimable GDL",
+        principal: "My Current Subscription Principal",
+        pendingGdl: "My Current Claimable GDL",
         weeklyClaimable: "Current Weekly Claimable (USGD)",
         maturedClaimable: "Current Matured Claimable",
-        maturedWithGdl: "Current Total Claimable Value (with GDL Bonus)",
+        maturedWithGdl: "Currently Claimable",
       },
       actions: {
         goSwapGodl: "Swap to GODL",
@@ -785,7 +824,7 @@ const en = {
       {
         symbol: "GODL",
         icon: "mdi:gold",
-        summary: "Gold-anchored token mapped to fund-share value, with an initial issuance baseline of 160,000.",
+        summary: "Gold-anchored token mapped to fund-share value, with an initial issuance of 105,000.",
         detail:
           "Underlying value references Tanzanian mining assets, including 2,300 tons of proven reserves and 3,500 tons of undeveloped long-term potential.",
       },
@@ -803,7 +842,7 @@ const en = {
         leading: "Compliance",
         title: "Audit & Custody",
         description:
-          "Underlying assets, reserves, and key ledger data are audited by rules to form traceable dual verification both on-chain and off-chain.",
+          "Underlying assets, reserves, ALTENEEN REFINERY cooperation credentials, and key ledger data are audited to form dual on-chain and off-chain verification.",
       },
       {
         icon: "mdi:radar",
@@ -889,6 +928,12 @@ const en = {
         icon: "mdi:bank-check",
       },
       {
+        title: "ALTENEEN REFINERY",
+        desc:
+          "Refinery cooperation credentials strengthen the physical asset chain behind gold-token issuance, ownership proof, refining, and delivery credibility.",
+        icon: "mdi:factory",
+      },
+      {
         title: "Asset Backing",
         desc: "Uses Tanzanian gold mining assets as core support to strengthen token value mapping and credibility.",
         icon: "mdi:pickaxe",
@@ -899,6 +944,71 @@ const en = {
         icon: "mdi:earth",
       },
     ],
+    assetProof: {
+      badge: "Asset Proof",
+      title: "Underlying Asset Proof",
+      description:
+        "Publishes the mining license baseline, redacted credential scans, mine-area location, and reserve verification approach so investors can review the asset chain quickly.",
+      licenseNo: "License No.: TZ-MIN-2026-***-GODL",
+      scanTitle: "Redacted Credential Scan",
+      scanNote: "Sensitive fields are redacted. Formal files follow audit disclosure and compliance materials.",
+      items: [
+        {
+          label: "License No.",
+          value: "TZ-MIN-2026-***-GODL (redacted)",
+        },
+        {
+          label: "Mine Area Location",
+          value: "Compliant Tanzanian mining-rights area; coordinates and boundaries follow audit disclosure.",
+        },
+        {
+          label: "Credential Scan",
+          value: "Business, mining-rights, and cooperation files keep redacted scan entries.",
+        },
+        {
+          label: "Reserve Verification",
+          value: "Mining rights, reserves, refining, and custody materials are verified in layers and added to on-chain disclosure cadence.",
+        },
+      ],
+    },
+    team: {
+      members: [
+        {
+          name: "Lucie Colomb",
+          role: "Chief Executive Officer",
+          image: "/team/lucie-colomb.png",
+          bio:
+            "Lucie is an executive and growth strategist with over a decade across finance, Web3, and emerging technology. Her work spans digital marketing, token strategy, partnerships, community growth, and go-to-market execution across AI and blockchain ventures.",
+        },
+        {
+          name: "Sidharth Sogani",
+          role: "Chief Strategy Officer",
+          image: "/team/sidharth-sogani.png",
+          bio:
+            "Sidharth is the founder and CEO of CREBACO Global, a blockchain and cryptocurrency research, consulting, intelligence, and rating firm. Since 2017, he has consulted on 157+ projects across legal, technical, financial, and due-diligence dimensions, with deep experience in GCC digital-asset fund management and policy frameworks.",
+        },
+        {
+          name: "Vaibhav Gupta",
+          role: "Chief Marketing Officer",
+          image: "/team/vaibhav-gupta.png",
+          bio: "Bio coming soon.",
+        },
+        {
+          name: "Brian Ho",
+          role: "CFO",
+          image: "/team/brian-ho.png",
+          bio:
+            "Brian has over a decade of senior banking, wealth management, and corporate finance experience, including HSBC Hong Kong and CFO or board advisory roles across energy, commodities, and real estate. He brings hands-on experience in budgeting, cost-benefit analysis, forecasting, capital raising, and cross-border treasury structures.",
+        },
+        {
+          name: "Sean Demosthenous",
+          role: "Strategic Advisor",
+          image: "/team/sean.png",
+          bio:
+            "Sean began his career at Lloyd's of London, executed over $7 billion in credit default swaps, and brokered international energy commodities across global markets. He is a partner at Rythm Capital, has been involved in over $100 million in capital raises and deal flow across three continents, and advises GODL on institutional capital and blockchain yield.",
+        },
+      ],
+    },
     plans: {
       planCards: [
         {
@@ -907,7 +1017,7 @@ const en = {
           description: "Short-cycle allocation balancing liquidity with stable yield.",
           items: [
             "Lock term: 3 months (on-chain governed)",
-            "GDL incentive multiplier: 0.3x",
+            "GDL incentive multiplier: read live on the fund page",
             "Weekly yield claim available every 7 days",
             "Maturity payout: principal + remaining yield + GDL",
           ],
@@ -918,7 +1028,7 @@ const en = {
           description: "Mid-cycle option with a stronger yield-duration balance.",
           items: [
             "Lock term: 6 months (on-chain governed)",
-            "GDL incentive multiplier: 0.6x",
+            "GDL incentive multiplier: read live on the fund page",
             "Weekly yield claim available every 7 days",
             "Maturity payout: principal + remaining yield + GDL",
           ],
@@ -931,7 +1041,7 @@ const en = {
           description: "Long-cycle allocation with higher yield and incentive multiplier.",
           items: [
             "Lock term: 12 months (on-chain governed)",
-            "GDL incentive multiplier: 1.2x",
+            "GDL incentive multiplier: read live on the fund page",
             "Weekly yield claim available every 7 days",
             "Maturity payout: principal + remaining yield + GDL",
           ],
@@ -972,8 +1082,12 @@ const en = {
       farmsLink: "Fund Page",
       portfolioLink: "Asset Dashboard",
       contactLink: "Contact Us",
-      previewAlt: "By Template dashboard",
+      previewAlt: "GODL asset dashboard preview",
       trustNetwork: "Regulatory and audit coordination network",
+    },
+    heroPreview: {
+      chainLive: "BSC Live",
+      reserveMapping: "Reserve Mapping",
     },
     sectionHeadings: {
       overviewBase: "Protocol Core",
@@ -997,6 +1111,9 @@ const en = {
       partnerBase: "Strategic Cooperation and",
       partnerHighlight: "Ecosystem Synergy",
       partnerSubtitle: "Advancing collaboration across regulation, assets, and circulation to expand cross-border asset-management networks.",
+      teamBase: "Core Team and",
+      teamHighlight: "Advisor Network",
+      teamSubtitle: "Highlights execution, strategy, finance, marketing, and institutional advisory resources behind the official site.",
       plansBase: "Gold Fund",
       plansHighlight: "Subscription Plans",
       plansSubtitle: "Displays 3/6/12-month lock cycles and yield settings. Final parameters follow on-chain termConfigs.",
