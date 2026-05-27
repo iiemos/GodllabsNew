@@ -18,6 +18,7 @@ const tokenUiMeta = {
 };
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const SWAP_LOCKED = true;
 
 function isUsableAddress(value) {
   return typeof value === "string" && isAddress(value) && value.toLowerCase() !== ZERO_ADDRESS;
@@ -47,7 +48,101 @@ function calcRateString(amountIn, inDecimals, amountOut, outDecimals, inSymbol, 
   return `1 ${inSymbol} ≈ ${value.toLocaleString("en-US", { maximumFractionDigits: 8 })} ${outSymbol}`;
 }
 
-export default function SwapPage() {
+function SwapLockedView() {
+  const { t } = useTranslation();
+  const lockedStats = t("swap.locked.stats", { returnObjects: true });
+  const lockedRoutes = t("swap.locked.routes", { returnObjects: true });
+
+  return (
+    <section className="relative overflow-hidden px-4 py-10 md:py-14">
+      <div className="governance-grid pointer-events-none absolute inset-0 opacity-30" />
+      <div className="pointer-events-none absolute inset-x-0 top-[-80px] h-[260px] bg-[radial-gradient(circle_at_top,rgba(252,213,53,0.18),rgba(252,213,53,0)_70%)]" />
+
+      <div className="relative mx-auto max-w-6xl">
+        <h1 className="text-4xl font-semibold tracking-tight text-[#fcd535] md:text-6xl">{t("swap.title")}</h1>
+        <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300">{t("swap.locked.subtitle")}</p>
+
+        <div className="governance-panel relative mt-8 overflow-hidden rounded-[28px] p-5 md:p-6">
+          <div className="pointer-events-none select-none blur-[5px]">
+            <div className="grid gap-4 md:grid-cols-3">
+              {lockedStats.map((item) => (
+                <article key={item.label} className="governance-panel-soft rounded-3xl p-5 opacity-55">
+                  <p className="text-sm text-slate-500">{item.label}</p>
+                  <p className="mt-2 text-3xl font-semibold text-white">{item.value}</p>
+                  <p className="mt-2 text-xs text-slate-500">{item.note}</p>
+                </article>
+              ))}
+            </div>
+
+            <div className="mx-auto mt-6 max-w-[520px] rounded-3xl border border-white/15 bg-white/[0.03] p-5 shadow-[0_24px_64px_rgba(0,0,0,0.42)] md:p-6">
+              <div className="flex flex-nowrap items-center justify-center gap-2 overflow-x-auto pb-1">
+                {lockedRoutes.map((route, index) => (
+                  <span
+                    key={route.label}
+                    className={`shrink-0 rounded-full px-4 py-2 text-sm ${
+                      index === 0 ? "morgan-btn-primary border-0 font-semibold text-[#111111]" : "morgan-btn-secondary text-slate-300"
+                    }`}
+                  >
+                    {route.label}
+                  </span>
+                ))}
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-white/10 bg-black/25 p-4">
+                <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
+                  <span>{t("swap.fields.from")}</span>
+                  <span>{t("swap.fields.balance")}: --</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 flex-1 rounded-lg bg-white/8" />
+                  <span className="inline-flex items-center gap-2 rounded-xl bg-emerald-500/20 px-3 py-2 text-emerald-300">
+                    <Icon icon="mdi:currency-usd-circle-outline" width="16" />
+                    USDT
+                  </span>
+                </div>
+              </div>
+
+              <div className="relative z-10 flex h-6 items-center justify-center">
+                <span className="swap-switch-btn morgan-btn-secondary inline-flex h-9 w-9 items-center justify-center rounded-xl border-2 text-[#fcd535]">
+                  <Icon icon="mdi:swap-vertical" width="17" />
+                </span>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+                <div className="mb-2 flex items-center justify-between text-xs text-slate-400">
+                  <span>{t("swap.fields.to")}</span>
+                  <span>{t("swap.fields.balance")}: --</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 flex-1 rounded-lg bg-white/8" />
+                  <span className="inline-flex items-center gap-2 rounded-xl bg-amber-500/20 px-3 py-2 text-amber-300">
+                    <Icon icon="mdi:gold" width="16" />
+                    GODL
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="absolute inset-0 flex items-start justify-center bg-black/48 px-5 pt-6 backdrop-blur-[2px] md:items-center md:pt-0">
+            <div className="relative max-w-lg text-center">
+              <div className="pointer-events-none absolute inset-[-32px] opacity-25 [background-image:linear-gradient(45deg,rgba(255,255,255,0.18)_25%,transparent_25%),linear-gradient(-45deg,rgba(255,255,255,0.18)_25%,transparent_25%),linear-gradient(45deg,transparent_75%,rgba(255,255,255,0.18)_75%),linear-gradient(-45deg,transparent_75%,rgba(255,255,255,0.18)_75%)] [background-position:0_0,0_9px,9px_-9px,-9px_0] [background-size:18px_18px]" />
+              <div className="relative rounded-[24px] border border-[#fcd535]/30 bg-[#050608]/90 px-6 py-7 shadow-[0_24px_70px_rgba(0,0,0,0.42)]">
+                <span className="inline-flex rounded-full border border-[#fcd535]/35 bg-[#fcd535]/10 px-3 py-1 text-xs font-semibold text-[#f0cd54]">
+                  {t("swap.locked.badge")}
+                </span>
+                <h2 className="mt-4 text-3xl font-semibold text-white">{t("swap.locked.title")}</h2>
+                <p className="mt-3 text-sm leading-6 text-slate-400">{t("swap.locked.description")}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SwapTradeView() {
   const location = useLocation();
   const { notify } = useNotification();
   const { t } = useTranslation();
@@ -693,4 +788,8 @@ export default function SwapPage() {
       </div>
     </section>
   );
+}
+
+export default function SwapPage() {
+  return SWAP_LOCKED ? <SwapLockedView /> : <SwapTradeView />;
 }

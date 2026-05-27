@@ -7,11 +7,9 @@ import { useWallet } from "../contexts/WalletContext";
 
 const navItems = [
   { key: "home", href: "/" },
-  { key: "fund", href: "/fund" },
-  { key: "defi", href: "/defi" },
+  { key: "fund", href: "/stake" },
   { key: "governance", href: "/governance", actionMessageKey: "governanceComingSoon" },
   { key: "portfolio", href: "/portfolio" },
-  { key: "swap", href: "/swap" },
   { key: "docs", href: "/docs" },
 ];
 
@@ -65,7 +63,7 @@ export default function AppHeader() {
   const activeMap = useMemo(
     () => ({
       "/": location.pathname === "/",
-      "/fund": location.pathname === "/fund",
+      "/stake": location.pathname === "/stake" || location.pathname === "/fund",
       "/defi": location.pathname === "/defi" || location.pathname === "/farms" || location.pathname === "/mine/one",
       "/governance": location.pathname === "/governance",
       "/portfolio": location.pathname === "/portfolio" || location.pathname === "/mine/two",

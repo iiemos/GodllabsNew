@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07090d"/>
+      <stop offset="1" stop-color="#141006"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff2a8"/>
+      <stop offset="0.45" stop-color="#fcd535"/>
+      <stop offset="1" stop-color="#a57a10"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="50" y="50" width="1100" height="530" rx="34" fill="none" stroke="#fcd535" stroke-opacity="0.28" stroke-width="2"/>
+  <circle cx="930" cy="110" r="260" fill="#fcd535" opacity="0.08"/>
+  <circle cx="230" cy="520" r="220" fill="#fcd535" opacity="0.06"/>
+  <g transform="translate(86 84)">
+    <circle cx="52" cy="52" r="52" fill="url(#gold)"/>
+    <path d="M52 16 82 52 52 88 22 52Z" fill="#07090d" opacity="0.88"/>
+    <path d="M52 28 70 52 52 76 34 52Z" fill="#fcd535"/>
+  </g>
+  <text x="86" y="235" fill="#fcd535" font-family="Space Grotesk, Arial, sans-serif" font-size="88" font-weight="700" letter-spacing="0">GODL LABS</text>
+  <text x="88" y="315" fill="#f8fafc" font-family="Space Grotesk, Arial, sans-serif" font-size="44" font-weight="600" letter-spacing="0">Institutional Gold RWA</text>
+  <text x="90" y="390" fill="#cbd5e1" font-family="Space Grotesk, Arial, sans-serif" font-size="28" font-weight="400" letter-spacing="0">
+    <tspan x="90" dy="0">Audited Tanzanian mining reserves.</tspan>
+    <tspan x="90" dy="42">Regulated custody. Transparent on-chain framework.</tspan>
+  </text>
+  <g transform="translate(90 495)">
+    <rect width="236" height="48" rx="24" fill="#fcd535" fill-opacity="0.12" stroke="#fcd535" stroke-opacity="0.38"/>
+    <text x="28" y="32" fill="#fcd535" font-family="Space Grotesk, Arial, sans-serif" font-size="18" font-weight="600">GOLD TOKENIZATION</text>
+  </g>
+</svg>

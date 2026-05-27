@@ -36,10 +36,12 @@ export default function App() {
 
   useEffect(() => {
     const baseTitle = "GODL Labs";
+    const homeTitle = t("meta.homeTitle");
     const pageTitleKeyByPath = {
-      "/": "header.nav.home",
+      "/": "",
       "/defi": "header.nav.defi",
-      "/fund": "header.nav.fund",
+      "/fund": "fund.title",
+      "/stake": "fund.title",
       "/governance": "header.nav.governance",
       "/docs": "header.nav.docs",
       "/portfolio": "portfolio.title",
@@ -48,6 +50,11 @@ export default function App() {
     };
 
     const pageTitleKey = pageTitleKeyByPath[location.pathname];
+    if (location.pathname === "/") {
+      document.title = homeTitle;
+      return;
+    }
+
     const pageTitle = pageTitleKey ? t(pageTitleKey) : "";
     document.title = pageTitle ? `${pageTitle} | ${baseTitle}` : baseTitle;
   }, [i18n.language, location.pathname, t]);
@@ -64,7 +71,8 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/defi" element={<FarmsPage />} />
-            <Route path="/fund" element={<FundPage />} />
+            <Route path="/stake" element={<FundPage />} />
+            <Route path="/fund" element={<Navigate to="/stake" replace />} />
             <Route path="/governance" element={<GovernancePage />} />
             <Route path="/docs" element={<DocsPage />} />
             <Route path="/portfolio" element={<Portfolio />} />

@@ -10,12 +10,10 @@ const sectionLinks = [
 ];
 
 const infoLinks = [
-  { key: "fund", href: "/fund" },
-  { key: "defi", href: "/defi" },
+  { key: "fund", href: "/stake" },
   { key: "governance", href: "/governance" },
   { key: "docs", href: "/docs" },
   { key: "portfolio", href: "/portfolio" },
-  { key: "swap", href: "/swap" },
   { key: "contact", href: "/contact-us" },
 ];
 
@@ -34,7 +32,7 @@ export default function AppFooter() {
   return (
     <footer className="border-t border-white/10 bg-black/40">
       <div className="mx-auto w-full max-w-6xl px-4 py-14">
-        <div className="grid gap-9 md:grid-cols-[1.2fr_1fr_1.2fr]">
+        <div className="grid gap-9 md:grid-cols-[1.1fr_0.9fr_1fr_1.2fr]">
           <div className="space-y-4">
             <div className="inline-flex h-12 w-12 items-center justify-center p-1.5">
               <img src="/static/logo.png" alt="GODL logo" className="h-full w-full object-contain" />
@@ -85,6 +83,14 @@ export default function AppFooter() {
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div>
+            <p className="text-lg font-medium text-white">{t("footer.investorTitle")}</p>
+            <p className="mt-4 text-sm leading-6 text-slate-400">{t("footer.investorDescription")}</p>
+            <a href="mailto:partnerships@godl.io" className="mt-4 inline-flex text-sm font-semibold text-[#f0cd54] transition hover:text-white">
+              partnerships@godl.io
+            </a>
           </div>
         </div>
       </div>

@@ -26,6 +26,17 @@ export default function DocsPage() {
           </p>
           <h1 className="mt-5 text-4xl font-semibold tracking-tight text-white md:text-6xl">{t("docs.title")}</h1>
           <p className="mt-4 max-w-4xl text-base leading-7 text-slate-300">{t("docs.subtitle")}</p>
+          <div className="mt-6">
+            <button
+              type="button"
+              disabled
+              className="inline-flex h-12 cursor-not-allowed items-center justify-center gap-2 rounded-full border border-[#fcd535]/30 bg-[#fcd535]/10 px-5 text-sm font-semibold text-[#f0cd54] opacity-80"
+              title={t("docs.whitepaperPending")}
+            >
+              <Icon icon="mdi:file-download-outline" width="18" />
+              {t("docs.whitepaperButton")}
+            </button>
+          </div>
         </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -50,7 +61,7 @@ export default function DocsPage() {
           })}
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <div className="mt-6 grid gap-4 md:grid-cols-[1fr_0.82fr]">
           <article className="governance-panel-soft rounded-[24px] p-5 md:p-6">
             <p className="text-sm font-semibold text-[#f0cd54]">{t("docs.formulas.fund.title")}</p>
             <p className="mt-3 rounded-xl border border-white/10 bg-black/25 px-4 py-3 font-mono text-sm text-emerald-300">
@@ -60,15 +71,8 @@ export default function DocsPage() {
           </article>
           <article className="governance-panel-soft rounded-[24px] p-5 md:p-6">
             <p className="text-sm font-semibold text-[#f0cd54]">{t("docs.formulas.gdl.title")}</p>
-            <p className="mt-3 rounded-xl border border-white/10 bg-black/25 px-4 py-3 font-mono text-sm text-emerald-300">
-              {t("docs.formulas.gdl.expression")}
-            </p>
             <p className="mt-3 text-sm leading-7 text-slate-300">{t("docs.formulas.gdl.note")}</p>
           </article>
-        </div>
-
-        <div className="governance-panel mt-6 rounded-[28px] p-5 md:p-6">
-          <p className="text-sm leading-7 text-slate-300">{t("docs.whitepaperNote")}</p>
         </div>
       </div>
     </section>

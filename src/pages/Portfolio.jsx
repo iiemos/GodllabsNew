@@ -14,7 +14,7 @@ const BALANCE_CARD_META = [
   { key: "usgd", iconSrc: "/static/usgd.svg", symbol: "USGD" },
   { key: "gdl", icon: "mynaui:letter-g-waves-solid", symbol: "GDL" },
   { key: "godl", iconSrc: "/static/gold.svg", symbol: "GODL" },
-  { key: "fundShares", icon: "solar:pie-chart-2-bold", symbol: "USGD" },
+  { key: "fundShares", icon: "solar:pie-chart-2-bold", symbol: "USDT" },
 ];
 
 const EMPTY_BALANCES = {

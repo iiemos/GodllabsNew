@@ -38,15 +38,15 @@ function CardBaseBackground() {
 
 function HeroDashboardPreview({ t }) {
   const balances = [
-    { key: "usgd", value: "128,420.00", iconSrc: "/static/usgd.svg" },
-    { key: "godl", value: "105,000", iconSrc: "/static/gold.svg" },
-    { key: "gdl", value: "32,680.45", icon: "mynaui:letter-g-waves-solid" },
-    { key: "fundShares", value: "58,900.00", icon: "solar:pie-chart-2-bold" },
+    { label: "USDT", value: "Live at TGE", icon: "mdi:currency-usd-circle-outline" },
+    { label: "GODL", value: "160,000", iconSrc: "/static/gold.svg" },
+    { label: t("portfolio.balances.fundShares"), value: "58,900.00", icon: "solar:pie-chart-2-bold" },
+    { label: t("fund.page.estimates.yieldTotal"), value: "31% APY", icon: "mdi:chart-line" },
   ];
   const records = [
-    { type: "fundSubscribe", token: "GODL", amount: "-12.50", status: "active" },
-    { type: "rewardClaim", token: "GDL", amount: "+486.20", status: "completed" },
-    { type: "swap", token: "USGD", amount: "+8,240.00", status: "completed" },
+    { type: "fundSubscribe", token: "GODL", amount: "-12.50" },
+    { type: "rewardClaim", token: "USDT", amount: "+486.20" },
+    { type: "swap", token: "USDT", amount: "+8,240.00" },
   ];
 
   return (
@@ -71,9 +71,9 @@ function HeroDashboardPreview({ t }) {
         <div>
           <div className="grid grid-cols-2 gap-3">
             {balances.map((item) => (
-              <div key={item.key} className="rounded-2xl border border-white/10 bg-white/[0.045] p-3">
+              <div key={item.label} className="rounded-2xl border border-white/10 bg-white/[0.045] p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs text-slate-400">{t(`portfolio.balances.${item.key}`)}</p>
+                  <p className="text-xs text-slate-400">{item.label}</p>
                   <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black/25 text-[#fcd535]">
                     {item.iconSrc ? (
                       <img src={item.iconSrc} alt="" className="h-6 w-6 object-contain" />
@@ -143,13 +143,7 @@ export default function HomePage() {
   const heroCanvasRef = useRef(null);
   const heroPreviewRef = useRef(null);
 
-  const trustLogos = [
-    { name: "Binance", src: "/friends/binance.png", sizeClass: "h-20" },
-    { name: "Coinbase", src: "/friends/coinbase.png" },
-    { name: "BitGo", src: "/friends/bitgo.png" },
-    { name: "Hex Trust", src: "/friends/hextrust.svg" },
-    { name: "AG", src: "/friends/ag.png", sizeClass: "h-16" },
-  ];
+  const confirmedPartners = t("home.confirmedPartners", { returnObjects: true });
   const protocolMetrics = t("home.protocolMetrics", { returnObjects: true });
   const institutionalPillars = t("home.institutionalPillars", { returnObjects: true });
   const tokenRows = t("home.tokenRows", { returnObjects: true });
@@ -159,6 +153,7 @@ export default function HomePage() {
   const projectCards = t("home.projectCards", { returnObjects: true });
   const teamMembers = t("home.team.members", { returnObjects: true });
   const planCards = t("home.plans.planCards", { returnObjects: true });
+  const stakingSteps = t("home.plans.howItWorks.steps", { returnObjects: true });
 
   useEffect(() => {
     const canvas = heroCanvasRef.current;
@@ -380,7 +375,7 @@ export default function HomePage() {
           </div>
 
           <Link
-            to="/fund"
+            to="/stake"
             className="mt-9 inline-flex rounded-full border border-[#fcd535] bg-black/45 px-8 py-3 text-sm font-semibold text-white transition hover:bg-black/60"
             style={{ boxShadow: "rgba(0, 0, 0, 0.3) 0px 0px 2px 3px inset, rgba(252, 213, 53, 0.16) 0px 0px 4px 8px inset" }}
           >
@@ -406,9 +401,10 @@ export default function HomePage() {
             <p className="text-sm text-slate-300">{t("home.hero.trustNetwork")}</p>
             <div className="marquee-mask mt-7 overflow-hidden py-2">
               <ul className="marquee-track flex w-max items-center gap-8 md:gap-12">
-                {[...trustLogos, ...trustLogos].map((logo, index) => (
-                  <li key={`${logo.name}-${index}`} className="flex h-[58px] min-w-[150px] items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] px-5 backdrop-blur-sm md:h-[64px] md:min-w-[170px]">
-                    <img src={logo.src} alt={logo.name} className={`${logo.sizeClass ?? "h-7 md:h-8"} w-auto object-contain opacity-90`} />
+                {[...confirmedPartners, ...confirmedPartners].map((partner, index) => (
+                  <li key={`${partner.name}-${index}`} className="flex h-[72px] min-w-[190px] flex-col items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] px-5 backdrop-blur-sm">
+                    <span className="text-sm font-semibold text-slate-100">{partner.name}</span>
+                    <span className="mt-1 text-xs text-slate-500">{partner.role}</span>
                   </li>
                 ))}
               </ul>
@@ -427,7 +423,23 @@ export default function HomePage() {
           subtitle={t("home.sectionHeadings.plansSubtitle")}
         />
 
-        <div className="mx-auto mt-12 grid max-w-6xl gap-5 lg:grid-cols-3">
+        <div className="glass-card mx-auto mt-10 max-w-6xl rounded-[24px] p-5 md:p-6">
+          <p className="text-sm font-semibold text-[#f0cd54]">{t("home.plans.howItWorks.title")}</p>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            {stakingSteps.map((step, index) => (
+              <div key={step.title} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#fcd535] text-sm font-semibold text-[#111111]">
+                  {index + 1}
+                </span>
+                <p className="mt-3 text-sm font-semibold text-white">{step.title}</p>
+                <p className="mt-2 text-xs leading-5 text-slate-400">{step.description}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-4 text-xs leading-5 text-slate-500">{t("home.plans.howItWorks.note")}</p>
+        </div>
+
+        <div className="mx-auto mt-8 grid max-w-6xl gap-5 lg:grid-cols-3">
           {planCards.map((plan) => (
             <article
               key={plan.cycle}
@@ -459,7 +471,7 @@ export default function HomePage() {
                 <p className="mt-3 text-[15px] text-slate-400">{plan.description}</p>
 
                 <Link
-                  to="/fund"
+                  to="/stake"
                   className={`mt-8 inline-flex h-12 w-full items-center justify-center text-sm font-semibold ${
                     plan.highlight ? "morgan-btn-primary" : "morgan-btn-secondary"
                   }`}
@@ -551,35 +563,29 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="px-4 pb-32 md:pb-40" id="features">
-        <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-[1.1fr_1fr] md:items-center">
-          <div>
-            <h3 className="text-4xl font-semibold leading-tight text-white md:text-5xl">
-              <span className="text-[#fcd535]">{t("home.blocks.featureTitleBase")}</span>{t("home.blocks.featureTitleHighlight")}
-            </h3>
-            <p className="mt-5 max-w-xl text-sm leading-7 text-slate-400 md:text-base">
-              {t("home.blocks.featureDescription")}
-            </p>
-          </div>
+      <section className="px-4 pb-32 md:pb-40" id="team">
+        <SectionHeading
+          title={
+            <>
+              {t("home.sectionHeadings.teamBase")} <span className="text-[#fcd535]">{t("home.sectionHeadings.teamHighlight")}</span>
+            </>
+          }
+          subtitle={t("home.sectionHeadings.teamSubtitle")}
+        />
 
-          <div className="relative overflow-hidden rounded-3xl p-5">
-            <div className="space-y-3">
-              {[82, 67, 71, 56].map((value, index) => (
-                <div
-                  key={value}
-                  className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/25 px-3 py-3"
-                  style={index === 1 ? { transform: "translateX(42px)" } : index === 2 ? { transform: "translateX(86px)" } : undefined}
-                >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-slate-200">
-                    {String.fromCharCode(65 + index)}
-                  </div>
-                  <div className="h-2 flex-1 rounded-full bg-white/10">
-                    <div className="h-full rounded-full bg-gradient-to-r from-[#fcd535] to-[#a57a10]" style={{ width: `${value}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="mx-auto mt-12 grid max-w-6xl gap-5 lg:grid-cols-2">
+          {teamMembers.map((member) => (
+            <article key={member.name} className="glass-card overflow-hidden rounded-[24px] lg:grid lg:grid-cols-[220px_1fr]">
+              <div className="min-h-[280px] bg-black/25 lg:min-h-full">
+                <img src={member.image} alt={member.name} className="h-full min-h-[280px] w-full object-cover object-center" />
+              </div>
+              <div className="p-6">
+                <p className="text-2xl font-semibold text-white">{member.name}</p>
+                <p className="mt-1 text-sm font-semibold text-[#f0cd54]">{member.role}</p>
+                <p className="mt-4 text-sm leading-6 text-slate-400">{member.bio}</p>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
 
@@ -808,32 +814,6 @@ export default function HomePage() {
               </div>
               <h4 className="mt-5 text-xl font-semibold text-white">{card.title}</h4>
               <p className="mt-2 text-sm leading-6 text-slate-400">{card.desc}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="px-4 pb-32 md:pb-40" id="team">
-        <SectionHeading
-          title={
-            <>
-              {t("home.sectionHeadings.teamBase")} <span className="text-[#fcd535]">{t("home.sectionHeadings.teamHighlight")}</span>
-            </>
-          }
-          subtitle={t("home.sectionHeadings.teamSubtitle")}
-        />
-
-        <div className="mx-auto mt-12 grid max-w-6xl gap-5 lg:grid-cols-2">
-          {teamMembers.map((member) => (
-            <article key={member.name} className="glass-card overflow-hidden rounded-[24px] lg:grid lg:grid-cols-[220px_1fr]">
-              <div className="min-h-[280px] bg-black/25 lg:min-h-full">
-                <img src={member.image} alt={member.name} className="h-full min-h-[280px] w-full object-cover object-center" />
-              </div>
-              <div className="p-6">
-                <p className="text-2xl font-semibold text-white">{member.name}</p>
-                <p className="mt-1 text-sm font-semibold text-[#f0cd54]">{member.role}</p>
-                <p className="mt-4 text-sm leading-6 text-slate-400">{member.bio}</p>
-              </div>
             </article>
           ))}
         </div>
