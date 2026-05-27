@@ -9,6 +9,7 @@ const navItems = [
   { key: "home", href: "/" },
   { key: "fund", href: "/stake" },
   { key: "governance", href: "/governance", actionMessageKey: "governanceComingSoon" },
+  { key: "lab", href: "/lab" },
   { key: "portfolio", href: "/portfolio" },
   { key: "docs", href: "/docs" },
 ];
@@ -66,6 +67,7 @@ export default function AppHeader() {
       "/stake": location.pathname === "/stake" || location.pathname === "/fund",
       "/defi": location.pathname === "/defi" || location.pathname === "/farms" || location.pathname === "/mine/one",
       "/governance": location.pathname === "/governance",
+      "/lab": location.pathname === "/lab",
       "/portfolio": location.pathname === "/portfolio" || location.pathname === "/mine/two",
       "/swap": location.pathname === "/swap",
       "/docs": location.pathname === "/docs",

@@ -22,6 +22,7 @@ const en = {
       fund: "Stake",
       defi: "DeFi Mining",
       governance: "Governance",
+      lab: "Lab",
       portfolio: "Portfolio",
       swap: "Swap",
       docs: "Documentation",
@@ -102,6 +103,9 @@ const en = {
     note: "After submission, our team will reply by email within 1-3 business days.",
     submit: "Submit Information",
     submitted: "Submitted (frontend demo). Thank you for contacting us. We will reply soon.",
+  },
+  lab: {
+    title: "Lab",
   },
   portfolio: {
     badge: "Asset Dashboard",

@@ -9,6 +9,7 @@ import FarmsPage from "./pages/FarmsPage";
 import FundPage from "./pages/FundPage";
 import GovernancePage from "./pages/GovernancePage";
 import HomePage from "./pages/HomePage";
+import LabPage from "./pages/LabPage";
 import Portfolio from "./pages/Portfolio";
 import SwapPage from "./pages/SwapPage";
 
@@ -43,6 +44,7 @@ export default function App() {
       "/fund": "fund.title",
       "/stake": "fund.title",
       "/governance": "header.nav.governance",
+      "/lab": "lab.title",
       "/docs": "header.nav.docs",
       "/portfolio": "portfolio.title",
       "/swap": "header.nav.swap",
@@ -74,6 +76,7 @@ export default function App() {
             <Route path="/stake" element={<FundPage />} />
             <Route path="/fund" element={<Navigate to="/stake" replace />} />
             <Route path="/governance" element={<GovernancePage />} />
+            <Route path="/lab" element={<LabPage />} />
             <Route path="/docs" element={<DocsPage />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/swap" element={<SwapPage />} />

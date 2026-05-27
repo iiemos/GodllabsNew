@@ -22,6 +22,7 @@ const zh = {
       fund: "质押",
       defi: "DeFi 挖矿",
       governance: "治理",
+      lab: "实验室",
       portfolio: "资产仪表盘",
       swap: "兑换中心",
       docs: "文档",
@@ -99,6 +100,9 @@ const zh = {
     note: "提交后将由团队在 1-3 个工作日内邮件回复。",
     submit: "提交信息",
     submitted: "已提交（前端演示）。感谢你的联系，我们会尽快回复。",
+  },
+  lab: {
+    title: "实验室",
   },
   portfolio: {
     badge: "资产仪表盘",
