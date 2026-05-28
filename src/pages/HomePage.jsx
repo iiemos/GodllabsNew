@@ -543,9 +543,9 @@ export default function HomePage() {
           {tokenRows.map((token) => (
             <article
               key={token.symbol}
-              className="glass-card flex flex-col gap-4 rounded-2xl p-5 text-left md:flex-row md:items-center md:justify-between"
+              className="glass-card flex flex-col gap-4 rounded-2xl p-5 text-left md:block"
             >
-              <div className="flex items-center gap-4 md:min-w-[280px]">
+              <div className="flex items-center gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[#fcd535]">
                   <Icon icon={token.icon} width="24" />
                 </div>
@@ -554,7 +554,7 @@ export default function HomePage() {
                   <p className="text-xs text-slate-500">{t("home.blocks.tokenProfile")}</p>
                 </div>
               </div>
-              <div className="space-y-1 text-left md:max-w-3xl">
+              <div className="space-y-1 text-left md:mt-4">
                 <p className="text-sm text-slate-200">{token.summary}</p>
                 <p className="text-xs leading-5 text-slate-400">{token.detail}</p>
               </div>
