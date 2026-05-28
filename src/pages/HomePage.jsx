@@ -143,14 +143,14 @@ export default function HomePage() {
   const heroCanvasRef = useRef(null);
   const heroPreviewRef = useRef(null);
 
-  const confirmedPartners = t("home.confirmedPartners", { returnObjects: true });
+  // const confirmedPartners = t("home.confirmedPartners", { returnObjects: true });
   const protocolMetrics = t("home.protocolMetrics", { returnObjects: true });
   const institutionalPillars = t("home.institutionalPillars", { returnObjects: true });
   const tokenRows = t("home.tokenRows", { returnObjects: true });
   const helpCards = t("home.helpCards", { returnObjects: true });
   const assetProofItems = t("home.assetProof.items", { returnObjects: true });
   const comparisonRows = t("home.comparisonRows", { returnObjects: true });
-  const projectCards = t("home.projectCards", { returnObjects: true });
+  // const projectCards = t("home.projectCards", { returnObjects: true });
   const teamMembers = t("home.team.members", { returnObjects: true });
   const planCards = t("home.plans.planCards", { returnObjects: true });
   const stakingSteps = t("home.plans.howItWorks.steps", { returnObjects: true });
@@ -397,7 +397,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="relative z-10 mx-auto mt-10 max-w-5xl">
+          {/* <div className="relative z-10 mx-auto mt-10 max-w-5xl">
             <p className="text-sm text-slate-300">{t("home.hero.trustNetwork")}</p>
             <div className="marquee-mask mt-7 overflow-hidden py-2">
               <ul className="marquee-track flex w-max items-center gap-8 md:gap-12">
@@ -409,7 +409,7 @@ export default function HomePage() {
                 ))}
               </ul>
             </div>
-          </div>
+          </div> */}
         </div>
       </section>
 
@@ -543,7 +543,7 @@ export default function HomePage() {
           {tokenRows.map((token) => (
             <article
               key={token.symbol}
-              className="glass-card flex flex-col gap-4 rounded-2xl p-5 md:flex-row md:items-center md:justify-between"
+              className="glass-card flex flex-col gap-4 rounded-2xl p-5 text-left md:flex-row md:items-center md:justify-between"
             >
               <div className="flex items-center gap-4 md:min-w-[280px]">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[#fcd535]">
@@ -554,7 +554,7 @@ export default function HomePage() {
                   <p className="text-xs text-slate-500">{t("home.blocks.tokenProfile")}</p>
                 </div>
               </div>
-              <div className="space-y-1 md:max-w-3xl">
+              <div className="space-y-1 text-left md:max-w-3xl">
                 <p className="text-sm text-slate-200">{token.summary}</p>
                 <p className="text-xs leading-5 text-slate-400">{token.detail}</p>
               </div>
@@ -573,14 +573,14 @@ export default function HomePage() {
           subtitle={t("home.sectionHeadings.teamSubtitle")}
         />
 
-        <div className="mx-auto mt-12 grid max-w-6xl gap-5 lg:grid-cols-2">
+        <div className="mx-auto mt-12 grid max-w-6xl gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {teamMembers.map((member) => (
-            <article key={member.name} className="glass-card overflow-hidden rounded-[24px] lg:grid lg:grid-cols-[220px_1fr]">
-              <div className="min-h-[280px] bg-black/25 lg:min-h-full">
-                <img src={member.image} alt={member.name} className="h-full min-h-[280px] w-full object-cover object-center" />
+            <article key={member.name} className="glass-card overflow-hidden rounded-[20px] text-left">
+              <div className="aspect-[4/3] overflow-hidden bg-black/25">
+                <img src={member.image} alt={member.name} className="h-full w-full scale-[1.06] object-cover object-center" />
               </div>
-              <div className="p-6">
-                <p className="text-2xl font-semibold text-white">{member.name}</p>
+              <div className="p-5">
+                <p className="text-xl font-semibold text-white">{member.name}</p>
                 <p className="mt-1 text-sm font-semibold text-[#f0cd54]">{member.role}</p>
                 <p className="mt-4 text-sm leading-6 text-slate-400">{member.bio}</p>
               </div>
@@ -796,7 +796,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="px-4 pb-32 md:pb-40">
+      {/* <section className="px-4 pb-32 md:pb-40">
         <SectionHeading
           title={
             <>
@@ -817,7 +817,7 @@ export default function HomePage() {
             </article>
           ))}
         </div>
-      </section>
+      </section> */}
 
     </>
   );
