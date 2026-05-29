@@ -143,7 +143,7 @@ export default function HomePage() {
   const heroCanvasRef = useRef(null);
   const heroPreviewRef = useRef(null);
 
-  const confirmedPartners = t("home.confirmedPartners", { returnObjects: true });
+  // const confirmedPartners = t("home.confirmedPartners", { returnObjects: true });
   const protocolMetrics = t("home.protocolMetrics", { returnObjects: true });
   const institutionalPillars = t("home.institutionalPillars", { returnObjects: true });
   const tokenRows = t("home.tokenRows", { returnObjects: true });
@@ -397,7 +397,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="relative z-10 mx-auto mt-10 max-w-5xl">
+          {/* <div className="relative z-10 mx-auto mt-10 max-w-5xl">
             <p className="text-sm text-slate-300">{t("home.hero.trustNetwork")}</p>
             <div className="marquee-mask mt-7 overflow-hidden py-2">
               <ul className="marquee-track flex w-max items-center gap-8 md:gap-12">
@@ -409,7 +409,7 @@ export default function HomePage() {
                 ))}
               </ul>
             </div>
-          </div>
+          </div> */}
         </div>
       </section>
 
