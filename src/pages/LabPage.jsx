@@ -151,7 +151,7 @@ function EcosystemPanel({ goldPrice, annualRevenue, copy }) {
         })}
       </div>
 
-      <SectionLabel>{ecosystem.infrastructureTitle}</SectionLabel>
+      {/* <SectionLabel>{ecosystem.infrastructureTitle}</SectionLabel>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {ecosystem.infrastructureItems.map(([role, name]) => (
           <PanelCard key={role} className="rounded-2xl p-4">
@@ -159,7 +159,7 @@ function EcosystemPanel({ goldPrice, annualRevenue, copy }) {
             <p className="mt-2 font-semibold text-white">{name}</p>
           </PanelCard>
         ))}
-      </div>
+      </div> */}
     </>
   );
 }
