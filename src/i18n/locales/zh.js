@@ -26,6 +26,7 @@ const zh = {
       portfolio: "资产仪表盘",
       swap: "兑换中心",
       docs: "文档",
+      faq: "常见问题",
       bridge: "跨链桥",
     },
     bridgeComingSoon: "跨链桥暂未开放",
@@ -66,6 +67,7 @@ const zh = {
     },
     infoLinks: {
       fund: "质押",
+      faq: "常见问题",
       defi: "DeFi 挖矿",
       governance: "治理页面",
       docs: "项目文档",
@@ -100,6 +102,82 @@ const zh = {
     note: "提交后将由团队在 1-3 个工作日内邮件回复。",
     submit: "提交信息",
     submitted: "已提交（前端演示）。感谢你的联系，我们会尽快回复。",
+  },
+  faq: {
+    badge: "FAQ",
+    title: "常见问题",
+    subtitle: "面向投资人、合作伙伴与白名单质押用户的确认版答复。",
+    items: [
+      {
+        question: "GODL Labs 是什么？",
+        answer:
+          "GODL Labs 是基于 BNB Smart Chain 构建的机构级黄金支持 RWA 平台。我们通过 GODL（黄金资产代币）、USGD（黄金支持稳定币）和 GDL（治理代币）三代币生态，将实物黄金矿业资产连接到数字金融。",
+      },
+      {
+        question: "GODL 代币是什么？",
+        answer:
+          "GODL 是黄金资产代币，按 1:1 锚定预计矿山产出的金衡盎司，上限为 160,000 枚。它跟踪伦敦金价，并可产生最高 31% APY 的质押收益，收益按月累计并以 USDT 支付，来源于真实采矿收入。",
+      },
+      {
+        question: "收益来自哪里？",
+        answer:
+          "31% APY 来自两个来源：（1）真实金矿收入，即坦桑尼亚 JORC 审计储备预计年产 46,000 盎司；（2）Wynson Asset Management 管理的黄金对冲 AI 基金（香港 SFC 监管），该基金在伦敦 LBMA 与纽约 COMEX 黄金市场执行系统化 Delta-neutral 对冲策略。这是真实采矿与基金现金流，不是通胀式代币增发。",
+      },
+      {
+        question: "实物黄金由谁托管？",
+        answer:
+          "Ferrari Vault（GCC）是项目唯一实物黄金托管方，覆盖从矿区到 ALTENEEN REFINERY 再到金库托管的完整运输物流。实物黄金由 Ferrari Gold insurance 承保，最高保额 2.25 亿美元。",
+      },
+      {
+        question: "Standard Chartered 的角色是什么？",
+        answer:
+          "Standard Chartered 是 GODL 代币的代币化代理，负责 GODL RWA 代币在 BSC 上的铸造、数字托管与分发。Standard Chartered 不是实物黄金托管方。他们也在推进对香港资产管理人的直接投资及进一步 RWA 代币化安排。",
+      },
+      {
+        question: "黄金储备由谁审计？",
+        answer:
+          "我们的坦桑尼亚矿区（100 万盎司、4.15 g/t 品位）已由 GMRCS 根据 JORC Code (2012) 进行独立审计。采矿许可证 E734429 由 JICUN INTERNATIONAL COMPANY (T) LTD 持有。2026 年新版 JORC 更新正在推进中。我们还拥有巴西和玻利维亚另外两个矿区组合，目前正在审计。",
+      },
+      {
+        question: "USGD 是什么？",
+        answer:
+          "USGD 是我们的黄金支持稳定币，由实物黄金储备 150% 超额抵押。它作为 GODL Labs 生态内的结算与认购货币。USGD 与 USDT 锚定，并将在 TGE 时上线。",
+      },
+      {
+        question: "GDL 是什么？",
+        answer:
+          "GDL 是治理与激励代币，固定供应量为 10 亿枚。生态净利润的 5% 将用于 GDL 回购销毁机制。GDL 持有人参与协议治理决策。",
+      },
+      {
+        question: "TGE 什么时候进行？",
+        answer: "GDL 代币的 TGE 目标时间为 2026 年 9 月之后。",
+      },
+      {
+        question: "你们是否已获得 VARA 牌照？",
+        answer:
+          "我们的迪拜交易实体 Fraktiq DMCC 已获得 VARA 牌照预批准，目前处于正式化的最后阶段。我们现阶段不会声称已经持有有效牌照，但流程正在按计划推进。",
+      },
+      {
+        question: "智能合约是否已审计？",
+        answer:
+          "CertiK 智能合约审计正在进行中。CertiK 完成后，将继续进行 ROMA.US 真实资产审计。审计结果会公开发布。",
+      },
+      {
+        question: "公司架构是什么？",
+        answer:
+          "Wynson Global Opportunities Fund SPC（开曼，HoldCo）→ GODL Labs Ltd（开曼，运营）→ GODL Protocol Foundation（GDL 代币发行方）+ Fraktiq DMCC（迪拜交易层，VARA 预批准）+ JICUN INTERNATIONAL COMPANY (T) LTD（坦桑尼亚，采矿许可证 E734429）。Wynson Asset Management Ltd（香港，SFC 监管）负责管理黄金对冲 AI 基金。",
+      },
+      {
+        question: "如何质押？",
+        answer:
+          "在 /stake 页面连接你的白名单钱包。选择锁定周期：3 个月（15% APY）、6 个月（21% APY）或 12 个月（31% APY）。输入要质押的 GODL 数量。你的本金会在质押时按 USDT 价值锁定，收益按月累计，并在到期时与本金一起以 USDT 结算。",
+      },
+      {
+        question: "如何投资或与 GODL Labs 合作？",
+        answer:
+          "如需机构咨询、数据室访问与合作洽谈，请通过 partnerships@godl.io 联系我们。",
+      },
+    ],
   },
   lab: {
     title: "实验室",
@@ -565,7 +643,7 @@ const zh = {
     },
   },
   fund: {
-    title: "黄金质押",
+    title: "GODL 质押",
     subtitle: "将 GODL 存入固定锁仓周期，质押时按 USDT 价值锁定本金，收益按月累计，到期以 USDT 领取本金加累计收益。",
     summary: {
       principal: "质押本金（USDT）",
@@ -615,6 +693,7 @@ const zh = {
         paused: "协议已暂停，暂不可写入",
         blacklisted: "当前地址在黑名单中",
         notWhitelisted: "当前地址不在白名单中",
+        privateAccess: "GODL 质押目前仅限私有访问。请加入候补名单，钱包获批后将收到通知。",
         invalidGodlAmount: "请输入有效的 GODL 数量",
         minPurchase: "最低质押 {{amount}} GODL",
         minSubscribe: "最低质押 {{amount}} GODL",
@@ -984,31 +1063,31 @@ const zh = {
           name: "Lucie Colomb",
           role: "首席执行官",
           image: "/team/lucie-colomb.png",
-          bio: "Lucie 是增长与执行策略负责人，拥有十年以上金融、Web3 与新兴科技经验。她曾服务 Web3、奢侈品、金融科技、AI 与美国政治客户，后在 AI 与区块链前沿担任高管角色，参与代币策略、合作拓展、社区增长与市场落地。",
+          bio: "Lucie 是增长与执行策略负责人，拥有十年以上金融、Web3 与新兴科技经验。她曾服务 Web3、奢侈品、金融科技、AI 与政治传播客户，后在 AI 与区块链前沿担任高管角色。在 GODL Labs，她统筹代币策略、合作拓展、社区增长、市场落地、投资人沟通与运营协同。",
         },
         {
           name: "Sidharth Sogani",
           role: "首席战略官",
           image: "/team/sidharth-sogani.png",
-          bio: "Sidharth 是 CREBACO Global 创始人兼 CEO，专注区块链与加密资产研究、咨询、情报与评级。自 2017 年以来，他参与 157+ 个项目咨询，覆盖法律、技术、金融与尽调维度，并在 GCC 区域数字资产基金管理与多国政策监管框架中拥有丰富经验。",
+          bio: "Sidharth 是 CREBACO Global 创始人兼 CEO，专注区块链与加密资产研究、咨询、情报与评级。自 2017 年以来，他参与 157+ 个项目咨询，覆盖法律、技术、金融与尽调维度，并在 GCC 区域数字资产基金管理、政策框架、代币研究、市场进入策略与机构区块链顾问方面拥有丰富经验。",
         },
         {
           name: "Vaibhav Gupta",
           role: "首席营销官",
           image: "/team/vaibhav-gupta.png",
-          bio: "个人简介待补充。",
+          bio: "Vaibhav 负责 GODL Labs 的市场职能，统筹品牌定位、活动策略、社区建设、合作方沟通与面向 Web3 及机构受众的增长执行。他的工作重点是将复杂的 RWA 基础设施转化为清晰的市场叙事、获客漏斗、上线活动与投资人沟通材料。",
         },
         {
           name: "Brian Ho",
           role: "首席财务官",
           image: "/team/brian-ho.png",
-          bio: "Brian 拥有十年以上银行、财富管理与企业财务经验，曾在汇丰香港担任部门经理，并在能源、大宗商品与地产领域担任 CFO 及董事会顾问。他擅长预算管理、成本收益分析、财务预测、资本募集与跨境资金结构搭建。",
+          bio: "Brian 拥有十年以上银行、财富管理与企业财务经验，曾在汇丰香港任职，并在能源、大宗商品与地产领域担任 CFO 及董事会顾问。他擅长预算管理、成本收益分析、财务预测、资本募集、资金规划、合规协同、投资人报告与跨境财务结构搭建。",
         },
         {
           name: "Sean Demosthenous",
           role: "战略顾问",
           image: "/team/sean.png",
-          bio: "Sean 的职业生涯始于 Lloyd's of London，曾执行超过 70 亿美元信用违约互换，并在全球能源大宗商品市场开展跨境经纪业务。他现为 Rythm Capital 合伙人，参与超过 1 亿美元资本募集与跨三大洲交易流，并担任 GODL 顾问。",
+          bio: "Sean 的职业生涯始于 Lloyd's of London，曾执行超过 70 亿美元信用违约互换，并在全球能源大宗商品市场开展跨境经纪业务。他现为 Rythm Capital 合伙人，参与超过 1 亿美元资本募集与跨三大洲交易流，并为 GODL Labs 提供机构资本、战略合作、大宗商品市场与区块链收益设计顾问支持。",
         },
       ],
     },
@@ -1116,6 +1195,9 @@ const zh = {
       matrixBase: "GODL Labs",
       matrixHighlight: "交付能力",
       matrixSubtitle: "覆盖资产、收益、策略与安全四个支柱的框架。",
+      yieldBase: "收益",
+      yieldHighlight: "如何生成",
+      yieldSubtitle: "GODL 质押收益锚定两类真实世界收益引擎：已审计金矿收入与受监管 AI 黄金对冲基金。",
       auditBase: "审计与合作",
       auditHighlight: "背书",
       auditSubtitle: "围绕资产真实性、监管路径与协议执行，形成多层验证体系。",
@@ -1131,7 +1213,7 @@ const zh = {
       teamBase: "核心团队与",
       teamHighlight: "顾问网络",
       teamSubtitle: "展示项目执行、战略、财务、市场与机构顾问资源，增强官网可信度。",
-      plansBase: "黄金质押",
+      plansBase: "GODL 质押",
       plansHighlight: "方案",
       plansSubtitle:
         "三档锁定周期均锚定真实采矿收入。用户质押 GODL 后，Standard Chartered 交易台会在质押时对冲黄金价格，将本金按 USDT 价值锁定至整个周期。收益按月累计并由 Standard Chartered 结算；到期后领取 USDT 本金与累计收益。散户最低 500 美元，机构最低 1,000,000 美元，参数由链上治理。",
@@ -1140,6 +1222,24 @@ const zh = {
       faqSubtitle: "围绕稳定锚定、资产映射、收益释放和挖矿规则的核心问题说明。",
       finalBase: "立即进入",
       finalHighlight: "立即质押",
+    },
+    yieldSources: {
+      cards: [
+        {
+          title: "金矿收入",
+          label: "主要收益引擎",
+          icon: "mdi:pickaxe",
+          description:
+            "坦桑尼亚 JORC 审计储备预计年产 46,000 盎司，采矿许可证编号 E734429。矿山收入是 GODL 质押收益的主要来源。",
+        },
+        {
+          title: "AI 黄金对冲基金",
+          label: "第二收益层",
+          icon: "mdi:chart-timeline-variant-shimmer",
+          description:
+            "由香港 SFC 监管实体 Wynson Asset Management 管理。Wynson Cayman 黄金对冲 AI 基金在伦敦 LBMA 与纽约 COMEX 黄金市场执行系统化 Delta-neutral 对冲策略，并以经审计历史表现作为质押收益的补充支撑。",
+        },
+      ],
     },
     blocks: {
       featureTitleBase: "机构级",

@@ -151,6 +151,7 @@ export default function HomePage() {
   const assetProofItems = t("home.assetProof.items", { returnObjects: true });
   const comparisonRows = t("home.comparisonRows", { returnObjects: true });
   const projectCards = t("home.projectCards", { returnObjects: true });
+  const yieldSourceCards = t("home.yieldSources.cards", { returnObjects: true });
   const teamMembers = t("home.team.members", { returnObjects: true });
   const planCards = t("home.plans.planCards", { returnObjects: true });
   const stakingSteps = t("home.plans.howItWorks.steps", { returnObjects: true });
@@ -682,6 +683,37 @@ export default function HomePage() {
               </div>
             </article>
           </div>
+        </div>
+      </section>
+
+      <section className="px-4 pb-32 md:pb-40">
+        <SectionHeading
+          title={
+            <>
+              {t("home.sectionHeadings.yieldBase")} <span className="text-[#fcd535]">{t("home.sectionHeadings.yieldHighlight")}</span>
+            </>
+          }
+          subtitle={t("home.sectionHeadings.yieldSubtitle")}
+        />
+
+        <div className="mx-auto mt-12 grid max-w-6xl gap-5 md:grid-cols-2">
+          {yieldSourceCards.map((card) => (
+            <article key={card.title} className="glass-card relative overflow-hidden rounded-[24px] p-6 text-left md:p-8">
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_86%_18%,rgba(252,213,53,0.18),rgba(252,213,53,0)_44%)]" />
+              <div className="relative">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[#fcd535]">
+                    <Icon icon={card.icon} width="25" />
+                  </div>
+                  <span className="rounded-full border border-[#fcd535]/30 bg-[#fcd535]/10 px-3 py-1 text-xs font-semibold text-[#f0cd54]">
+                    {card.label}
+                  </span>
+                </div>
+                <h3 className="mt-6 text-2xl font-semibold text-white">{card.title}</h3>
+                <p className="mt-4 text-sm leading-7 text-slate-400">{card.description}</p>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
 

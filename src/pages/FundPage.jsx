@@ -8,6 +8,7 @@ import { ADDRESSES, GOLD_TERM_OPTIONS, TBSC_CHAIN_ID } from "../web3/config";
 import { createCoreContracts, validateCoreContractAddresses } from "../web3/contracts";
 import { getReadProvider, isExpectedChain } from "../web3/client";
 import { formatBps, formatTimestamp, formatTokenAmount, parseTokenAmount, toErrorMessage } from "../web3/format";
+import { isStakingWhitelisted } from "../web3/stakingAccess";
 
 const ONE_E18 = 10n ** 18n;
 const ZERO_PENDING_MATURED = { principal: 0n, yieldAmount: 0n };
@@ -125,7 +126,7 @@ function resolveDisplayedPayoutYield(purchase) {
 export default function FundPage() {
   const { t } = useTranslation();
   const { notify } = useNotification();
-  const { address, chainId, connect, getSigner } = useWallet();
+  const { address, chainId, connect, disconnect, getSigner } = useWallet();
   const pageT = useCallback((key, options) => t(`fund.page.${key}`, options), [t]);
 
   const [loading, setLoading] = useState(true);
@@ -138,6 +139,7 @@ export default function FundPage() {
   const [refreshNonce, setRefreshNonce] = useState(0);
   const purchaseIdsRef = useRef([]);
   const pendingRefreshRef = useRef(false);
+  const privateAccessNoticeRef = useRef("");
 
   const [fundState, setFundState] = useState({
     paused: false,
@@ -151,6 +153,19 @@ export default function FundPage() {
     terms: {},
     purchases: [],
   });
+
+  const stakingAccessAllowed = useMemo(() => isStakingWhitelisted(address), [address]);
+  const stakingAccessBlocked = Boolean(address && !stakingAccessAllowed);
+
+  useEffect(() => {
+    if (!stakingAccessBlocked) return;
+    const noticeKey = address.toLowerCase();
+    if (privateAccessNoticeRef.current !== noticeKey) {
+      privateAccessNoticeRef.current = noticeKey;
+      notify({ type: "info", message: pageT("errors.privateAccess") });
+    }
+    disconnect();
+  }, [address, disconnect, notify, pageT, stakingAccessBlocked]);
 
   const loadSpotPrice = useCallback(async (router, tokenIn, tokenOut) => {
     try {
@@ -187,7 +202,7 @@ export default function FundPage() {
       let godlBalance = 0n;
       let purchases = [];
 
-      if (address) {
+      if (address && isStakingWhitelisted(address)) {
         [blacklisted, godlBalance] = await Promise.all([contracts.gold.blacklisted(address), contracts.godl.balanceOf(address).catch(() => 0n)]);
 
         const ids = [];
@@ -496,19 +511,21 @@ export default function FundPage() {
 
   const canWrite = useMemo(() => {
     if (!address) return false;
+    if (!stakingAccessAllowed) return false;
     if (!isExpectedChain(chainId)) return false;
     if (fundState.paused) return false;
     if (fundState.blacklisted) return false;
     return true;
-  }, [address, chainId, fundState.blacklisted, fundState.paused]);
+  }, [address, chainId, fundState.blacklisted, fundState.paused, stakingAccessAllowed]);
 
   const writeBlockReason = useMemo(() => {
     if (!address) return pageT("errors.connectWalletFirst");
+    if (!stakingAccessAllowed) return pageT("errors.privateAccess");
     if (!isExpectedChain(chainId)) return pageT("errors.switchNetwork", { chainId: TBSC_CHAIN_ID });
     if (fundState.paused) return pageT("errors.paused");
     if (fundState.blacklisted) return pageT("errors.blacklisted");
     return "";
-  }, [address, chainId, fundState.blacklisted, fundState.paused, pageT]);
+  }, [address, chainId, fundState.blacklisted, fundState.paused, pageT, stakingAccessAllowed]);
 
   const ensureSigner = useCallback(async () => {
     let currentAddress = address;
@@ -521,6 +538,11 @@ export default function FundPage() {
       }
     }
     if (!currentAddress) return null;
+
+    if (!isStakingWhitelisted(currentAddress)) {
+      notify({ type: "info", message: pageT("errors.privateAccess") });
+      return null;
+    }
 
     const signer = await getSigner();
     if (!signer) return null;
@@ -677,10 +699,15 @@ export default function FundPage() {
           </div>
         )}
 
+        {(!address || stakingAccessBlocked) && (
+          <div className="mt-4 rounded-2xl border border-[#fcd535]/30 bg-[#fcd535]/10 px-4 py-3 text-sm leading-6 text-[#f0cd54]">
+            {pageT("errors.privateAccess")}
+          </div>
+        )}
+
         <article className="governance-panel mt-6 rounded-[28px] p-5 md:p-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-2">
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500">GoldStakingProtocol</p>
               <p className="text-xl font-semibold text-white">{pageT("header.contractMode")}</p>
               <p className="text-sm text-slate-400">
                 {pageT("header.currentPrice")}: {" "}
@@ -850,6 +877,8 @@ export default function FundPage() {
         <div className="mt-4 space-y-4">
           {loading ? (
             <div className="governance-panel rounded-[28px] px-6 py-10 text-center text-slate-400">{pageT("states.loading")}</div>
+          ) : stakingAccessBlocked ? (
+            <div className="governance-panel rounded-[28px] px-6 py-10 text-center text-slate-400">{pageT("errors.privateAccess")}</div>
           ) : !address ? (
             <div className="governance-panel rounded-[28px] px-6 py-10 text-center text-slate-400">{pageT("states.connectToView")}</div>
           ) : filteredPurchases.length === 0 ? (

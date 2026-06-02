@@ -6,7 +6,7 @@ const sectionLinks = [
   { key: "overview", hash: "#overview" },
   { key: "tokenomics", hash: "#tokenomics" },
   { key: "security", hash: "#security" },
-  { key: "faq", hash: "#faq" },
+  { key: "faq", href: "/faq" },
 ];
 
 const infoLinks = [
@@ -64,7 +64,7 @@ export default function AppFooter() {
             <ul className="mt-4 space-y-3 text-sm text-slate-400">
               {sectionLinks.map((item) => (
                 <li key={item.key}>
-                  <Link to={`${homePrefix}${item.hash}`} className="transition hover:text-white">
+                  <Link to={item.href ?? `${homePrefix}${item.hash}`} className="transition hover:text-white">
                     {t(`footer.sectionLinks.${item.key}`)}
                   </Link>
                 </li>

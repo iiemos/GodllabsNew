@@ -26,6 +26,7 @@ const en = {
       portfolio: "Portfolio",
       swap: "Swap",
       docs: "Documentation",
+      faq: "FAQ",
       bridge: "Bridge",
     },
     bridgeComingSoon: "Cross-chain bridge is not available yet",
@@ -66,6 +67,7 @@ const en = {
     },
     infoLinks: {
       fund: "Stake",
+      faq: "FAQ",
       defi: "DeFi Mining",
       governance: "Governance",
       docs: "Docs",
@@ -103,6 +105,82 @@ const en = {
     note: "After submission, our team will reply by email within 1-3 business days.",
     submit: "Submit Information",
     submitted: "Submitted (frontend demo). Thank you for contacting us. We will reply soon.",
+  },
+  faq: {
+    badge: "FAQ",
+    title: "Frequently Asked Questions",
+    subtitle: "Confirmed answers for investors, partners, and whitelisted staking participants.",
+    items: [
+      {
+        question: "What is GODL Labs?",
+        answer:
+          "GODL Labs is an institutional-grade gold-backed RWA platform built on Binance Smart Chain. We connect physical gold mining assets to digital finance through a three-token ecosystem: GODL (gold asset token), USGD (gold-backed stablecoin), and GDL (governance token).",
+      },
+      {
+        question: "What is the GODL token?",
+        answer:
+          "GODL is a gold asset token pegged 1:1 to projected troy ounces of mine output, capped at 160,000 tokens. It tracks the London gold price and generates up to 31% APY staking yield, paid monthly in USDT, sourced from real mining revenue.",
+      },
+      {
+        question: "Where does the yield come from?",
+        answer:
+          "The 31% APY comes from two sources: (1) actual gold mine revenue — 46,000 oz/yr projected production from our JORC-audited Tanzania reserve — and (2) the Wynson Asset Management gold-hedged AI fund (SFC-regulated, Hong Kong), which uses a Delta-neutral systematic hedging strategy across LBMA and COMEX. This is real mining and fund cash flow, not inflationary token issuance.",
+      },
+      {
+        question: "Who holds the physical gold?",
+        answer:
+          "Ferrari Vault (GCC) is the sole physical gold custodian for the project, covering full transport logistics from mine to the ALTENEEN REFINERY through to vault storage. Physical gold is insured up to $225M by Ferrari Gold insurance.",
+      },
+      {
+        question: "What is Standard Chartered's role?",
+        answer:
+          "Standard Chartered serves as the tokenisation agent for the GODL token — responsible for minting, digital custody, and distribution of the RWA token on BSC. Standard Chartered is not the physical gold custodian. They are also pursuing direct investments into our Hong Kong asset manager and further RWA tokenisation arrangements.",
+      },
+      {
+        question: "Who audited the gold reserve?",
+        answer:
+          "Our Tanzania mine (1M oz, 4.15 g/t grade) has been independently audited under the JORC Code (2012) by GMRCS. Mining licence E734429 is held by JICUN INTERNATIONAL COMPANY (T) LTD. A fresh 2026 JORC update is in progress. We do have 2 other mines as part as our portfolio in Brazil and Bolivia, currently being audited.",
+      },
+      {
+        question: "What is USGD?",
+        answer:
+          "USGD is our gold-backed stablecoin, 150% overcollateralised by physical gold reserves. It serves as the settlement and subscription currency within the GODL Labs ecosystem. USGD is pegged to USDT and will go live at TGE.",
+      },
+      {
+        question: "What is GDL?",
+        answer:
+          "GDL is the governance and incentive token with a fixed supply of 1 billion tokens. 5% of net ecosystem profits fund a GDL buyback-and-burn mechanism. GDL holders participate in protocol governance decisions.",
+      },
+      {
+        question: "When is TGE?",
+        answer: "TGE is targeted for September 2026 onwards for our GDL token.",
+      },
+      {
+        question: "Are you VARA licensed?",
+        answer:
+          "Our Dubai exchange entity, Fraktiq DMCC, has received pre-approval for a VARA licence, which is currently in the final stages of formalisation. We are not claiming an active licence at this stage — the process is on track.",
+      },
+      {
+        question: "Is the smart contract audited?",
+        answer:
+          "A CertiK smart contract audit is currently in progress. A ROMA.US real asset audit follows upon CertiK completion. Results will be published publicly.",
+      },
+      {
+        question: "What is the corporate structure?",
+        answer:
+          "Wynson Global Opportunities Fund SPC (Cayman, HoldCo) → GODL Labs Ltd (Cayman, operations) → GODL Protocol Foundation (GDL token issuer) + Fraktiq DMCC (Dubai exchange layer, VARA pre-approved) + JICUN INTERNATIONAL COMPANY (T) LTD (Tanzania, mining licence E734429). Wynson Asset Management Ltd (Hong Kong, SFC-regulated) manages the gold-hedged AI fund.",
+      },
+      {
+        question: "How do I stake?",
+        answer:
+          "Connect your whitelisted wallet on the /stake page. Choose your lock cycle — 3 months (15% APY), 6 months (21% APY), or 12 months (31% APY). Enter the number of GODL tokens to stake. Your principal is locked in USDT value at the time of staking. Yield accrues monthly and is settled in USDT at maturity along with your principal.",
+      },
+      {
+        question: "How can I invest or partner with GODL Labs?",
+        answer:
+          "For institutional inquiries, data-room access, and partnership discussions, please contact us at partnerships@godl.io.",
+      },
+    ],
   },
   lab: {
     title: "Lab",
@@ -570,7 +648,7 @@ const en = {
     },
   },
   fund: {
-    title: "Gold Staking",
+    title: "GODL Staking",
     subtitle:
       "Stake GODL into fixed lock cycles. Principal is locked in USDT value at stake time, yield accrues monthly, and principal plus accrued yield are settled in USDT at maturity.",
     summary: {
@@ -621,6 +699,8 @@ const en = {
         paused: "Protocol is paused. Writes are disabled",
         blacklisted: "Current address is blacklisted",
         notWhitelisted: "Current address is not in whitelist",
+        privateAccess:
+          "GODL staking is currently in private access. Please join the waitlist to be notified when your wallet is approved.",
         invalidGodlAmount: "Please enter a valid GODL amount",
         minPurchase: "Minimum stake is {{amount}} GODL",
         minSubscribe: "Minimum stake is {{amount}} GODL",
@@ -1009,34 +1089,35 @@ const en = {
           role: "Chief Executive Officer",
           image: "/team/lucie-colomb.png",
           bio:
-            "Lucie is an executive and growth strategist with over a decade across finance, Web3, and emerging technology. Her work spans digital marketing, token strategy, partnerships, community growth, and go-to-market execution across AI and blockchain ventures.",
+            "Lucie is an executive and growth strategist with over a decade across finance, Web3, and emerging technology. She has worked across Web3, luxury, fintech, AI, and political campaign clients before moving into leadership roles at the frontier of AI and blockchain. At GODL Labs, she leads execution across token strategy, partnerships, community growth, go-to-market planning, investor communications, and operational coordination.",
         },
         {
           name: "Sidharth Sogani",
           role: "Chief Strategy Officer",
           image: "/team/sidharth-sogani.png",
           bio:
-            "Sidharth is the founder and CEO of CREBACO Global, a blockchain and cryptocurrency research, consulting, intelligence, and rating firm. Since 2017, he has consulted on 157+ projects across legal, technical, financial, and due-diligence dimensions, with deep experience in GCC digital-asset fund management and policy frameworks.",
+            "Sidharth is the founder and CEO of CREBACO Global, a blockchain and cryptocurrency research, consulting, intelligence, and rating firm. Since 2017, he has consulted on 157+ projects across legal, technical, financial, and due-diligence dimensions. He brings deep experience in GCC digital-asset fund management, policy frameworks, token research, market-entry strategy, and institutional blockchain advisory.",
         },
         {
           name: "Vaibhav Gupta",
           role: "Chief Marketing Officer",
           image: "/team/vaibhav-gupta.png",
-          bio: "Bio coming soon.",
+          bio:
+            "Vaibhav leads GODL Labs' marketing function, coordinating brand positioning, campaign strategy, community development, partner communications, and growth execution across Web3 and institutional audiences. His work focuses on converting complex RWA infrastructure into clear market narratives, acquisition funnels, launch campaigns, and investor-facing communications.",
         },
         {
           name: "Brian Ho",
           role: "CFO",
           image: "/team/brian-ho.png",
           bio:
-            "Brian has over a decade of senior banking, wealth management, and corporate finance experience, including HSBC Hong Kong and CFO or board advisory roles across energy, commodities, and real estate. He brings hands-on experience in budgeting, cost-benefit analysis, forecasting, capital raising, and cross-border treasury structures.",
+            "Brian has over a decade of senior banking, wealth management, and corporate finance experience, including HSBC Hong Kong and CFO or board advisory roles across energy, commodities, and real estate. He brings hands-on experience in budgeting, cost-benefit analysis, forecasting, capital raising, treasury planning, compliance coordination, investor reporting, and cross-border financial structures.",
         },
         {
           name: "Sean Demosthenous",
           role: "Strategic Advisor",
           image: "/team/sean.png",
           bio:
-            "Sean began his career at Lloyd's of London, executed over $7 billion in credit default swaps, and brokered international energy commodities across global markets. He is a partner at Rythm Capital, has been involved in over $100 million in capital raises and deal flow across three continents, and advises GODL on institutional capital and blockchain yield.",
+            "Sean began his career at Lloyd's of London, executed over $7 billion in credit default swaps, and brokered international energy commodities across global markets. He is a partner at Rythm Capital, has been involved in over $100 million in capital raises and deal flow across three continents, and advises GODL Labs on institutional capital formation, strategic partnerships, commodity markets, and blockchain yield design.",
         },
       ],
     },
@@ -1148,6 +1229,10 @@ const en = {
       matrixBase: "What GODL Labs",
       matrixHighlight: "Delivers",
       matrixSubtitle: "A four-pillar framework spanning assets, yield, strategy, and security.",
+      yieldBase: "How Yield Is",
+      yieldHighlight: "Generated",
+      yieldSubtitle:
+        "GODL staking yield is anchored to two real-world engines: audited gold mine revenue and a regulated AI gold hedge fund.",
       auditBase: "Audit and Partnership",
       auditHighlight: "Endorsements",
       auditSubtitle: "A multi-layer validation system for asset authenticity, regulatory path, and protocol execution.",
@@ -1163,7 +1248,7 @@ const en = {
       teamBase: "Core Team and",
       teamHighlight: "Advisor Network",
       teamSubtitle: "Highlights execution, strategy, finance, marketing, and institutional advisory resources behind the official site.",
-      plansBase: "Gold Staking",
+      plansBase: "GODL Staking",
       plansHighlight: "Plans",
       plansSubtitle:
         "Three lock cycles, each anchored to real mining-revenue yield. Stake your GODL, Standard Chartered's trading desk hedges the gold price the moment you stake, locking your principal in USDT value for the entire lock period. Yield accrues monthly and is settled through Standard Chartered. At maturity, you receive your principal plus accrued yield in USDT. Retail minimum: $500. Institutional minimum: $1,000,000. Parameters are governed on-chain.",
@@ -1172,6 +1257,24 @@ const en = {
       faqSubtitle: "Core explanations on stable anchoring, asset mapping, reward release, and mining rules.",
       finalBase: "Enter",
       finalHighlight: "Stake Now",
+    },
+    yieldSources: {
+      cards: [
+        {
+          title: "Gold Mining Revenue",
+          label: "Primary yield engine",
+          icon: "mdi:pickaxe",
+          description:
+            "46,000 oz/yr projected production from the Tanzania JORC-audited reserve under licence E734429. Mine revenue is the primary source of GODL staking yield.",
+        },
+        {
+          title: "AI Gold Hedge Fund",
+          label: "Secondary yield layer",
+          icon: "mdi:chart-timeline-variant-shimmer",
+          description:
+            "Managed by Wynson Asset Management, an SFC-regulated Hong Kong entity. The Wynson Cayman gold-hedged AI fund runs a systematic Delta-neutral hedging strategy across London LBMA and New York COMEX gold markets, with an audited track record that reinforces staking returns.",
+        },
+      ],
     },
     blocks: {
       featureTitleBase: "Institution-grade",

@@ -5,6 +5,7 @@ import AppFooter from "./components/AppFooter";
 import AppHeader from "./components/AppHeader";
 import ContactPage from "./pages/ContactPage";
 import DocsPage from "./pages/DocsPage";
+import FaqPage from "./pages/FaqPage";
 import FarmsPage from "./pages/FarmsPage";
 import FundPage from "./pages/FundPage";
 import GovernancePage from "./pages/GovernancePage";
@@ -46,6 +47,7 @@ export default function App() {
       "/governance": "header.nav.governance",
       "/lab": "lab.title",
       "/docs": "header.nav.docs",
+      "/faq": "faq.title",
       "/portfolio": "portfolio.title",
       "/swap": "header.nav.swap",
       "/contact-us": "contact.title",
@@ -78,6 +80,7 @@ export default function App() {
             <Route path="/governance" element={<GovernancePage />} />
             <Route path="/lab" element={<LabPage />} />
             <Route path="/docs" element={<DocsPage />} />
+            <Route path="/faq" element={<FaqPage />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/swap" element={<SwapPage />} />
             <Route path="/contact-us" element={<ContactPage />} />
