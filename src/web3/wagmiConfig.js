@@ -2,7 +2,7 @@ import { getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { createConnector, http } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { bsc, bscTestnet } from "wagmi/chains";
-import { TBSC_CHAIN_ID, TBSC_RPC_URL } from "./config";
+import { DEMO_MODE, TBSC_CHAIN_ID, TBSC_RPC_URL } from "./config";
 
 const walletConnectProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || "00000000000000000000000000000000";
 
@@ -83,7 +83,7 @@ export const wagmiConfig = getDefaultConfig({
     },
   ],
   transports: {
-    [TBSC_CHAIN_ID]: http(TBSC_RPC_URL),
+    [TBSC_CHAIN_ID]: http(DEMO_MODE ? "/__demo_rpc_disabled__" : TBSC_RPC_URL),
   },
   ssr: false,
 });

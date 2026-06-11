@@ -6,7 +6,7 @@ import { useNotification } from "../components/Notification";
 import { useWallet } from "../contexts/WalletContext";
 import { createCoreContracts, validateCoreContractAddresses } from "../web3/contracts";
 import { getReadProvider, isExpectedChain } from "../web3/client";
-import { TBSC_CHAIN_ID } from "../web3/config";
+import { DEMO_MODE, TBSC_CHAIN_ID } from "../web3/config";
 import { formatTimestamp, formatTokenAmount, toErrorMessage } from "../web3/format";
 
 const BALANCE_CARD_META = [
@@ -36,7 +36,7 @@ export default function Portfolio() {
   const [records, setRecords] = useState([]);
 
   const loadPortfolioData = useCallback(async () => {
-    if (!address) {
+    if (DEMO_MODE || !address) {
       setBalances(EMPTY_BALANCES);
       setRecords([]);
       setLoading(false);
@@ -118,7 +118,7 @@ export default function Portfolio() {
     loadPortfolioData();
   }, [loadPortfolioData, refreshNonce]);
 
-  const canRefresh = useMemo(() => Boolean(address), [address]);
+  const canRefresh = useMemo(() => Boolean(address && !DEMO_MODE), [address]);
 
   const handleConnect = async () => {
     try {
@@ -171,7 +171,13 @@ export default function Portfolio() {
         </div>
       )}
 
-      {address && !isExpectedChain(chainId) && (
+      {DEMO_MODE && (
+        <div className="mt-6 rounded-2xl border border-[#fcd535]/30 bg-[#fcd535]/10 px-4 py-3 text-sm leading-6 text-[#f0cd54]">
+          {t("fund.page.errors.demoMode")}
+        </div>
+      )}
+
+      {!DEMO_MODE && address && !isExpectedChain(chainId) && (
         <div className="mt-6 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
           {t("portfolio.switchNetwork", { chainId: TBSC_CHAIN_ID })}
         </div>

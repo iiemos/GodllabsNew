@@ -785,47 +785,18 @@ export default function HomePage() {
         </div>
 
         <div className="glass-card mx-auto mt-5 max-w-6xl overflow-hidden rounded-[24px]">
-          <div className="grid gap-0 lg:grid-cols-[0.95fr_1.05fr]">
-            <div className="border-b border-white/10 p-6 md:p-8 lg:border-b-0 lg:border-r">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#f0cd54]">{t("home.assetProof.badge")}</p>
-              <h3 className="mt-3 text-3xl font-semibold text-white">{t("home.assetProof.title")}</h3>
-              <p className="mt-4 text-sm leading-6 text-slate-400">{t("home.assetProof.description")}</p>
+          <div className="p-6 md:p-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#f0cd54]">{t("home.assetProof.badge")}</p>
+            <h3 className="mt-3 text-3xl font-semibold text-white">{t("home.assetProof.title")}</h3>
+            <p className="mt-4 text-sm leading-6 text-slate-400">{t("home.assetProof.description")}</p>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                {assetProofItems.map((item) => (
-                  <div key={item.label} className="rounded-2xl border border-white/10 bg-black/20 p-4">
-                    <p className="text-xs text-slate-500">{item.label}</p>
-                    <p className="mt-2 text-sm font-semibold leading-6 text-slate-100">{item.value}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="relative min-h-[360px] p-6 md:p-8">
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_24%,rgba(252,213,53,0.18),rgba(252,213,53,0)_42%)]" />
-              <div className="relative mx-auto flex max-w-md flex-col gap-4 rounded-2xl border border-[#fcd535]/20 bg-[#0b0c0d]/80 p-5 shadow-[0_20px_60px_rgba(0,0,0,0.28)]">
-                <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-500">GODL LABS</p>
-                    <p className="mt-1 text-lg font-semibold text-white">{t("home.assetProof.scanTitle")}</p>
-                  </div>
-                  <Icon icon="mdi:file-certificate-outline" width="34" className="text-[#fcd535]" />
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {assetProofItems.map((item) => (
+                <div key={item.label} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+                  <p className="text-xs text-slate-500">{item.label}</p>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-slate-100">{item.value}</p>
                 </div>
-                <div className="space-y-3">
-                  <div className="h-3 w-3/4 rounded-full bg-white/20" />
-                  <div className="h-3 w-5/6 rounded-full bg-white/12" />
-                  <div className="h-3 w-2/3 rounded-full bg-white/12" />
-                  <div className="mt-5 grid grid-cols-3 gap-2">
-                    {Array.from({ length: 9 }).map((_, index) => (
-                      <span key={index} className="h-8 rounded-md bg-white/[0.07]" />
-                    ))}
-                  </div>
-                  <div className="rounded-xl border border-dashed border-[#fcd535]/30 bg-[#fcd535]/10 px-4 py-3 text-sm font-semibold text-[#f0cd54]">
-                    {t("home.assetProof.licenseNo")}
-                  </div>
-                </div>
-                <p className="text-xs leading-5 text-slate-500">{t("home.assetProof.scanNote")}</p>
-              </div>
+              ))}
             </div>
           </div>
         </div>

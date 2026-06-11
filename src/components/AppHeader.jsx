@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useNotification } from "./Notification";
 import { useWallet } from "../contexts/WalletContext";
+import { DEMO_MODE } from "../web3/config";
 import { isStakingWhitelisted } from "../web3/stakingAccess";
 
 const navItems = [
@@ -108,7 +109,7 @@ export default function AppHeader() {
     try {
       const first = await connect();
       if (first) {
-        if (location.pathname === "/stake" && !isStakingWhitelisted(first)) {
+        if (!DEMO_MODE && location.pathname === "/stake" && !isStakingWhitelisted(first)) {
           disconnect();
           notify({ type: "info", message: t("fund.page.errors.privateAccess") });
           return;

@@ -693,6 +693,7 @@ const zh = {
         paused: "协议已暂停，暂不可写入",
         blacklisted: "当前地址在黑名单中",
         notWhitelisted: "当前地址不在白名单中",
+        demoMode: "演示模式已开启。当前打包版本不连接任何合约地址，也不会提交链上交易。",
         privateAccess: "GODL 质押目前仅限私有访问。请加入候补名单，钱包获批后将收到通知。",
         invalidGodlAmount: "请输入有效的 GODL 数量",
         minPurchase: "最低质押 {{amount}} GODL",
@@ -1072,10 +1073,10 @@ const zh = {
           bio: "Sidharth 是 CREBACO Global 创始人兼 CEO，专注区块链与加密资产研究、咨询、情报与评级。自 2017 年以来，他参与 157+ 个项目咨询，覆盖法律、技术、金融与尽调维度，并在 GCC 区域数字资产基金管理、政策框架、代币研究、市场进入策略与机构区块链顾问方面拥有丰富经验。",
         },
         {
-          name: "Vaibhav Gupta",
-          role: "首席营销官",
-          image: "/team/vaibhav-gupta.png",
-          bio: "Vaibhav 负责 GODL Labs 的市场职能，统筹品牌定位、活动策略、社区建设、合作方沟通与面向 Web3 及机构受众的增长执行。他的工作重点是将复杂的 RWA 基础设施转化为清晰的市场叙事、获客漏斗、上线活动与投资人沟通材料。",
+          name: "Avin Garg",
+          role: "增长与市场负责人",
+          image: "/team/d16dad15-e10e.png",
+          bio: "Avin 在数字资产行业拥有六年以上经验，覆盖代币发行、增长策略与生态扩展。他专注于构建可规模化的市场增长飞轮、识别行业趋势，并推动 DeFi、AI 与 RWA 领域以叙事驱动的增长。目前，他负责多个数字资产项目的增长策略、合作伙伴关系与市场执行。",
         },
         {
           name: "Brian Ho",

@@ -4,7 +4,7 @@ import { formatUnits } from "ethers";
 import { useTranslation } from "react-i18next";
 import { useNotification } from "../components/Notification";
 import { useWallet } from "../contexts/WalletContext";
-import { ADDRESSES, GOLD_TERM_OPTIONS, TBSC_CHAIN_ID } from "../web3/config";
+import { ADDRESSES, DEMO_MODE, GOLD_TERM_OPTIONS, TBSC_CHAIN_ID } from "../web3/config";
 import { createCoreContracts, validateCoreContractAddresses } from "../web3/contracts";
 import { getReadProvider, isExpectedChain } from "../web3/client";
 import { formatBps, formatTimestamp, formatTokenAmount, parseTokenAmount, toErrorMessage } from "../web3/format";
@@ -15,6 +15,11 @@ const ZERO_PENDING_MATURED = { principal: 0n, yieldAmount: 0n };
 const DEFAULT_GDL_BONUS_MULTIPLIER_BPS = 10000;
 const SETTLEMENT_SYMBOL = "USDT";
 const FUND_GDL_INCENTIVES_ENABLED = false;
+const DEMO_TERM_CONFIGS = Object.freeze({
+  0: { duration: 90n * 86400n, yieldDuration: 90n * 86400n, months: 3, apyBps: 1500, gdlBonusBps: 0 },
+  1: { duration: 180n * 86400n, yieldDuration: 180n * 86400n, months: 6, apyBps: 2100, gdlBonusBps: 0 },
+  2: { duration: 365n * 86400n, yieldDuration: 365n * 86400n, months: 12, apyBps: 3100, gdlBonusBps: 0 },
+});
 
 function toPositiveInt(value) {
   const parsed = Number(value);
@@ -154,7 +159,7 @@ export default function FundPage() {
     purchases: [],
   });
 
-  const stakingAccessAllowed = useMemo(() => isStakingWhitelisted(address), [address]);
+  const stakingAccessAllowed = useMemo(() => DEMO_MODE || isStakingWhitelisted(address), [address]);
   const stakingAccessBlocked = Boolean(address && !stakingAccessAllowed);
 
   useEffect(() => {
@@ -178,6 +183,25 @@ export default function FundPage() {
 
   const reloadFundData = useCallback(async () => {
     setLoading(true);
+
+    if (DEMO_MODE) {
+      setFundState((prev) => ({
+        ...prev,
+        paused: false,
+        blacklisted: false,
+        godlBalance: 0n,
+        minPurchase: parseTokenAmount("0.1"),
+        releaseStepSeconds: 0n,
+        spotGodlPrice: parseTokenAmount("2350"),
+        spotGdlPrice: 0n,
+        gdlBonusMultiplierBps: DEFAULT_GDL_BONUS_MULTIPLIER_BPS,
+        terms: DEMO_TERM_CONFIGS,
+        purchases: [],
+      }));
+      setLoading(false);
+      return;
+    }
+
     const readProvider = getReadProvider();
     const contracts = createCoreContracts(readProvider);
 
@@ -307,6 +331,7 @@ export default function FundPage() {
   }, [fundState.purchases]);
 
   const refreshPendingRewards = useCallback(async () => {
+    if (DEMO_MODE) return;
     if (!address) return;
 
     const ids = purchaseIdsRef.current;
@@ -511,6 +536,7 @@ export default function FundPage() {
 
   const canWrite = useMemo(() => {
     if (!address) return false;
+    if (DEMO_MODE) return false;
     if (!stakingAccessAllowed) return false;
     if (!isExpectedChain(chainId)) return false;
     if (fundState.paused) return false;
@@ -519,6 +545,7 @@ export default function FundPage() {
   }, [address, chainId, fundState.blacklisted, fundState.paused, stakingAccessAllowed]);
 
   const writeBlockReason = useMemo(() => {
+    if (DEMO_MODE) return pageT("errors.demoMode");
     if (!address) return pageT("errors.connectWalletFirst");
     if (!stakingAccessAllowed) return pageT("errors.privateAccess");
     if (!isExpectedChain(chainId)) return pageT("errors.switchNetwork", { chainId: TBSC_CHAIN_ID });
@@ -565,6 +592,11 @@ export default function FundPage() {
 
   const handlePurchase = async () => {
     if (submitting) return;
+
+    if (DEMO_MODE) {
+      notify({ type: "info", message: pageT("errors.demoMode") });
+      return;
+    }
 
     let amount;
     try {
@@ -699,9 +731,9 @@ export default function FundPage() {
           </div>
         )}
 
-        {(!address || stakingAccessBlocked) && (
+        {(DEMO_MODE || !address || stakingAccessBlocked) && (
           <div className="mt-4 rounded-2xl border border-[#fcd535]/30 bg-[#fcd535]/10 px-4 py-3 text-sm leading-6 text-[#f0cd54]">
-            {pageT("errors.privateAccess")}
+            {DEMO_MODE ? pageT("errors.demoMode") : pageT("errors.privateAccess")}
           </div>
         )}
 
@@ -781,9 +813,9 @@ export default function FundPage() {
             <button
               type="button"
               onClick={handlePurchase}
-              disabled={submitting || !amountInput}
+              disabled={submitting || !amountInput || !canWrite}
               className={`h-full min-h-[72px] rounded-2xl text-sm font-semibold transition ${
-                submitting || !amountInput
+                submitting || !amountInput || !canWrite
                   ? "cursor-not-allowed border border-white/10 bg-white/8 text-slate-500"
                   : "morgan-btn-primary border-0 text-[#111111]"
               }`}

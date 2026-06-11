@@ -1,29 +1,32 @@
 const env = import.meta.env;
 
-const fallbackAddresses = {
-  mockUsdt: "0x55d398326f99059fF775485246999027B3197955",
-  usgd: "0x4828a032fE584Fe27ce0b6AC7065f60ebbFd45F0",
-  godl: "0x01875a9668845DEB2B26010570521073d3f7d4aE",
-  gdl: "0xf0474C0f36035E5Fdc72eAd145F8de67ffD6A3Ea",
-  goldProxy: "0xd227c98015A8842afF0DA1587Be859B9632DB1F8",
-  lpProxy: "0x4Eef4d00d72134f10eA3dfe2405e87667ac22eFB",
-  lp0: "0x1C04325D9C975427C83578a4eb26AFdEE678d4D8",
-  lp1: "0xBB04AD248F3c178c806c40540FEc6ABaE8978537",
-  lp2: "0x891c0E8f18f80B951F38D06e93De81e710B9D721",
-  routerV2: "0x10ED43C718714eb63d5aA57B78B54704E256024E",
-};
+const fallbackAddresses = Object.freeze({
+  mockUsdt: "",
+  usgd: "",
+  godl: "",
+  gdl: "",
+  goldProxy: "",
+  lpProxy: "",
+  lp0: "",
+  lp1: "",
+  lp2: "",
+  routerV2: "",
+});
+
+export const DEMO_MODE = String(env.VITE_DEMO_MODE ?? "true").toLowerCase() !== "false";
 
 function fromEnv(key, fallbackValue) {
+  if (DEMO_MODE) return "";
   return env[`VITE_${key}`] || env[key] || fallbackValue;
 }
 
 export const TBSC_CHAIN_ID = Number(env.VITE_CHAIN_ID || 56);
-export const TBSC_RPC_URL = env.VITE_RPC_URL || "https://bsc-rpc.publicnode.com";
+export const TBSC_RPC_URL = DEMO_MODE ? "" : env.VITE_RPC_URL || "https://bsc-rpc.publicnode.com";
 export const BSC_SCAN_BASE_URL = TBSC_CHAIN_ID === 56 ? "https://bscscan.com" : "https://testnet.bscscan.com";
 
 export const ADDRESSES = Object.freeze({
   goldProxy: fromEnv("GOLD_PROXY_ADDRESS", fallbackAddresses.goldProxy),
-  lpProxy: fallbackAddresses.lpProxy,
+  lpProxy: fromEnv("LP_PROXY_ADDRESS", fallbackAddresses.lpProxy),
   usgd: fromEnv("USGD_TOKEN_ADDRESS", fallbackAddresses.usgd),
   godl: fromEnv("GODL_TOKEN_ADDRESS", fallbackAddresses.godl),
   gdl: fromEnv("GDL_TOKEN_ADDRESS", fallbackAddresses.gdl),

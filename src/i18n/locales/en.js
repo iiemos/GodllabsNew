@@ -699,6 +699,7 @@ const en = {
         paused: "Protocol is paused. Writes are disabled",
         blacklisted: "Current address is blacklisted",
         notWhitelisted: "Current address is not in whitelist",
+        demoMode: "Demo mode is enabled. This build does not connect to contract addresses or submit on-chain transactions.",
         privateAccess:
           "GODL staking is currently in private access. Please join the waitlist to be notified when your wallet is approved.",
         invalidGodlAmount: "Please enter a valid GODL amount",
@@ -1099,11 +1100,11 @@ const en = {
             "Sidharth is the founder and CEO of CREBACO Global, a blockchain and cryptocurrency research, consulting, intelligence, and rating firm. Since 2017, he has consulted on 157+ projects across legal, technical, financial, and due-diligence dimensions. He brings deep experience in GCC digital-asset fund management, policy frameworks, token research, market-entry strategy, and institutional blockchain advisory.",
         },
         {
-          name: "Vaibhav Gupta",
-          role: "Chief Marketing Officer",
-          image: "/team/vaibhav-gupta.png",
+          name: "Avin Garg",
+          role: "Growth & Marketing Lead",
+          image: "/team/d16dad15-e10e.png",
           bio:
-            "Vaibhav leads GODL Labs' marketing function, coordinating brand positioning, campaign strategy, community development, partner communications, and growth execution across Web3 and institutional audiences. His work focuses on converting complex RWA infrastructure into clear market narratives, acquisition funnels, launch campaigns, and investor-facing communications.",
+            "Avin Garg has been active in the digital asset industry for over six years, with experience across token launches, growth strategy, and ecosystem expansion. His expertise revolves around building scalable marketing flywheels, identifying industry trends, and driving narrative-led growth across DeFi, AI, and RWA sectors. He currently oversees growth strategy, partnerships, and marketing execution across multiple digital asset initiatives.",
         },
         {
           name: "Brian Ho",
